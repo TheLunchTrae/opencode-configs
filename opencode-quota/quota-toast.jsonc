@@ -1,0 +1,22 @@
+{
+  "enabledProviders": ["openai"],
+  "formatStyle": "allWindows",
+  "percentDisplayMode": "remaining",
+  "tuiCommandDisplay": "inline",
+  "tuiSidebarPanel": {
+    "enabled": true
+  },
+  "enableToast": false,
+  "tuiCompactStatus": {
+    "enabled": false
+  },
+  "tuiPromptBar": {
+    "enabled": false
+  },
+  "maintainerAnnouncements": {
+    "enabled": false
+  },
+  "telemetry": {
+    "enabled": false
+  }
+}

@@ -1,0 +1,12 @@
+# Default
+node_modules
+package.json
+package-lock.json
+bun.lock
+.gitignore
+
+# IDE
+.idea
+
+# Secrets
+secrets/**/*
