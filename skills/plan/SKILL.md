@@ -1,25 +1,34 @@
 ---
 name: plan
-description: Create a detailed implementation plan before writing any code
+description: Produce an evidence-backed implementation plan with acceptance slices before writing code.
 ---
 
-<!-- Run this skill as a subtask in the `planner` subagent for context isolation. -->
+# Implementation plan
 
-# Plan: $ARGUMENTS
+Use this skill in the read-only `planner` subagent. Return the plan to the lead for design review and user approval.
+Do not edit files, execute scripts, run tests, or dispatch another agent. Proposed checks are not observed results.
 
-Produce a structured implementation plan. Use when the task needs phases, file paths, dependencies, and risks laid out before any code is written. Read-only — produces a plan document, no edits.
+1. Read relevant project instructions, manifests, adjacent code, and existing interfaces.
+2. State the outcome, non-goals, constraints, confirmed requirements, assumptions, and consequential unknowns.
+3. Cite existing paths and symbols. Mark proposed files or symbols as new. Describe the actual search scope for gaps.
+4. Describe data shape, ownership, errors, and user-visible acceptance examples before implementation details.
+5. Choose the smallest coherent design. Explain consequential alternatives and structural risks.
+6. Break work into small acceptance slices. Give each slice its rationale, files, dependencies, and checks.
+7. Identify characterization or failing-regression checks, integration checks, and any measurement baseline needed.
+8. Return the plan for annotation, required design reviews, and explicit user approval. Do not begin implementation.
 
-## Process
+```text
+Outcome and non-goals
+Source evidence and current constraints
+Confirmed decisions, assumptions, and blockers
+Design and data lifecycle
+Acceptance examples and preserved invariants
+Task slices: ID, owner role, files, dependencies, rationale, checks
+Risks and verification limitations
+Decisions requiring user review
+```
 
-1. Determine what is being built or changed from the user's request and current context
-2. Restate the requirements clearly, including any relevant file paths or constraints
-3. Present the resulting plan with file paths, dependencies, and risks clearly marked. Default to a single-pass plan describing the end state; only break into phases if the user explicitly asks (use `/phased-plan` for that) or if phasing is structurally required.
-4. Wait for explicit user approval before any implementation begins
-
-Read the codebase but make no changes. Output a plan only.
-
-## Gotchas
-
-- Subagent fork — the output is a plan, not an implementation. Always wait for explicit user approval before any code is written.
-- The planner does not run tests or execute scripts; verification steps in the plan are descriptions, not results.
-- If the user's request is ambiguous, surface the ambiguity in the plan rather than guessing a direction.
+Default to an immediate full-state change. Acceptance slices do not require separate releases or migration windows.
+Use `phased-plan` only when the user requests a rollout or safe deployment structurally requires one.
+If product behavior remains ambiguous, return focused questions to the lead for `spec-interview`.
+A plan is not execution evidence, permission to edit, or permission to ship.

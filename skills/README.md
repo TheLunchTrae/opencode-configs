@@ -1,13 +1,40 @@
 # Skills
 
-| Skill | What it does |
-|-------|--------------|
-| `commit` | Stage and commit changes with a secret-scan guard and a "why-not-what" commit message. Matches the `/commit` command. |
-| `plan` | Draft a detailed implementation plan (phases, file paths, risks) before any code is written. Matches the `/plan` command. |
-| `phased-plan` | Draft a phased rollout plan with migration windows, backwards-compat scaffolding, and per-phase rollback. Matches the `/phased-plan` command. |
-| `push` | Push the current branch to its remote, handling first-push tracking and network-error retries. Matches the `/push` command. |
-| `review` | Review code and present findings. Matches `/review` and `/code-review`. |
-| | Load `@reviewer-standards` and `@review-template`. |
-| `security-review` | Security-focused review of current changes or specified files. Matches the `/security-review` command. |
-| `project-standards` | Plan and approve new-project or repository standards and deliberate test-tooling, linting, formatting, type-check, CI, and tooling configuration. Does not write ordinary tests, run routine checks, or fix ordinary defects. |
-| `verify` | Run the verification loop (type checking, linting, tests, build) and report PASS/FAIL with action items. Matches the `/verify` command. |
+Skills load on demand. The lead selects the relevant procedure and preserves the existing approval gates.
+A skill does not grant tools, edit rights, or Task permission.
+
+## Development
+
+| Skill | Purpose |
+| --- | --- |
+| `development-workflow` | Route work through planning, bounded tasks, acceptance evidence, and review. |
+| `spec-interview` | Resolve consequential ambiguity before planning. Matches `/spec`. |
+| `plan` | Produce a source-backed plan with acceptance slices. Matches `/plan`; the planner stays read-only. |
+| `phased-plan` | Plan a requested or necessary staged rollout with per-phase rollback. Matches `/phased-plan`. |
+| `test-first` | Observe a meaningful failing test, implement the behavior, and verify green. |
+| `measured-performance` | Compare a baseline and candidate under the same measurement conditions. |
+| `checkpoint` | Save or validate a project-local handoff. Matches `/checkpoint` and `/resume-work`. |
+| `finish` | Collect final checks, independent reviews, and lessons without shipping. Matches `/finish`. |
+| `code-learning` | Explain code mechanics and optional questions. Matches `/explain` and `/quiz`. |
+
+## Review and verification
+
+| Skill | Purpose |
+| --- | --- |
+| `review` | Review code with shared standards and report format. Matches `/review` and `/code-review`. |
+| `security-review` | Review security-sensitive changes. Matches `/security-review`. |
+| `verify` | Run configured checks and report PASS, FAIL, BLOCKED, or SKIP. Matches `/verify`. |
+| `project-standards` | Plan and approve deliberate repository standards and tooling changes. |
+
+Reviewers load `@reviewer-standards` and `@review-template` as required by their role.
+Use `project-standards` for new test tooling, linting, formatting, type checks, or CI configuration.
+It does not replace ordinary tests, routine verification, or defect fixes.
+
+## Git
+
+| Skill | Purpose |
+| --- | --- |
+| `commit` | Stage and commit with secret scanning and a reason-focused conventional message. Matches `/commit`. |
+| `push` | Push the current branch under the existing approval policy. Matches `/push`. |
+
+Copy complete skill folders, including supporting license files. Keep project checkpoints in their work project.

@@ -46,13 +46,20 @@ The hard calls in orchestration are about delegation and coordination, not the w
 
 ## Workflow for implementation tasks
 
+Load the development-workflow skill for implementation tasks. It supplies route selection, task contracts,
+acceptance evidence, and bounded retries. Keep trivial work lightweight and retain all approval and review gates.
+Load supporting skills only when needed; do not load the whole skill catalog into every session.
+
 For any task involving writing or modifying code, follow this workflow. Skip it only for trivial changes (single-line fixes, config values, documentation) or questions with no implementation.
 
 Invoke `architect` whenever the right approach is unclear or the user wants to explore alternatives — multiple viable approaches, user uncertainty, open-ended design questions, or doubt about an existing plan. When invoked before implementation, it produces a decision document; once the user picks an approach, continue with the workflow below. When invoked for a standalone question, return its output directly without entering implementation.
 
 ### 1. Plan
 
-Clarify the request if needed, then produce a design. Apply these grounding rules:
+For non-trivial work, dispatch `planner` with the plan skill before implementation.
+Use the spec-interview skill only for consequential requirements that the repository and user have not resolved.
+Define acceptance examples, data ownership, preserved invariants, and non-goals. Then produce a design.
+Apply these grounding rules:
 
 * Verify every file, symbol, and interface by actually searching for it. Confirm paths and names from the codebase, not from naming conventions.
 * Cite file paths and line numbers for existing symbols referenced. Identify proposed symbols as new components.
@@ -96,11 +103,20 @@ Present the finalised design to the user with these explicit options and wait be
 
 ### 4. Implement
 
-When the work decomposes into non-overlapping files or modules, fan out to the matching developer subagents in parallel (see **Delegation and parallelism**). Otherwise, implement the approved design directly, or pass the whole slice to one developer subagent. On a blocker, revise the design and return to step 2.
+Dispatch the matching developer with a bounded task contract from the development-workflow skill.
+Include acceptance criteria, owned files, dependencies, relevant evidence, and stopping conditions.
+Use the test-first skill for behavior changes and characterization checks for refactors.
+Start with one writer. Use at most two concurrent writers only for independent acceptance targets and disjoint files.
+If no permitted specialist matches, report the uncovered scope rather than bypassing the Task allowlist.
+On a design blocker, revise the design and return to step 2. Carry retry counts across resumed sessions.
 
 ### 5. Review — implementation
 
 Send the implementation to `code-reviewer`. Address issues and re-run as needed. A coordinator can include applicable language-review findings in its report. Do not schedule a duplicate language review for the same scope when those findings are current and complete. This does not waive mandatory design review, implementation review, security review triggers, or re-review after fixes. When no CRITICAL or HIGH issues remain, report completion to the user with any lower-severity findings — the user decides whether to address them.
+
+Use the finish skill before the final handoff. Run verification in the active lead session, not a nested lead.
+Use the checkpoint skill before a context reset. Revalidate source evidence and approvals when resuming.
+A checkpoint, finish step, or completed review does not authorize a commit, push, pull request, or merge.
 
 ## Delegation and parallelism
 
@@ -109,7 +125,7 @@ Parallelise delegation when subtasks are independent:
 | Work type | Default |
 |-----------|---------|
 | Research, exploration, reviews on different files / modules | Parallel |
-| Implementation across non-overlapping files or modules | Parallel (fan-out / fan-in) |
+| Independent implementation targets with non-overlapping files | At most two writers; verify after integration |
 | Implementation on overlapping files, or step B depends on step A | Sequential |
 
 Maintain single ownership per artifact — no two subagents modifying the same file in one fan-out.
