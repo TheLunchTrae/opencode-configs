@@ -9,41 +9,74 @@
   "default_agent": "lead",
   "references": {
     "asd-ste100": {
-      "path": "./references/asd-ste100.md",
-      "description": "ASD-STE100 Simplified Technical English rules for technical documentation."
+      "path": "./references/agent-prompts/asd-ste100.md",
+      "description": "Technical documentation authority, preservation rules, and verification limits.",
+      "hidden": true
     },
     "global-coding-style": {
-      "path": "./references/global-coding-style.md",
-      "description": "Generic global coding style defaults. Project- and language-specific conventions override these."
+      "path": "./references/agent-prompts/global-coding-style.md",
+      "description": "Project-aware coding defaults; project and language rules take precedence.",
+      "hidden": true
     },
     "reviewer-standards": {
-      "path": "./references/reviewer-standards.md",
-      "description": "Universal reviewer rules, severity levels, output format, and verdicts. Load by every reviewer agent."
+      "path": "./references/agent-prompts/reviewer-standards.md",
+      "description": "Shared reviewer conduct and verification rules. Read for each review.",
+      "hidden": true
     },
     "review-template": {
-      "path": "./references/review-template.md",
-      "description": "Read this file to format code review findings."
+      "path": "./references/agent-prompts/review-template.md",
+      "description": "Shared format for review findings, evidence, counts, and verdict.",
+      "hidden": true
+    },
+    "review-criteria": {
+      "path": "./references/agent-prompts/review-criteria.md",
+      "description": "Severity and verdict definitions without reviewer-role instructions.",
+      "hidden": true
+    },
+    "review-target": {
+      "path": "./references/agent-prompts/review-target.md",
+      "description": "Review scope selection and evidence for branch, staged, local, or file targets.",
+      "hidden": true
+    },
+    "delegation-contract": {
+      "path": "./references/agent-prompts/delegation-contract.md",
+      "description": "Shared assignment and return fields; grants no delegation authority.",
+      "hidden": true
+    },
+    "implementation-standards": {
+      "path": "./references/agent-prompts/implementation-standards.md",
+      "description": "Shared implementation checks and evidence for developer agents.",
+      "hidden": true
+    },
+    "typescript-guidance": {
+      "path": "./references/agent-prompts/typescript-guidance.md",
+      "description": "Shared TypeScript and JavaScript guidance for development and review.",
+      "hidden": true
+    },
+    "go-guidance": {
+      "path": "./references/agent-prompts/go-guidance.md",
+      "description": "Shared Go guidance for development and review.",
+      "hidden": true
+    },
+    "csharp-guidance": {
+      "path": "./references/agent-prompts/csharp-guidance.md",
+      "description": "Shared C# and .NET guidance for development and review.",
+      "hidden": true
+    },
+    "php-guidance": {
+      "path": "./references/agent-prompts/php-guidance.md",
+      "description": "Shared PHP guidance for development and review.",
+      "hidden": true
     }
   },
   "mcp": {
     "github": {
-         "type": "remote",
-         "url": "https://api.githubcopilot.com/mcp/",
-         "enabled": false,
-         "oauth": false,
-         "headers": {
-           "Authorization": "Bearer {file:secrets/github_token}"
-         }
-       },
-      "playwright": {
-        "type": "local",
-        "command": [
-          "npx",
-          "@playwright/mcp@latest"
-        ],
-        "enabled": false
-      }
+      "enabled": false
     },
+    "playwright": {
+      "enabled": false
+    }
+  },
   "permission": {
     "read": {
       "~/.config/opencode/secrets": "deny",

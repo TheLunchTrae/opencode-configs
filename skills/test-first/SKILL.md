@@ -6,8 +6,7 @@ description: Observe a meaningful failing test, implement a bounded behavior cha
 # Test-first change
 
 Use this skill for a behavior fix or feature with an available test seam.
-A leaf implementer performs only its assigned work. It returns review requests to the lead; it does not delegate.
-The lead retains planning, approval, specialist routing, and independent review responsibilities.
+Follow the active agent's assignment and role boundaries. The lead owns workflow, approvals, and review routing.
 
 1. Inspect the relevant code and configured test command. Record existing failures before changing behavior.
 2. Define the acceptance examples independently of the proposed implementation.
@@ -29,4 +28,4 @@ For a documentation-only change, use relevant structural checks rather than inve
 When execution is unavailable, report `BLOCKED` with the missing dependency or environment. Describe unrun checks as
 plans.
 Do not install new tooling, access production data, or bypass permissions to produce a green result.
-Two failed repair attempts on the same target return the blocker to the lead, unless a smaller approved budget applies.
+Respect the remaining task budget supplied by the lead; return blockers when it is exhausted.

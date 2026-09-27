@@ -32,10 +32,10 @@ Checkpoint paths belong to the current work project, never to the global configu
 
 | Command | Purpose |
 | --- | --- |
-| `/review` | Review recent changes and return findings. |
-| `/code-review` | Review staged and unstaged changes with severity levels and a verdict. |
+| `/review <target>` | Review the requested scope; ask when the target is unclear. |
+| `/code-review [target]` | Review the requested scope; default to local changes. |
 | `/security-review` | Review security risks; CRITICAL and HIGH findings block progress. |
-| `/go-review` | Review Go-specific behavior and conventions. |
+| `/go-review [target]` | Review Go behavior and conventions; default to local changes. |
 
 ## Refactoring and documentation
 
@@ -52,4 +52,5 @@ Checkpoint paths belong to the current work project, never to the global configu
 | `/push` | Push the current branch under the existing approval policy. |
 | `/summarize-branch` | Summarize the branch commits before a pull request. |
 
-See the [skill catalog](../skills/README.md) and [development procedure](../skills/development-workflow/SKILL.md).
+Commands route to agent procedures and skills; they do not maintain a second copy of role policy.
+See the [skill catalog](../skills/README.md) and [lead workflow](../agents/lead.md).

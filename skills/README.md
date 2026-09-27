@@ -2,6 +2,8 @@
 
 Skills load on demand. The lead selects the relevant procedure and preserves the existing approval gates.
 A skill does not grant tools, edit rights, or Task permission.
+Workflow and approval policy lives in [lead](../agents/lead.md); planning lives in [planner](../agents/planner.md).
+The `development-workflow` and `plan` skills are entry points to those agents.
 
 ## Development
 
@@ -27,6 +29,7 @@ A skill does not grant tools, edit rights, or Task permission.
 | `project-standards` | Plan and approve deliberate repository standards and tooling changes. |
 
 Reviewers load `@reviewer-standards` and `@review-template` as required by their role.
+Shared prompt references live in `references/agent-prompts/` and are hidden from `@` autocomplete.
 Use `project-standards` for new test tooling, linting, formatting, type checks, or CI configuration.
 It does not replace ordinary tests, routine verification, or defect fixes.
 
@@ -37,4 +40,5 @@ It does not replace ordinary tests, routine verification, or defect fixes.
 | `commit` | Stage and commit with secret scanning and a reason-focused conventional message. Matches `/commit`. |
 | `push` | Push the current branch under the existing approval policy. Matches `/push`. |
 
-Copy complete skill folders, including supporting license files. Keep project checkpoints in their work project.
+Copy complete skill folders, including supporting license files, with their owning agents and references.
+Keep project checkpoints in their work project.

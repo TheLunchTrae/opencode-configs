@@ -114,9 +114,4 @@ requires it.
 
 ## Documentation Standard
 
-Write target-repository documentation in the project's specified ASD-STE100
-issue. If the project does not specify an issue, use Issue 9 (January 15,
-2025). At use time, verify that the official writing rules and dictionary are
-available. If they are unavailable, report that compliance could not be
-verified and identify the missing reference. Preserve commands, identifiers,
-paths, URLs, literal values, and quotations exactly.
+Read `@asd-ste100` for documentation authority, literal preservation, and compliance verification requirements.

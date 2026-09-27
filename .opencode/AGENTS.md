@@ -28,20 +28,26 @@ Read the relevant README before you change a component. Do not load all READMEs 
 | [Plugin README](../plugins/README.md) | Read before you change plugins. |
 | [Skill README](../skills/README.md) | Read before you change skills or their procedures. |
 
-Use these READMEs as reference material, not as replacements for applicable `AGENTS.md` instructions. Verify referenced files and current configuration before you follow a procedure. The agent README conflicts with this file about custom-agent model settings; verify the current configuration before you change those settings.
+Use these READMEs as reference material, not replacements for applicable agent instructions.
+Verify referenced files and current configuration before you follow a procedure.
+Workflow and approval policy belongs in the relevant agent prompt. Shared prompt content belongs in
+`references/agent-prompts/` with a hidden reference in `opencode.jsonc`.
 
 ## Verification
 
 - Run `npx --no-install tsc --project tsconfig.json` from the repository root for type checking.
   The config includes `plugins/**/*.ts` and `tests/**/*.ts`. It does not validate Markdown, JSONC, or `.opencode/` code.
 - Run `node --experimental-strip-types --test tests/block-secrets.test.ts` for the plugin tests.
-- Root `package.json` has no scripts. No CI workflow is present.
-  Do not assume `npm test`, `npm run lint`, or `npm run build` exists.
-- Root dependencies support authored plugins; `.opencode/package.json` is a separate dependency manifest, not a workspace package. Check the relevant manifest before changing dependencies.
+- Run `node --test tests/workflow-config.test.mjs` for configuration and reference checks.
+- Dependency manifests are local editor support and are not tracked. No CI workflow is present.
+  Check available tooling; do not assume `npm test`, `npm run lint`, or `npm run build` exists.
+- If local root or `.opencode/package.json` manifests exist, inspect the relevant one before changing dependencies.
 - Type checking cannot prove OpenCode config loads. Validate changed configuration separately and restart OpenCode to exercise config-time changes.
 
 ## Operational traps
-- GitHub MCP credentials are referenced through `secrets/github_token`; do not read or inline that file when inspecting configuration.
+- Preserve explicit Bash `ask` rules. Project configuration can override the wildcard while inheriting specific rules.
+- MCP entries are disabled placeholders. Enabling one requires a complete local or project server definition.
+- Never inspect or inline secret files when checking configuration.
 
 # Markdown Style
 Style rules for config-related Markdown files in this repository.

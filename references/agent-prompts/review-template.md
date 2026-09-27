@@ -42,7 +42,7 @@ After all findings and any verification section, add this table:
 ```
 
 Then add one heading. Determine `BLOCKED` or `PASSED` with
-`@reviewer-standards`.
+`@review-criteria`.
 
 ```text
 ## Verdict: BLOCKED

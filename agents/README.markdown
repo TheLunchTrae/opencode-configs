@@ -7,8 +7,10 @@ disabled: true
 ## Review references
 
 Reviewer agents load `@reviewer-standards` for role and conduct rules. They load
-`@review-template` for report structure. `@global-coding-style` remains the style
-authority when it applies.
+`@review-template` for report structure and `@review-criteria` for severity and verdicts.
+`@global-coding-style` supplies defaults when project and language rules do not specify them.
+Shared prompts live in `references/agent-prompts/` and are hidden from `@` autocomplete.
+Each agent explicitly reads its needed references. Framework prompts do not inherit another agent's body.
 
 ## Model routing and defaults
 
@@ -86,8 +88,8 @@ The research-only instruction limits the delegated assignment. It does not remov
 
 Delegation prompts state the task, scope, constraints, required context, and return evidence. They preserve user approval gates and existing commit policy.
 
-All agents follow the safety and mandatory-review requirements in
-[`AGENTS.md`](../AGENTS.md). For an architecture, system, or high-level design,
+All agents follow the shared safety requirements in [`AGENTS.md`](../AGENTS.md).
+[The lead](lead.md) owns required reviews and approvals. [The planner](planner.md) owns planning. For an architecture, system, or high-level design,
 the caller asks `lead` to arrange sibling `architecture-reviewer` work. The
 mandatory `code-reviewer` review remains required. The caller sends a CRITICAL
 security finding to `lead`. The lead arranges sibling `security-reviewer` work
@@ -109,7 +111,7 @@ This repository defines 24 custom agents, including `lead`: `lead`, `planner`,
 
 The local configuration also defines the built-in agent overrides `build`,
 `plan`, `general`, `explore`, `summary`, `compaction`, and `title`. See
-[`opencode.jsonc`](../opencode.jsonc#L75-L107).
+[`opencode.jsonc`](../opencode.jsonc).
 
 ## Custom agent roles
 
@@ -118,7 +120,7 @@ The local configuration also defines the built-in agent overrides `build`,
 | Agent | What it does |
 |-------|--------------|
 | `lead` | The primary orchestrator. Runs the end-to-end workflow, deciding when to hand off to specialists. |
-| `planner` | Breaks complex work into phases with dependencies and risks. Writes plans, not code. |
+| `planner` | Plans acceptance slices, dependencies, and risks. Uses rollout phases only when needed. |
 | `architect` | Compares design alternatives, identifies trade-offs. Used when multiple approaches are viable. |
 
 ### Review
@@ -144,12 +146,12 @@ the global Task denial. It cannot implement changes or grant user approval.
 
 ### Framework developers
 
-| Agent | Framework | Base |
+| Agent | Framework | Shared language reference |
 |-------|-----------|------|
-| `react-developer` | React / Next.js / Remix | `typescript-developer` |
-| `efcore-developer` | Entity Framework Core | `csharp-developer` |
-| `doctrine-developer` | Doctrine ORM | `php-developer` |
-| `laminas-developer` | Laminas / Mezzio | `php-developer` |
+| `react-developer` | React / Next.js / Remix | `@typescript-guidance` |
+| `efcore-developer` | Entity Framework Core | `@csharp-guidance` |
+| `doctrine-developer` | Doctrine ORM | `@php-guidance` |
+| `laminas-developer` | Laminas / Mezzio | `@php-guidance` |
 
 ### Cross-stack specialists
 

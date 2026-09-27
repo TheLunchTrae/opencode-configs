@@ -12,6 +12,7 @@ The default primary agent is `lead`. It coordinates planning, specialist work, r
 | [`agents/`](agents/README.markdown) | Agent roles, model pins, and delegation rules. |
 | [`commands/`](commands/README.markdown) | Slash commands. |
 | [`skills/`](skills/README.md) | Task procedures. |
+| [`references/agent-prompts/`](references/agent-prompts/) | Shared prompt guidance, loaded by reference alias. |
 | [`plugins/`](plugins/README.md) | Local plugins, including `block-secrets.ts`. |
 | [`opencode.jsonc`](opencode.jsonc) | Global agent, permission, MCP, shell, and plugin settings. |
 | [`tui.jsonc`](tui.jsonc) | TUI plugin settings. |
@@ -39,7 +40,12 @@ require it for normal global configuration installation.
 No `npm install` step is required for normal setup.
 
 Copy each selected skill folder with its supporting files, including license notices.
+Skills that route to an agent require that agent and its references too.
 Do not copy work-project checkpoints into the global configuration.
+
+When upgrading, copy `references/agent-prompts/` and `opencode.jsonc` together. The aliases remain unchanged.
+Remove the old root reference copies of `asd-ste100.md`, `global-coding-style.md`, `reviewer-standards.md`,
+and `review-template.md` after the new paths are in place. Preserve unrelated references.
 
 ## Configure Before First Launch
 
@@ -55,10 +61,9 @@ Do not copy work-project checkpoints into the global configuration.
    overrides. These global settings apply to every project. The `lead` agent
    can edit files; permission behavior can differ by agent.
 
-For MCP, remove unused entries from your copy of `opencode.jsonc` before you
-start OpenCode. The disabled `github` entry contains a
-`{file:secrets/github_token}` substitution. Do not copy secrets or add tokens
-inline.
+The `github` and `playwright` MCP entries are disabled. They contain no server definitions or credential references.
+To enable either server, add its complete configuration in your local or project settings and set `enabled` to `true`.
+Use the server's supported authentication flow. Do not copy secrets or add tokens inline.
 
 Local `*.ts` files in the global `plugins/` directory load when OpenCode
 starts. OpenCode installs npm plugins named in the `plugin` setting. The
@@ -78,9 +83,10 @@ behavior, see <https://opencode.ai/docs/plugins/>.
 
 ## Development workflow
 
-The `lead` agent loads the development-workflow skill for implementation tasks.
-The skill selects the procedures needed for the task.
-Implementation requires planning, user approval, specialist routing, and review under the configured security controls.
+[The lead prompt](agents/lead.md) owns workflow, approvals, specialist routing, and required reviews.
+[The planner prompt](agents/planner.md) owns planning. Commands and entry-point skills route to those roles.
+Shared guidance lives in `references/agent-prompts/`. Each reference has `hidden: true` in `opencode.jsonc`.
+Hidden references stay out of `@` autocomplete; agents can still discover and read them. This is not access control.
 
 Use `/workflow <task>` for a routed task, or keep using `/plan`, `/review`, and `/verify`.
 Use `/spec <feature>` when consequential requirements remain unclear.
@@ -103,4 +109,4 @@ Run the dependency-free configuration checks from the repository root:
 node --test tests/workflow-config.test.mjs
 ```
 
-These checks validate the authored metadata and routing contracts. They do not launch OpenCode or prove agent behavior.
+These checks validate authored metadata, routing, and shared-reference contracts. They do not launch OpenCode or prove agent behavior.

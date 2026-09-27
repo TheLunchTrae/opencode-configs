@@ -4,11 +4,6 @@ agent: architect
 subtask: true
 ---
 
-Produce an architectural design for the problem described in `$ARGUMENTS`.
-
-Restate the problem and its constraints, propose a design (component
-responsibilities, data flow, integration points, key technical decisions), and
-document the trade-offs and alternatives considered. Output the design only —
-do not write code and do not persist the design anywhere.
+Use the architect's procedure to return a design for the requested problem. Do not persist the design.
 
 $ARGUMENTS
