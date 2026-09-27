@@ -38,4 +38,3 @@ It does not replace ordinary tests, routine verification, or defect fixes.
 | `push` | Push the current branch under the existing approval policy. Matches `/push`. |
 
 Copy complete skill folders, including supporting license files. Keep project checkpoints in their work project.
-The [workflow synthesis](../.opencode/WORKFLOW-SYNTHESIS.md) explains the source contributions and deliberate omissions.

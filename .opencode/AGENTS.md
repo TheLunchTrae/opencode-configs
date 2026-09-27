@@ -2,6 +2,11 @@
 
 ## Scope and configuration
 
+- Keep this repository limited to reusable OpenCode configuration, usage and maintenance documentation,
+  supporting tests, and required license notices.
+- Describe the current configuration directly. Do not add research catalogs, source-comparison reports,
+  task-specific completion reports, or references to unrelated private resources.
+- Keep change-specific plans, test results, and open review items in the pull request, not tracked report files.
 - Root `AGENTS.md` is the global instruction file for all OpenCode sessions. Keep repository-only guidance here, not in that file.
 - The repository root is the live global OpenCode configuration directory, not an application. Changes to its agents, skills, plugins, and permissions affect other projects after restarting OpenCode.
 - Put configuration and instructions that apply only to work in this repository in `.opencode/`. Root-level configuration files define global settings; do not use them for repository-only settings. This file gives maintenance instructions for the whole repository.

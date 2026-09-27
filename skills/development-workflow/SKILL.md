@@ -90,7 +90,7 @@ Resolve blocking findings and re-review affected scope. A second context is not 
 
 Set a finite task budget before work starts. By default, allow two repair attempts for the same failed acceptance
 target.
-Count attempts across resumed sessions. These limits are operating defaults, not claims about an original author.
+Count attempts across resumed sessions. These limits are default operating budgets.
 Stop earlier on repeated failure without new evidence, unclear requirements, a permission denial, or an access limit.
 Report the blocker and preserve a checkpoint. Do not restart indefinitely, switch billing routes, or widen permissions.
 A fresh session is a deliberate handoff, not a background loop. Use `checkpoint` before a context reset.
@@ -102,5 +102,4 @@ Suggest one evidence-backed project lesson only when useful. A test or lint rule
 Ask before changing persistent instructions or tooling. Keep general configuration free of project-specific lessons.
 No automatic commit, push, pull request, merge, installation, or deployment is authorized by this skill.
 
-The route guidance includes adaptations of pstack principles. Retain [the MIT notice](LICENSE-pstack.txt) when copying
-it.
+Retain [the MIT notice](LICENSE-pstack.txt) when copying this skill.

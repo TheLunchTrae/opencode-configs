@@ -12,7 +12,7 @@
 | `/verify` | Run configured checks and report observed results without fixes. |
 | `/finish` | Collect final verification and independent reviews without shipping. |
 
-The new workflow commands and `/verify` use the existing lead agent in the active session.
+The workflow commands and `/verify` use the lead agent in the active session.
 `/plan` remains an isolated planner subtask. It returns to the lead for design review and user approval.
 No command removes approval gates. `/finish` does not commit, push, open a pull request, merge, or deploy.
 
@@ -52,4 +52,4 @@ Checkpoint paths belong to the current work project, never to the global configu
 | `/push` | Push the current branch under the existing approval policy. |
 | `/summarize-branch` | Summarize the branch commits before a pull request. |
 
-See the [skill catalog](../skills/README.md) and [workflow guide](../.opencode/WORKFLOW-SYNTHESIS.md).
+See the [skill catalog](../skills/README.md) and [development procedure](../skills/development-workflow/SKILL.md).

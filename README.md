@@ -76,11 +76,11 @@ agent and that the slash commands are available.
 For configuration fields, see <https://opencode.ai/docs/config/>. For plugin
 behavior, see <https://opencode.ai/docs/plugins/>.
 
-## Integrated development workflow
+## Development workflow
 
-The existing `lead` agent now loads the development-workflow skill for implementation tasks.
-The skill selects the needed procedure without loading every workflow into the session.
-Planning, user approval, specialist routing, review gates, model pins, and security controls remain in place.
+The `lead` agent loads the development-workflow skill for implementation tasks.
+The skill selects the procedures needed for the task.
+Implementation requires planning, user approval, specialist routing, and review under the configured security controls.
 
 Use `/workflow <task>` for a routed task, or keep using `/plan`, `/review`, and `/verify`.
 Use `/spec <feature>` when consequential requirements remain unclear.
@@ -91,11 +91,11 @@ Use `/explain <feature>` and `/quiz <topic>` for optional, read-only learning.
 
 The workflow starts with one writer. It allows at most two disjoint writers and two repair attempts per failed target.
 These are prompt-level operating limits, not filesystem isolation or an autonomous loop.
-No new service, MCP server, background process, provider, or package installation is required.
+The workflow requires no additional service, MCP server, background process, provider, or package installation.
 
-Read the [workflow synthesis](.opencode/WORKFLOW-SYNTHESIS.md) for all 20 source contributions and adaptation limits.
-Read the [validation guide](.opencode/WORKFLOW-VALIDATION.md) before activating the branch.
 The [command catalog](commands/README.markdown) and [skill catalog](skills/README.md) describe the entry points.
+
+## Configuration checks
 
 Run the dependency-free configuration checks from the repository root:
 

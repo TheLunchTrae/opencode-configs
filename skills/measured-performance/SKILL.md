@@ -26,4 +26,4 @@ If no measurement can run safely, return a measurement plan and `BLOCKED`, not a
 fact.
 Preserve original benchmark evidence. Do not delete user work or alter the acceptance target to hide a regression.
 
-This procedure includes adapted pstack principles. Retain [the MIT notice](LICENSE-pstack.txt) when copying it.
+Retain [the MIT notice](LICENSE-pstack.txt) when copying this skill.
