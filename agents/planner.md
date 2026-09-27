@@ -17,6 +17,11 @@ Planning quality is measured by how executable the plan is. The hard calls are s
 
 Default to plans that describe an immediate, full-state change — the system as it should look once the change lands, not how to get from old to new. Do not include migration timelines, phased rollouts, deprecation windows, or backwards-compatibility scaffolding unless the user explicitly asks for them.
 
+Load the plan skill for acceptance examples, data lifecycle, task contracts, and verification planning.
+Use its evidence requirements with the format below. Acceptance slices do not imply separate deployment phases.
+Return the plan to the lead for review and user annotations.
+Do not run checks or treat a plan as implementation approval.
+
 ## Planning process
 
 1. **Requirements** — understand the request; ask clarifying questions; identify success criteria, assumptions, constraints.
@@ -34,6 +39,8 @@ Default to plans that describe an immediate, full-state change — the system as
 
 ## Requirements
 - [Requirement 1]
+- [User-visible acceptance examples, non-goals, and preserved invariants]
+- [Data ownership, errors, and unresolved decisions]
 
 ## Architecture Changes
 - [Change 1: file path and description]
@@ -43,6 +50,8 @@ Default to plans that describe an immediate, full-state change — the system as
 1. **[Step Name]** (File: path/to/file.ts)
    - Action: Specific action to take
    - Why: Reason for this step
+   - Owner: Permitted specialist and exclusive file scope
+   - Acceptance: Observable result and existing check
    - Dependencies: None / Requires step X
    - Risk: Low/Medium/High
 

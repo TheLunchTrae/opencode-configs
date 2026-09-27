@@ -1,34 +1,55 @@
 # Slash commands
 
-### Day-to-day workflow
+## Day-to-day workflow
 
-| Command | What it does |
-|---------|--------------|
-| `/plan` | Draft an implementation plan for the current task — file paths, risks, dependencies. No code is written; it waits for your approval before executing. |
-| `/phased-plan` | Same as `/plan` but produces a phased rollout — independently mergeable phases with migration timeline, backwards-compat scaffolding, and per-phase rollback. Use when shipping atomically isn't safe. |
-| `/design` | Produce an architectural design: components, data flow, trade-offs, alternatives. Used when the "how" isn't settled. |
-| `/verify` | Run the verification loop (tests, linters, typecheck) and report. |
+| Command | Purpose |
+| --- | --- |
+| `/workflow <task>` | Select a route, plan, obtain approval, implement a bounded task, and review. |
+| `/spec <feature>` | Resolve consequential requirements without implementation. |
+| `/plan <task>` | Return a read-only plan with acceptance examples, files, risks, and dependencies. |
+| `/phased-plan` | Plan a requested or necessary phased rollout and per-phase rollback. |
+| `/design` | Compare architecture, data flow, and consequential alternatives. |
+| `/verify` | Run configured checks and report observed results without fixes. |
+| `/finish` | Collect final verification and independent reviews without shipping. |
 
-### Reviewing code
+The new workflow commands and `/verify` use the existing lead agent in the active session.
+`/plan` remains an isolated planner subtask. It returns to the lead for design review and user approval.
+No command removes approval gates. `/finish` does not commit, push, open a pull request, merge, or deploy.
 
-| Command | What it does |
-|---------|--------------|
-| `/review` | Lightweight review of recent changes with findings. |
-| `/code-review` | Comprehensive review of staged + unstaged changes. Returns severity-graded findings (CRITICAL / HIGH / MEDIUM / LOW) and an approval verdict. |
-| `/security-review` | OWASP Top 10 + common vulnerabilities. CRITICAL / HIGH findings block progress until resolved. |
-| `/go-review` | Go-specific idiomatic review. |
+## Context and learning
 
-### Refactoring and cleanup
+| Command | Purpose |
+| --- | --- |
+| `/checkpoint <task-id>` | Save an authorized project-local handoff without overwriting unrelated notes. |
+| `/resume-work <handoff-path>` | Revalidate source evidence, task ownership, approvals, and the remaining budget. |
+| `/explain <feature>` | Trace the actual code path and the invariants behind its safeguards. |
+| `/quiz <topic>` | Ask source-grounded questions and wait for answers. A score is not a merge gate. |
 
-| Command | What it does |
-|---------|--------------|
-| `/refactor-clean` | Find unused code, dead dependencies, duplicated logic. Categorizes findings by risk (SAFE / CAREFUL / RISKY), removes only the SAFE ones, and verifies with tests between batches. |
-| `/update-docs` | Update documentation to reflect the code changes in the current session. |
+`/resume-work` does not replace the built-in `/resume` session selector or native compaction.
+Checkpoint paths belong to the current work project, never to the global configuration.
 
-### Git
+## Review
 
-| Command | What it does |
-|---------|--------------|
-| `/commit` | Stage and commit changes with a conventional-commits message. |
-| `/push` | Push the current branch to the remote. |
-| `/summarize-branch` | Summarize every commit on the current branch — useful before opening a PR. |
+| Command | Purpose |
+| --- | --- |
+| `/review` | Review recent changes and return findings. |
+| `/code-review` | Review staged and unstaged changes with severity levels and a verdict. |
+| `/security-review` | Review security risks; CRITICAL and HIGH findings block progress. |
+| `/go-review` | Review Go-specific behavior and conventions. |
+
+## Refactoring and documentation
+
+| Command | Purpose |
+| --- | --- |
+| `/refactor-clean` | Classify dead code and duplicates by risk, then verify authorized cleanup. |
+| `/update-docs` | Update documentation for the current changes. |
+
+## Git
+
+| Command | Purpose |
+| --- | --- |
+| `/commit` | Stage and commit under the existing secret-scan and conventional-commit policy. |
+| `/push` | Push the current branch under the existing approval policy. |
+| `/summarize-branch` | Summarize the branch commits before a pull request. |
+
+See the [skill catalog](../skills/README.md) and [workflow guide](../.opencode/WORKFLOW-SYNTHESIS.md).

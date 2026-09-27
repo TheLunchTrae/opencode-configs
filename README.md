@@ -25,7 +25,7 @@ The default primary agent is `lead`. It coordinates planning, specialist work, r
 3. Back up your existing global configuration directory.
 4. Obtain a checkout or download of this repository.
 5. For a complete setup, copy `AGENTS.md`, `opencode.jsonc`, `tui.jsonc`,
-   `agents/`, `commands/`, `skills/`, `plugins/`, and `opencode-quota/` into
+   `agents/`, `commands/`, `skills/`, `references/`, `plugins/`, and `opencode-quota/` into
    the global configuration directory. Preserve the repository layout.
 
 The global configuration directory is `~/.config/opencode`. On Windows, it is
@@ -37,6 +37,9 @@ Do not copy credentials, tokens, `node_modules`, or `.idea`. The repository
 require it for normal global configuration installation.
 
 No `npm install` step is required for normal setup.
+
+Copy each selected skill folder with its supporting files, including license notices.
+Do not copy work-project checkpoints into the global configuration.
 
 ## Configure Before First Launch
 
@@ -72,3 +75,32 @@ agent and that the slash commands are available.
 
 For configuration fields, see <https://opencode.ai/docs/config/>. For plugin
 behavior, see <https://opencode.ai/docs/plugins/>.
+
+## Integrated development workflow
+
+The existing `lead` agent now loads the development-workflow skill for implementation tasks.
+The skill selects the needed procedure without loading every workflow into the session.
+Planning, user approval, specialist routing, review gates, model pins, and security controls remain in place.
+
+Use `/workflow <task>` for a routed task, or keep using `/plan`, `/review`, and `/verify`.
+Use `/spec <feature>` when consequential requirements remain unclear.
+Use `/checkpoint <task-id>` before a context reset and `/resume-work <handoff-path>` to validate saved state.
+The built-in `/resume` still selects a session; `/resume-work` does not replace it.
+Use `/finish` to collect final checks and reviews without shipping.
+Use `/explain <feature>` and `/quiz <topic>` for optional, read-only learning.
+
+The workflow starts with one writer. It allows at most two disjoint writers and two repair attempts per failed target.
+These are prompt-level operating limits, not filesystem isolation or an autonomous loop.
+No new service, MCP server, background process, provider, or package installation is required.
+
+Read the [workflow synthesis](.opencode/WORKFLOW-SYNTHESIS.md) for all 20 source contributions and adaptation limits.
+Read the [validation guide](.opencode/WORKFLOW-VALIDATION.md) before activating the branch.
+The [command catalog](commands/README.markdown) and [skill catalog](skills/README.md) describe the entry points.
+
+Run the dependency-free configuration checks from the repository root:
+
+```sh
+node --test tests/workflow-config.test.mjs
+```
+
+These checks validate the authored metadata and routing contracts. They do not launch OpenCode or prove agent behavior.
