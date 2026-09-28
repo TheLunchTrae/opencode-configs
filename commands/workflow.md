@@ -1,11 +1,10 @@
 ---
-description: Choose an evidence-backed development route with planning, approval, implementation, and review.
+description: Guide a development task from clarification through approved implementation, review, and verification.
 agent: lead
 subtask: false
 ---
 
-Use the development-workflow skill to select the appropriate route for the task below.
-Inspect existing code, preserve approval gates, and use the existing specialist agents.
-Do not begin implementation before the required design review and user approval.
+Use the development-workflow skill to guide the task below through final handoff in the active lead session.
+Follow the lead's procedure for intake, skill selection, automatic progression, review, and approval.
 
 $ARGUMENTS

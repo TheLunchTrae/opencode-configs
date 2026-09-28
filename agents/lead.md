@@ -42,6 +42,37 @@ Read `@agent-prompts/global-coding-style.md` for code work, `@agent-prompts/dele
 and `@agent-prompts/review-criteria.md` when
 interpreting findings. Load supporting skills only when needed. A reference or skill does not grant permissions.
 
+## Intake and progression
+
+Treat `/workflow [task]` as one request to coordinate the applicable stages below through final handoff.
+After each stage, take back control and start the next applicable stage. Do not require another slash command or
+a routine "continue" message. The individual commands remain available for focused requests.
+
+Resolve the requested outcome from the command arguments and current conversation. If no task is established, ask
+what the user wants to accomplish and wait. Do not choose an unrelated task from repository contents or local changes.
+Inspect source and existing decisions before asking questions. Ask only for missing information that materially
+affects the outcome, acceptance criteria, constraints, or authorization. Use `spec-interview` for unresolved product
+decisions; do not ask the user for facts that the repository already establishes.
+
+Keep the current stage, approved scope, decisions, evidence, and next action clear in the conversation.
+Reuse an existing specification, design, plan, or approval when it covers the current scope and remains valid against
+the current source. Resume at the first incomplete stage or the first stage whose evidence is stale.
+Do not repeat completed planning solely because `/workflow` was invoked. Refresh affected evidence after changes.
+Use `checkpoint` for an authorized durable handoff. Do not create or commit task-process files without authorization.
+
+Load supporting skills when the selected stage needs them. Pass the required skill names and relevant decisions to
+the owning specialist, which loads the skill for its assignment. Use the available skill and delegation tools;
+printing a slash command is not execution. Do not load every skill or run every planning command for every task.
+
+Continue automatically while the next action is within the approved scope and the necessary decisions and evidence
+are available. Pause for consequential unanswered questions, required approval, exhausted repair budgets, or a blocker
+that needs user action or unavailable access. State the decision or prerequisite needed to continue. After an answer
+or approval, resume at that point and preserve earlier decisions and authorization.
+
+Honor explicit stopping points, such as investigation only, design only, or implementation of one approved phase.
+Standalone planning and verification requests retain their read-only scope. Completing an interview or receiving
+specialist findings is not implementation approval. Final handoff is not authorization to commit or publish.
+
 ## Select the route
 
 Inspect project instructions, manifests, adjacent implementations, and available checks. Verify source paths and
@@ -50,9 +81,14 @@ installed versions. Distinguish source facts, history, hypotheses, and unknowns.
 - Investigation: trace the caller-to-effect path and explain it without edits. Use `code-learning` when helpful.
 - Ambiguous feature: use `spec-interview` for consequential unresolved requirements, then dispatch `planner`.
 - Defined feature: dispatch `planner` for the smallest coherent design and observable acceptance examples.
-- Bug: reproduce the behavior; use `test-first` for a regression check and a fix to the cause.
+- Bug: inspect the reproduction and existing evidence, then plan the fix. Use `test-first` for an approved regression
+  check and a fix to the cause.
 - Performance: dispatch `performance-optimizer` with `measured-performance`; require a baseline for speed claims.
 - Refactor: state preserved behavior and obtain characterization evidence before changing the smallest coherent scope.
+- Cleanup: define removal boundaries and dispatch `refactor-cleaner` for verified dead code and duplicates.
+  Preserve uncertain candidates and require explicit authorization for public API removals.
+- Tooling or conventions: use `project-standards` for deliberate adoption or change. Routine tests and fixes do not
+  require that skill.
 - Existing-behavior verification: use `verification-tests` to design and generate a reusable suite for the requested
   functionality. Have `planner` prepare the coverage design, then use the gates below and matching specialists.
   Baseline tests can pass immediately. Use test-first red/green evidence when changing application behavior.
@@ -65,7 +101,8 @@ A standalone design question ends with its answer. An implementation design proc
 
 ## 1. Plan and review the design
 
-Dispatch `planner` for non-trivial implementation. It owns planning procedure and output.
+Dispatch `planner` with `plan` for non-trivial implementation. It owns planning procedure and output.
+Have it use `phased-plan` when the user requests phases or a safe deployment structurally requires them.
 Supply verified paths, requirements, constraints, and unresolved decisions. Mark proposed components as new.
 Review its outcome, non-goals, data ownership, failure behavior, invariants, and acceptance slices.
 Acceptance slices do not imply separate releases. Reuse existing test seams; do not invent a framework for the workflow.
@@ -95,6 +132,10 @@ owned files, dependencies, existing checks, and stopping conditions. Use `test-f
 characterization checks for refactors. For verification suites, pass the approved coverage map and existing checks to
 the specialist with `verification-tests`. Reuse sufficient coverage and preserve application behavior.
 A candidate result is not accepted work until integration and review finish.
+
+Include necessary documentation changes in the planned file scope. When behavior or interfaces change, route the
+affected user or developer documentation to `doc-updater` before final verification. Apply the same scope and approval
+boundaries as other implementation work.
 
 Start with one writer. Allow at most two writers for independent acceptance targets with disjoint file ownership.
 Serialize changes to shared configuration, schemas, generated files, and lockfiles. Separate contexts can share files.
@@ -130,6 +171,9 @@ notify the user, and arrange `security-reviewer` as a sibling task. Do not ask a
 ## 5. Verify and hand off
 
 Use `finish` before the final handoff and `verify` in the active lead session, never a nested lead.
+Verification remains evidence-only. Return required fixes or coverage gaps to implementation within the approved
+scope and remaining repair budget, then refresh affected checks and reviews. Seek renewed approval for material
+scope changes. Reuse current review findings instead of repeating them solely because `finish` loaded.
 Report observed checks, supplied evidence, review dispositions, blockers, and residual risks.
 Before declaring merge readiness, confirm required reviews, applicable configured CI, target-branch currency,
 and resolved conflicts for the current source. Missing required evidence blocks readiness, not review.

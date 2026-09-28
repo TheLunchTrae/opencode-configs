@@ -10,9 +10,10 @@
   project directory ancestry. Do not move it into the shipped root config.
 - V2 currently accepts `instructions` without loading its entries. When maintaining this repository in V2,
   read this file explicitly; do not assume that the array loaded it.
-- Keep README content relevant to users: installation, configuration, command reference, upgrades,
-  and operational limits.
-  Keep task examples and guidance for choosing commands and skills in `USAGE.md`.
+- Keep README content relevant to users: overview, installation, configuration, a short workflow quick start,
+  upgrades, and operational limits.
+  Keep the command and skill reference, workflow guidance, and task examples in `USAGE.md`.
+  Link to detailed usage instead of maintaining duplicate explanations in the README.
   Keep editing rules, verification procedures, and implementation notes here.
 - Describe the current setup directly. Do not add research catalogs, source-comparison reports, task completion
   reports, or references to unrelated private resources. Put change-specific plans and results in the pull request.
