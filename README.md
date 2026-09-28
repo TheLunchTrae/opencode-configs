@@ -35,7 +35,7 @@ No `npm install` step is required for normal setup. OpenCode installs configured
 
 Do not copy credentials, tokens, `node_modules`, `.idea`, or work-project checkpoints.
 The repository's `.opencode/` directory contains maintenance guidance and is not needed for global installation.
-When copying selected skills, include their supporting files, license notices, owning agents, and references.
+When copying selected skills, include their supporting files, applicable license notices, owning agents, and references.
 
 This setup retains V1 plugin and configuration conventions. Before using V2, port the bundled V1 plugin and
 review the delegation-depth setting. V2 does not run V1 plugins and ignores top-level `subagent_depth`.
@@ -142,9 +142,16 @@ Copying new files alone leaves old agents, commands, and skills discoverable. Ba
   and `finish/` from `skills/`.
 
 The preserved procedures and security checklist now live in `references/agent-prompts/`.
-The workflow's license notice is `references/agent-prompts/LICENSE-pstack.txt`; copy it with the shared references.
+After replacing the shipped workflow and performance skill, remove the obsolete
+`references/agent-prompts/LICENSE-pstack.txt` and `skills/measured-performance/LICENSE-pstack.txt` copies.
+Preserve any notices required by local additions or other retained third-party material.
 Update custom references to retired entrypoints using the [usage guide](USAGE.md).
 Select `workflow-lead` explicitly in an existing session that still names the old agent.
 
 Restart OpenCode and confirm agent, command, and skill availability in a work project.
 For other settings, see the [configuration documentation](https://opencode.ai/docs/config/).
+
+## References
+
+[Lauren Tan's pstack](https://github.com/cursor/plugins/tree/5bf2b1544db739998121a306340631963c2ff3de/pstack)
+informed the workflow's evidence-based task routing and performance measurement practices.

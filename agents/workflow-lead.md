@@ -82,5 +82,3 @@ Honor narrower stopping points such as "design only" or "implement only phase 1 
 
 Delegate directly to permitted specialists. Do not invoke another lead: focused leads are alternative primary
 entrypoints that use the same procedures. Own integration, escalation, and user-visible conclusions.
-
-Workflow portions are adapted under [the retained MIT notice](../references/agent-prompts/LICENSE-pstack.txt).

@@ -185,15 +185,6 @@ test("commands do not shadow documented built-in commands or aliases", () => {
   }
 })
 
-test("adapted workflow references and performance skill retain the complete notice", () => {
-  const notice = read("references/agent-prompts/LICENSE-pstack.txt")
-  assert.equal(notice, read("skills/measured-performance/LICENSE-pstack.txt"))
-  assert.match(notice, /Copyright \(c\) 2026 Lauren Tan/)
-  assert.match(notice, /THE SOFTWARE IS PROVIDED "AS IS"/)
-  assert.ok(read("agents/workflow-lead.md").includes("../references/agent-prompts/LICENSE-pstack.txt"))
-  assert.ok(read("references/agent-prompts/lead-contract.md").includes("(LICENSE-pstack.txt)"))
-})
-
 test("shared prompts use a hidden directory reference", () => {
   const reference = config.references["agent-prompts"]
   assert.equal(reference.hidden, true)
