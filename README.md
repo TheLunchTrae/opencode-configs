@@ -8,6 +8,7 @@ The default agent is `lead`. It coordinates planning, implementation, review, an
 
 | Path | Purpose |
 | --- | --- |
+| [`USAGE.md`](USAGE.md) | Practical task examples and guidance for choosing commands and skills. |
 | [`AGENTS.md`](AGENTS.md) | Shared instructions for all sessions. |
 | [`agents/`](agents/) | Agent prompts, roles, and model choices. |
 | [`commands/`](commands/) | Slash commands listed below. |
@@ -24,7 +25,7 @@ The default agent is `lead`. It coordinates planning, implementation, review, an
 2. Authenticate your provider through `/connect` when supported.
 3. Back up your existing global configuration directory.
 4. Obtain a checkout or download of this repository.
-5. Copy `README.md`, `AGENTS.md`, `opencode.jsonc`, `tui.jsonc`, `agents/`, `commands/`, `skills/`,
+5. Copy `README.md`, `USAGE.md`, `AGENTS.md`, `opencode.jsonc`, `tui.jsonc`, `agents/`, `commands/`, `skills/`,
    `references/`, `plugins/`, and `opencode-quota/` into the global configuration directory.
    Preserve the layout and merge your existing settings.
 
@@ -62,6 +63,8 @@ The quota plugin is configured for OpenAI. To opt out, remove its entries from b
 Restart OpenCode after configuration changes, then run `opencode` from your work project.
 Confirm that `lead` is active and the custom slash commands are available.
 Project settings and explicit session model choices can override global defaults.
+
+See the [usage guide](USAGE.md) for example prompts, task selection, and ways to combine commands and skills.
 
 Use `/workflow <task>` for a complete development task. Substantial implementation includes a plan for your approval.
 Use `/plan` or `/design` for read-only planning, and `/finish` for final checks without shipping the changes.
@@ -123,6 +126,9 @@ Other agents can use the `verification-tests` skill within their assigned scope.
 reuses relevant suites and reports coverage gaps. The lead assigns any required test additions through its normal
 implementation workflow. Use `test-first` for a new behavior or bug fix.
 
+See the [verification-test examples](USAGE.md#verification-tests-for-existing-code) for scope selection,
+design-only requests, complex infrastructure, and reuse after later changes.
+
 ### Additional skills
 
 Skills provide procedures used by agents and commands. You can also request these by name:
@@ -154,7 +160,7 @@ destructive commands. Check an approval prompt's scope before saving an approval
 
 ## Upgrade an existing installation
 
-Back up the configuration first. Update `README.md`, `AGENTS.md`, `agents/`, `commands/`, `skills/`,
+Back up the configuration first. Update `README.md`, `USAGE.md`, `AGENTS.md`, `agents/`, `commands/`, `skills/`,
 `references/agent-prompts/`, `plugins/`, and `opencode.jsonc` together, preserving local overrides and license notices.
 
 Shared prompts now use the hidden `agent-prompts` directory reference.
@@ -165,7 +171,7 @@ See the [reference documentation](https://opencode.ai/docs/references/).
 After installing the new files, remove the old root reference copies of `asd-ste100.md`, `global-coding-style.md`,
 `reviewer-standards.md`, and `review-template.md` from `references/`. Preserve unrelated references.
 The former directory READMEs are also obsolete: `agents/README.markdown`, `commands/README.markdown`,
-`skills/README.md`, and `plugins/README.md`. User documentation is now in this file.
+`skills/README.md`, and `plugins/README.md`. User documentation is in this README and the [usage guide](USAGE.md).
 
 Restart OpenCode and confirm agent, command, and skill availability in a work project.
 For other settings, see the [configuration documentation](https://opencode.ai/docs/config/).
