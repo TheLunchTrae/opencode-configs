@@ -13,10 +13,10 @@ install the baseline in this OpenCode configuration repository.
 1. Treat `https://github.com/KrishRVH/standards/tree/main` as the default
    baseline. The upstream catalog is not an installable dependency.
    Do not adopt catalog-root maintenance configuration.
-2. Follow the caller's existing design, review, approval, and delegation
-   gates. This skill does not delegate work.
+2. Follow the assignment's design, review, approval, and delegation
+   constraints. This skill does not delegate work.
 3. Do not change a global `AGENTS.md`, OpenCode configuration, or unrelated
-   files unless the caller explicitly includes them in the approved plan.
+   files unless they are explicitly included in the approved plan.
 4. Do not force a migration to Mise, Bun, a framework, or an architecture.
 5. Do not execute an upstream script without separate, explicit approval.
    Do not trust tool configuration, bootstrap a workstation, or upload private

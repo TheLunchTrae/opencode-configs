@@ -1,7 +1,7 @@
 # Reviewer Standards
 
 Shared conduct for reviewer agents. Load this reference for each review.
-The current agent file defines specialty, delegation authority, and escalation procedure.
+The current agent file defines specialty, delegation authority, and stopping conditions.
 
 ## Review conduct
 
@@ -11,8 +11,8 @@ Prioritize changed material. Use unchanged surrounding code as context; report a
 a CRITICAL security issue. Explain evidence, impact, and an actionable correction.
 Use project and language authorities for style findings; read `@agent-prompts/global-coding-style.md` when applicable.
 
-Read `@agent-prompts/review-criteria.md` for severity and verdicts and `@agent-prompts/review-template.md` for report
-structure.
+Read `@agent-prompts/review-criteria.md` for severity and verdicts and
+`@agent-prompts/response-formats/review.md` for report structure.
 For code reviews, use `@agent-prompts/review-target.md` to resolve scope. A supplied design is itself the design-review
 target.
 

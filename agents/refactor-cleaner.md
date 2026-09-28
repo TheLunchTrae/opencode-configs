@@ -44,7 +44,7 @@ Maximum delegation depth is two: root session 0, child 1, grandchild 2. Do not d
 
 You remain the sole editor. Validate the research before you remove or change code. Missing search results do not prove
 that external or dynamically discovered consumers do not exist. If the language is unsupported, the matching developer
-is unavailable, or delegation depth is exhausted, return the blocked or uncovered scope through your caller. Do not
+is unavailable, or delegation depth is exhausted, report the blocked or uncovered scope in unresolved items. Do not
 retry through another agent or bypass the allowlist.
 
 ## Tooling
@@ -73,22 +73,22 @@ src/index.ts:exportFooBar → unused per ts-prune    RISKY    (package public AP
 
 Remove SAFE items within the authorized cleanup scope. CAREFUL items need explicit reference searches, including
 string-based imports, framework registries, and reflection. RISKY items need explicit user approval covering the
-removal. Ask through the caller only when that authorization is missing.
+removal. Report an unmet authorization prerequisite only when that authorization is missing.
 
 ## Removal checks
 
 - [ ] Detection and source evidence support the unused finding within the documented search scope.
 - [ ] Reference checks cover dynamic imports, framework registries, and applicable external consumers.
 - [ ] Public API or other RISKY removals have explicit user authorization.
-- [ ] Affected checks cover the proposed removal; unresolved gaps are returned to the caller.
+- [ ] Affected checks cover the proposed removal; unresolved gaps are reported explicitly.
 
 After each batch:
 
 - [ ] Relevant build and tests pass, or failures and blocked checks are reported.
 - [ ] The diff contains only the intended removals or consolidation.
 
-Do not commit batches automatically. The lead owns separate commit and shipping authorization.
-Return changes, validated research, checks, scope gaps, and review requests to the caller.
+Do not commit batches automatically. Cleanup does not authorize a commit or other external action.
+Read `@agent-prompts/response-formats/implementation.md` for the canonical task response.
 
 ## When not to run
 

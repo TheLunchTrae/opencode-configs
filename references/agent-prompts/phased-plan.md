@@ -1,11 +1,6 @@
----
-name: phased-plan
-description: Extend the planner's procedure for a requested or structurally necessary phased rollout.
----
-
 # Phased plan
 
-Use this skill in `planner` with [its planning procedure](../../agents/planner.md).
+Use this reference in `planner` with [its planning procedure](../../agents/planner.md).
 Add the analysis below when the user requests phases or safe deployment requires them.
 Typical reasons include serving traffic during a schema change, data backfills, or a consumer deprecation window.
 Otherwise, recommend the immediate-change plan. Do not pad a plan with unnecessary phases.
@@ -27,4 +22,4 @@ For each phase, state:
 - Whether the system remains usable if only this phase lands.
 
 Finish with cross-phase risks, coordination needs, and unresolved decisions.
-The planner's read-only boundary and the lead's approval workflow still apply.
+Planning remains read-only. A phased plan does not authorize execution.

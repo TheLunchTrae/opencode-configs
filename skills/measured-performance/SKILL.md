@@ -5,8 +5,9 @@ description: Establish comparable performance measurements and test one bottlene
 
 # Measured performance
 
-Use this skill in `performance-optimizer`, or pass its evidence contract through the lead to a matching developer.
-Do not delegate from a leaf agent. Retain ordinary planning, approval, security review, and correctness checks.
+Use this skill for a bounded performance assignment within the active agent's specialty and permissions.
+Retain the assignment's planning, approval, security review, and correctness requirements. It grants no delegation.
+Use `@agent-prompts/response-formats/performance.md` for the canonical performance response.
 
 1. Identify the user-visible slow path and objective. Distinguish latency, throughput, startup, and resource use.
 2. Inspect existing benchmarks, traces, datasets, and commands. Prefer safe, local, repeatable measurements.
@@ -22,8 +23,8 @@ Do not rank a hot loop over startup without evidence about the actual workload.
 
 A faster microbenchmark does not prove a faster application. A different dataset does not establish a fair comparison.
 Do not invent an improvement percentage, significance claim, or fixed speedup quota.
-If no measurement can run safely, return a measurement plan and `BLOCKED`, not an estimated improvement presented as
-fact.
+If no measurement can run safely, report the blocked measurement and a proposed measurement plan. Set task status
+using the common response rules; a measurement-plan assignment can be complete without executing the measurement.
 Preserve original benchmark evidence. Do not delete user work or alter the acceptance target to hide a regression.
 
 Retain [the MIT notice](LICENSE-pstack.txt) when copying this skill.

@@ -17,8 +17,8 @@
   Keep editing rules, verification procedures, and implementation notes here.
 - Describe the current setup directly. Do not add research catalogs, source-comparison reports, task completion
   reports, or references to unrelated private resources. Put change-specific plans and results in the pull request.
-- Keep workflow, approval, and role policy in the applicable agent prompt. This maintenance file describes how
-  to edit the configuration; it must not become another copy of the runtime workflow.
+- Keep each lead's role and progression policy in its agent prompt. Shared stage procedures belong in the explicitly
+  loaded agent references. This maintenance file must not become another copy of the runtime workflow.
 
 Read the relevant source before editing it.
 Use [the user README](../README.md) and [usage guide](../USAGE.md) to check documented behavior.
@@ -30,7 +30,8 @@ Check the installed version against the [V1 documentation](https://opencode.ai/d
 - Custom agent `model` and `variant` settings belong in `agents/*.md` frontmatter.
   Root `opencode.jsonc` owns global defaults and built-in overrides.
 - Agent Markdown bodies are prompts. Do not add a separate `prompt` frontmatter field.
-- `lead` is the primary agent. Built-in `build` and `plan` are disabled; custom `planner` is a separate agent.
+- `workflow-lead` is the default primary agent. Focused leads are alternative primary entrypoints, never children.
+  Built-in `build` and `plan` are disabled; custom `planner` is a separate subagent.
 - Read the affected agent definitions for identities, models, and permissions. Do not maintain a second allocation
   table or hardcoded role inventory in documentation.
 - The existing allocation was checked against OpenCode 1.18.29. Before changing it, inspect current provider
@@ -48,18 +49,25 @@ Check the installed version against the [V1 documentation](https://opencode.ai/d
 
 ## Prompt ownership, commands, and skills
 
-- [Lead](../agents/lead.md) owns orchestration, approvals, review routing, budgets, and shipping authorization.
-  [Planner](../agents/planner.md) owns planning. Each specialist owns its scope and escalation behavior.
+- The active lead owns its stage, coordination, approval handling, and user-visible conclusions.
+  [The lead contract](../references/agent-prompts/lead-contract.md) supplies common boundaries and authorization rules.
+  [Planner](../agents/planner.md) owns planning procedure. Each specialist owns its scope and stopping conditions.
 - Shared prompt content belongs in `references/agent-prompts/`. Register that directory once as the hidden
   `agent-prompts` reference, with a description, in root `opencode.jsonc`.
   Use full paths such as `@agent-prompts/reviewer-standards.md`; verify every referenced file exists.
 - Hidden affects interactive visibility. It does not remove agent context or grant tool permissions.
 - Each agent must explicitly read the references it needs. Framework agents do not inherit another agent's body.
   Keep language guidance shared with the matching developer, reviewer, and framework roles.
-- Commands and entry-point skills route to the owning agent. Do not duplicate workflow or approval procedures there.
-  Preserve command names, argument handling, intended target defaults, and agent routing.
-- `/verify` and lead workflow commands run in the active lead session. `/plan` remains a read-only planner subtask.
-  Preserve the built-in `/resume` session selector; `/resume-work` consumes a project handoff.
+- Canonical task responses belong in `references/agent-prompts/response-formats/`.
+  Keep the envelope in `common.md`, task sections in profiles, and the consumer index in `catalog.md`.
+  Each specialist selects a profile. Do not duplicate response structures in agent prompts or reusable skills.
+  Delegating agents read the catalog and expected profile, then validate returned scope, source state, and evidence.
+  Specialists need task context and constraints, not the invoking agent's identity or workflow.
+  Keep task completion, review verdicts, and check results distinct. Preserve required empty sections with `None`.
+- Lead selection supplies workflow entrypoints. Keep stage procedures in agent references instead of discoverable
+  wrapper skills or role commands. Preserve supporting files and notices when moving procedures.
+- Utility commands retain the selected agent and its permissions. Do not silently switch a focused lead to a writer.
+  Preserve argument handling and the built-in `/resume` session selector; `/resume-work` consumes a project handoff.
 - Skills do not grant permissions. Preserve their supporting files and license notices when moving content.
   Keep project contracts, checkpoints, and lessons in their work project, not in this global configuration.
 - `project-standards` handles deliberate tooling and convention changes. Ordinary tests, routine checks, and defect
@@ -71,6 +79,8 @@ Check the installed version against the [V1 documentation](https://opencode.ai/d
   Do not remove specific rules merely because the global wildcard currently has the same value.
 - Keep global Task access denied by default. Exact agent allowlists are authoritative; do not expand them during
   documentation cleanup or infer permissions from a role description.
+- Planning and review leads must not have delegation routes to editing agents. No lead may delegate to another lead.
+  Verify transitive reachability as well as each lead's direct allowlist.
 - Preserve leaf restrictions and the configured depth limit. When changing permissions, verify that leaf delegation
   is denied and approved parents can reach only their listed targets in a fresh session.
 - Research-only assignments limit the task, not the developer's edit capability. Preserve the parent's sole-editor

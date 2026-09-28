@@ -114,7 +114,7 @@ public contracts without assuming a testing package is available.
 
 ## Security boundaries
 
-Identify risks and required review for these boundaries through the caller.
+Identify risks and required review for these boundaries in the task response.
 If a security design decision or required authorization is missing, pause the affected implementation:
 
 - Custom CSRF handling outside `Laminas\Form\Element\Csrf` or framework middleware
@@ -122,10 +122,10 @@ If a security design decision or required authorization is missing, pause the af
 - Session / cookie configuration outside `Laminas\Session` or Mezzio session middleware
 - Authentication flows or credential storage — defer design decisions before implementing
 
-Request security review through the caller to `lead` before committing.
+Report required security review before any commit.
 
 ## Handoff
 
-Return changes, verification, blockers, and review requests to the caller.
+Read `@agent-prompts/response-formats/implementation.md` for the canonical task response.
 This agent is a leaf. Do not delegate or bypass a Task denial.
-The lead owns required reviews and shipping authorization; an implementation assignment does not authorize a commit.
+An implementation assignment does not authorize a commit or other external action.

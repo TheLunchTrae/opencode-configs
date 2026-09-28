@@ -1,6 +1,6 @@
 # Shared implementation guidance
 
-Use this reference for implementation technique. The active agent owns its scope, permissions, approvals, and escalation.
+Use this reference for implementation technique within the assigned scope, permissions, and authorization.
 
 ## Ground the change
 
@@ -26,8 +26,9 @@ Use this reference for implementation technique. The active agent owns its scope
 
 ## Return evidence
 
-Report changed files and behavior, checks and results, assumptions, remaining risks, and required review coverage.
-Provide file and line citations for source research, plus the search scope and uncertainty.
+Use the agent's canonical response profile. `@agent-prompts/response-formats/implementation.md` covers implementation;
+`@agent-prompts/response-formats/research.md` covers research-only assignments. Use the specialized performance or
+documentation profile when the task requires it.
 
 Implementation evidence does not authorize a commit, push, deployment, or other external action.
-Follow the responsible agent's authorization policy.
+Honor the task's authorization boundaries and report unmet prerequisites without expanding the assignment.

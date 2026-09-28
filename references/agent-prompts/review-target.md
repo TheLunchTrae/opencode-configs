@@ -1,7 +1,7 @@
 # Review Target
 
-Use an explicit target from the user or caller. A command may supply a default when arguments are absent.
-If the target is ambiguous and no default is supplied, ask which scope to review.
+Use the assignment's explicit target or supplied default.
+If the target is ambiguous and no default is supplied, report the missing scope before reviewing.
 
 | Target | Scope and evidence |
 | --- | --- |

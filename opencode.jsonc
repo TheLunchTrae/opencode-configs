@@ -6,7 +6,7 @@
   "model": "openai/gpt-6-astra",
   "small_model": "openai/gpt-5.6-luna",
   "subagent_depth": 2,
-  "default_agent": "lead",
+  "default_agent": "workflow-lead",
   "references": {
     "agent-prompts": {
       "path": "./references/agent-prompts",

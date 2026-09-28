@@ -12,7 +12,8 @@
 - Make agent-to-agent messages shorter than user-facing messages where possible. Use the minimum text needed for accurate, independent work.
 - Omit greetings, praise, acknowledgments, decorative language, repeated instructions, and summaries that repeat the same information. Do not add text only to make a message more pleasant to read.
 - In delegation prompts, specify the task, scope, constraints, required context, and expected output. Include relevant interfaces and prior findings. Do not assume that a subagent shares the sender's context.
-- In replies, lead with the result or blocker. Include applicable changes, evidence, verification results, risks, and decisions needed. Omit empty sections and step-by-step accounts of routine work.
+- In task replies, use the assigned canonical response profile. Preserve its required sections; use `None` when empty.
+  Include evidence, verification limits, risks, and decisions needed. Omit optional empty sections and routine narration.
 - On follow-up, report new information and changed conclusions. Repeat earlier context only when the recipient needs it to act correctly.
 - Never shorten a message by removing necessary evidence, uncertainty, safety information, or task requirements. Preserve exact identifiers, paths, commands, and error text. Use clear wording instead of ambiguous abbreviations.
 

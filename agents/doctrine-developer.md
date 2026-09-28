@@ -126,7 +126,7 @@ tooling available in the installed DBAL version to check N+1 regressions.
 
 ## Security boundaries
 
-Identify risks and required review for these boundaries through the caller.
+Identify risks and required review for these boundaries in the task response.
 If a security design decision or required authorization is missing, pause the affected implementation:
 
 - Raw SQL concatenating user-controlled input — use DQL parameters or `setParameter`
@@ -134,10 +134,10 @@ If a security design decision or required authorization is missing, pause the af
 - Custom serialisation paths bypassing Doctrine hydration for sensitive columns
 - Filter / security listener logic gating which rows are returned (easy to get wrong under caching)
 
-Request security review through the caller to `lead` before committing.
+Report required security review before any commit.
 
 ## Handoff
 
-Return changes, verification, blockers, and review requests to the caller.
+Read `@agent-prompts/response-formats/implementation.md` for the canonical task response.
 This agent is a leaf. Do not delegate or bypass a Task denial.
-The lead owns required reviews and shipping authorization; an implementation assignment does not authorize a commit.
+An implementation assignment does not authorize a commit or other external action.

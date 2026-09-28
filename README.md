@@ -1,8 +1,9 @@
 # OpenCode Global Configuration
 
-Personal global configuration for OpenCode, with specialist agents, slash commands, reusable skills,
+Personal global configuration for OpenCode, with focused lead agents, specialists, utility commands, reusable skills,
 shared prompts, secret-path checks, and quota display preferences.
-The default agent is `lead`. It coordinates planning, implementation, review, and verification.
+The default agent is `workflow-lead`. It coordinates complete development tasks.
+Select a focused lead when you want only planning, approved implementation, or assessment of existing work.
 
 ## Contents
 
@@ -11,7 +12,7 @@ The default agent is `lead`. It coordinates planning, implementation, review, an
 | [`USAGE.md`](USAGE.md) | Workflow guide, command and skill reference, and practical task examples. |
 | [`AGENTS.md`](AGENTS.md) | Shared instructions for all sessions. |
 | [`agents/`](agents/) | Agent prompts, roles, and model choices. |
-| [`commands/`](commands/) | Slash command definitions. |
+| [`commands/`](commands/) | Optional utility shortcuts that retain the selected agent. |
 | [`skills/`](skills/) | Reusable task procedures. |
 | [`references/agent-prompts/`](references/agent-prompts/) | Shared prompt guidance. |
 | [`plugins/`](plugins/) | Local plugins, including secret-path checks. |
@@ -49,7 +50,8 @@ See the [V2 migration guide](https://opencode.ai/v2/docs/migrate-v1/).
    A global model change does not override those agent choices.
 3. Use reasoning and sampling options supported by the selected models.
 4. Remove `opencode` from `disabled_providers` if you want to use that provider.
-5. Review the global and per-agent permissions. These settings affect every project; `lead` can edit files.
+5. Review the global and per-agent permissions. These settings affect every project.
+   `workflow-lead` and `implementation-lead` can edit files; planning and review leads have narrower roles.
 
 GitHub and Playwright MCP servers are configured but disabled. Review their connection settings before enabling them.
 Configure GitHub authentication in your local environment, then set `enabled` to `true` for a server you want to use.
@@ -61,21 +63,25 @@ The quota plugin is configured for OpenAI. To opt out, remove its entries from b
 ## Quick start
 
 Restart OpenCode after configuration changes, then run `opencode` from your work project.
-Confirm that `lead` is active and the custom slash commands are available.
+Confirm that `workflow-lead` is active and the four primary leads are available.
 Project settings and explicit session model choices can override global defaults.
 
-Use `/workflow [task]` to start a complete development task:
+Describe a development task in an ordinary message:
 
 ```text
-/workflow Add a JSON output option to the existing list command. Preserve the default table output.
+Add a JSON output option to the existing list command. Preserve the default table output.
 ```
 
-The lead inspects the project, asks for consequential missing information, and loads the skills needed for each stage.
-It presents a reviewed plan for approval before substantial implementation. After approval, it coordinates the work,
-applicable documentation, reviews, and verification. You do not need to invoke each stage as a separate command.
-With no task text or established task in the conversation, `/workflow` asks what you want to accomplish.
+The workflow lead inspects the project, resolves consequential questions, and presents a reviewed plan for approval
+before substantial implementation. It then coordinates implementation, documentation, reviews, and verification.
+It advances between stages automatically within the approved scope. No workflow command or skill invocation is needed.
 
-See the [usage guide](USAGE.md) for the workflow, [command reference](USAGE.md#command-reference),
+Use Tab or your configured agent-switch key to select `planning-lead`, `implementation-lead`, or `review-lead`
+for a focused task. These are primary agents; select them instead of invoking them as child agents.
+Focused leads stop at their stage boundary. The workflow lead handles the full process without switching leads.
+
+See the [usage guide](USAGE.md) for [lead selection](USAGE.md#choose-a-lead),
+[utility commands](USAGE.md#command-reference),
 [supporting skills](USAGE.md#supporting-skills), and worked examples.
 It also explains [verification baselines](USAGE.md#verification-tests-for-existing-code) for existing behavior.
 Commits, pushes, pull requests, merges, and deployments require authorization for that action.
@@ -83,6 +89,11 @@ Commits, pushes, pull requests, merges, and deployments require authorization fo
 Specialists cover TypeScript, JavaScript, Go, C#, PHP, React, EF Core, Doctrine, Laminas, GitHub Actions, and GitLab CI.
 Other agents handle architecture, security, performance, cleanup, and documentation.
 See [agent definitions](agents/) for individual roles and model choices.
+Specialists return canonical Markdown reports defined in the
+[response format catalog](references/agent-prompts/response-formats/catalog.md).
+The reports share task status, result, evidence, and unresolved items, with sections for each kind of task.
+Delegating agents validate the reports and apply their own workflow rules. Specialists need only their assigned task
+and constraints; they do not depend on the invoking lead's identity.
 
 ## Secret-path protection
 
@@ -115,8 +126,25 @@ See the [reference documentation](https://opencode.ai/docs/references/).
 
 After installing the new files, remove the old root reference copies of `asd-ste100.md`, `global-coding-style.md`,
 `reviewer-standards.md`, and `review-template.md` from `references/`. Preserve unrelated references.
+Also remove `references/agent-prompts/review-template.md` if present. Update custom review prompts to read
+`@agent-prompts/response-formats/review.md`, and copy the complete `response-formats/` directory with the other references.
 The former directory READMEs are also obsolete: `agents/README.markdown`, `commands/README.markdown`,
 `skills/README.md`, and `plugins/README.md`. User documentation is in this README and the [usage guide](USAGE.md).
+
+If upgrading from the command-based workflow, remove these retired entries from the installation directory.
+Copying new files alone leaves old agents, commands, and skills discoverable. Back up first and remove only these entries:
+
+- Agent: `agents/lead.md`.
+- Commands: `workflow.md`, `spec.md`, `design.md`, `plan.md`, `phased-plan.md`, `verification-tests.md`, `verify.md`,
+  `finish.md`, `review.md`, `code-review.md`, `security-review.md`, `go-review.md`, `refactor-clean.md`, and
+  `update-docs.md` from `commands/`.
+- Skill directories: `development-workflow/`, `spec-interview/`, `plan/`, `phased-plan/`, `review/`, `security-review/`,
+  and `finish/` from `skills/`.
+
+The preserved procedures and security checklist now live in `references/agent-prompts/`.
+The workflow's license notice is `references/agent-prompts/LICENSE-pstack.txt`; copy it with the shared references.
+Update custom references to retired entrypoints using the [usage guide](USAGE.md).
+Select `workflow-lead` explicitly in an existing session that still names the old agent.
 
 Restart OpenCode and confirm agent, command, and skill availability in a work project.
 For other settings, see the [configuration documentation](https://opencode.ai/docs/config/).

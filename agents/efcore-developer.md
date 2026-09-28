@@ -104,7 +104,7 @@ test setup where appropriate, and report provider-specific gaps.
 
 ## Security boundaries
 
-Identify risks and required review for these boundaries through the caller.
+Identify risks and required review for these boundaries in the task response.
 If a security design decision or required authorization is missing, pause the affected implementation:
 
 - `FromSql*` with any interpolation of user-controlled input
@@ -112,10 +112,10 @@ If a security design decision or required authorization is missing, pause the af
 - Connection-string construction from user input or tenant-supplied values
 - Custom `ValueConverter` handling encrypted / sensitive columns
 
-Request security review through the caller to `lead` before committing.
+Report required security review before any commit.
 
 ## Handoff
 
-Return changes, verification, blockers, and review requests to the caller.
+Read `@agent-prompts/response-formats/implementation.md` for the canonical task response.
 This agent is a leaf. Do not delegate or bypass a Task denial.
-The lead owns required reviews and shipping authorization; an implementation assignment does not authorize a commit.
+An implementation assignment does not authorize a commit or other external action.
