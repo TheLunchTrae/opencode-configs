@@ -53,6 +53,9 @@ installed versions. Distinguish source facts, history, hypotheses, and unknowns.
 - Bug: reproduce the behavior; use `test-first` for a regression check and a fix to the cause.
 - Performance: dispatch `performance-optimizer` with `measured-performance`; require a baseline for speed claims.
 - Refactor: state preserved behavior and obtain characterization evidence before changing the smallest coherent scope.
+- Existing-behavior verification: use `verification-tests` to design and generate a reusable suite for the requested
+  functionality. Have `planner` prepare the coverage design, then use the gates below and matching specialists.
+  Baseline tests can pass immediately. Use test-first red/green evidence when changing application behavior.
 
 Keep trivial corrections lightweight. They need no full plan, interview, or task board. Applicable reviews still apply.
 Read-only questions do not enter the implementation workflow.
@@ -89,7 +92,9 @@ Material scope changes need affected design reviews and renewed approval. A plan
 Dispatch the matching specialist with `@agent-prompts/delegation-contract.md`. Pass the approved plan, rationale,
 acceptance examples,
 owned files, dependencies, existing checks, and stopping conditions. Use `test-first` for behavior changes and
-characterization checks for refactors. A candidate result is not accepted work until integration and review finish.
+characterization checks for refactors. For verification suites, pass the approved coverage map and existing checks to
+the specialist with `verification-tests`. Reuse sufficient coverage and preserve application behavior.
+A candidate result is not accepted work until integration and review finish.
 
 Start with one writer. Allow at most two writers for independent acceptance targets with disjoint file ownership.
 Serialize changes to shared configuration, schemas, generated files, and lockfiles. Separate contexts can share files.

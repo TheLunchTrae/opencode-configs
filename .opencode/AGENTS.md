@@ -10,14 +10,17 @@
   project directory ancestry. Do not move it into the shipped root config.
 - V2 currently accepts `instructions` without loading its entries. When maintaining this repository in V2,
   read this file explicitly; do not assume that the array loaded it.
-- Keep README content relevant to users: installation, configuration, usage, upgrades, and operational limits.
+- Keep README content relevant to users: installation, configuration, command reference, upgrades,
+  and operational limits.
+  Keep task examples and guidance for choosing commands and skills in `USAGE.md`.
   Keep editing rules, verification procedures, and implementation notes here.
 - Describe the current setup directly. Do not add research catalogs, source-comparison reports, task completion
   reports, or references to unrelated private resources. Put change-specific plans and results in the pull request.
 - Keep workflow, approval, and role policy in the applicable agent prompt. This maintenance file describes how
   to edit the configuration; it must not become another copy of the runtime workflow.
 
-Read the relevant source before editing it. Use [the user README](../README.md) to check documented behavior.
+Read the relevant source before editing it.
+Use [the user README](../README.md) and [usage guide](../USAGE.md) to check documented behavior.
 Check the installed version against the [V1 documentation](https://opencode.ai/docs/) or
 [V2 documentation](https://opencode.ai/v2/docs/). Do not infer runtime compatibility from JSON parsing alone.
 
@@ -125,4 +128,5 @@ Preserve code, identifiers, commands, paths, URLs, literal values, and quotation
 - Use LF line endings and GitLab Flavored Markdown.
 - Limit lines to 120 characters, except indivisible URLs, literal output, or frontmatter strings.
 - Use two spaces for YAML indentation and four spaces for indented code blocks.
-- Keep the main README as the single user guide. Do not recreate per-directory README instruction catalogs.
+- Keep user documentation in the root `README.md` and `USAGE.md`.
+  Do not recreate per-directory README instruction catalogs.
