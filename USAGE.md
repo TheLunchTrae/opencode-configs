@@ -129,6 +129,7 @@ For example, a planning or review lead cannot execute `/commit` or `/push`.
 | `/resume-work <handoff-path>` | Revalidate evidence and identify the next action within the selected lead's scope. |
 | `/explain <feature>` | Explain current behavior from source. |
 | `/quiz <topic>` | Ask optional source-grounded learning questions and wait for answers. |
+| `/init-docs [path] [notes]` | Add or update repository documentation rules and scoped technical vocabulary. |
 | `/commit [scope]` | Stage and commit authorized changes with secret checks. |
 | `/push` | Push the current branch with authorization. |
 | `/summarize-branch` | Summarize branch changes before a pull request. |
@@ -137,6 +138,36 @@ The built-in `/resume` selects an OpenCode session. `/resume-work` reads a proje
 Checkpoints stay in the work project. Learning questions and quiz scores are optional.
 See the [command definitions](commands/) for prompts.
 See [upgrade instructions](README.md#upgrade-an-existing-installation) for retired commands and skills.
+
+### Initialize repository documentation
+
+Run `/init-docs` from a work repository to prepare its documentation rules and technical terminology.
+By default, it updates the repository's `AGENTS.md` or creates that file when absent.
+Pass a file path to choose another destination. Pass a directory to use `AGENTS.md` inside that directory.
+Relative paths start at the repository root. Use a trailing slash for a new directory.
+All destinations must stay inside the work repository.
+
+```text
+/init-docs
+/init-docs docs/documentation-rules.md
+/init-docs packages/api/ Focus on the public API and its existing terminology.
+```
+
+The command reads current instructions, manifests, source, and documentation.
+It proposes a concise documentation section while preserving existing standards and unrelated instructions.
+New terminology entries stay in the selected file unless an existing glossary already owns them.
+Each entry records its spelling, meaning, grammatical use, scope, usage, and supporting source.
+The list supplements ordinary English. It does not contain ASD's official dictionary or establish formal STE compliance.
+
+Repository documentation standards override the [shared STE defaults](references/agent-prompts/asd-ste100.md).
+The defaults apply to choices that the repository leaves unspecified.
+Rerunning `/init-docs` preserves established rules and terms while proposing supported updates.
+Review the setup under the active lead's approval policy before implementation.
+The command retains that lead. A planning lead can propose the setup but cannot write it.
+
+A custom file might need an explicit read instruction before agents use it.
+A nested `AGENTS.md` follows its directory scope. The command reports the applicable loading path.
+Initialization writes only to the work repository and does not publish the generated files.
 
 ## Supporting skills
 
