@@ -1,6 +1,6 @@
 # Review Template
 
-Use this template after you apply `@reviewer-standards`.
+Use this template after you apply `@agent-prompts/reviewer-standards.md`.
 
 ## Findings
 
@@ -42,7 +42,7 @@ After all findings and any verification section, add this table:
 ```
 
 Then add one heading. Determine `BLOCKED` or `PASSED` with
-`@reviewer-standards`.
+`@agent-prompts/review-criteria.md`.
 
 ```text
 ## Verdict: BLOCKED

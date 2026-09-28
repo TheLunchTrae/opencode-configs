@@ -8,42 +8,25 @@
   "subagent_depth": 2,
   "default_agent": "lead",
   "references": {
-    "asd-ste100": {
-      "path": "./references/asd-ste100.md",
-      "description": "ASD-STE100 Simplified Technical English rules for technical documentation."
-    },
-    "global-coding-style": {
-      "path": "./references/global-coding-style.md",
-      "description": "Generic global coding style defaults. Project- and language-specific conventions override these."
-    },
-    "reviewer-standards": {
-      "path": "./references/reviewer-standards.md",
-      "description": "Universal reviewer rules, severity levels, output format, and verdicts. Load by every reviewer agent."
-    },
-    "review-template": {
-      "path": "./references/review-template.md",
-      "description": "Read this file to format code review findings."
+    "agent-prompts": {
+      "path": "./references/agent-prompts",
+      "description": "Shared coding, review, delegation, language, and documentation guidance for agent prompts.",
+      "hidden": true
     }
   },
   "mcp": {
     "github": {
-         "type": "remote",
-         "url": "https://api.githubcopilot.com/mcp/",
-         "enabled": false,
-         "oauth": false,
-         "headers": {
-           "Authorization": "Bearer {file:secrets/github_token}"
-         }
-       },
-      "playwright": {
-        "type": "local",
-        "command": [
-          "npx",
-          "@playwright/mcp@latest"
-        ],
-        "enabled": false
-      }
+      "type": "remote",
+      "url": "https://api.githubcopilot.com/mcp/",
+      "enabled": false,
+      "oauth": false
     },
+    "playwright": {
+      "type": "local",
+      "command": ["npx", "@playwright/mcp@latest"],
+      "enabled": false
+    }
+  },
   "permission": {
     "read": {
       "~/.config/opencode/secrets": "deny",
