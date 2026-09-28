@@ -98,7 +98,7 @@ Consult the [migration guide](https://opencode.ai/v2/docs/migrate-v1/) and verif
 Run applicable existing checks from the repository root:
 
 ```sh
-node --test tests/workflow-config.test.mjs
+node --test tests/config-integrity.test.mjs
 node --experimental-strip-types --test tests/block-secrets.test.ts
 npx --no-install tsc --project tsconfig.json
 ```

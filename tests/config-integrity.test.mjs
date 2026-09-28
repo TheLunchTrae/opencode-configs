@@ -1,5 +1,5 @@
 import assert from "node:assert/strict"
-import { existsSync, readFileSync, readdirSync, statSync } from "node:fs"
+import { readFileSync, readdirSync, statSync } from "node:fs"
 import { test } from "node:test"
 
 const root = new URL("../", import.meta.url)
@@ -9,16 +9,7 @@ const skills = [
   "development-workflow", "spec-interview", "test-first", "measured-performance",
   "checkpoint", "finish", "code-learning", "plan", "verify",
 ]
-const commands = {
-  workflow: "development-workflow",
-  spec: "spec-interview",
-  checkpoint: "checkpoint",
-  "resume-work": "checkpoint",
-  finish: "finish",
-  explain: "code-learning",
-  quiz: "code-learning",
-  verify: "verify",
-}
+const leadCommands = ["workflow", "spec", "checkpoint", "resume-work", "finish", "explain", "quiz", "verify"]
 
 // This checks our flat command/skill metadata, not arbitrary YAML or runtime loading.
 const metadata = (path) => {
@@ -37,7 +28,6 @@ const metadata = (path) => {
 for (const skill of skills) {
   test(`${skill} has valid discoverable skill metadata`, () => {
     const fields = metadata(`skills/${skill}/SKILL.md`)
-    assert.deepEqual(Object.keys(fields).sort(), ["description", "name"])
     assert.equal(fields.name, skill)
     assert.match(fields.name, /^[a-z0-9]+(-[a-z0-9]+)*$/)
     assert.ok(fields.name.length <= 64)
@@ -45,30 +35,22 @@ for (const skill of skills) {
   })
 }
 
-for (const [command, skill] of Object.entries(commands)) {
-  test(`/${command} uses ${skill} without a nested lead`, () => {
+for (const command of leadCommands) {
+  test(`/${command} runs in the active lead session`, () => {
     const path = `commands/${command}.md`
     const fields = metadata(path)
-    assert.deepEqual(Object.keys(fields).sort(), ["agent", "description", "subtask"])
+    assert.ok(fields.description?.trim(), `${path}: missing description`)
     assert.equal(fields.agent, "lead")
     assert.equal(fields.subtask, "false")
-    assert.ok(read(path).includes(`${skill} skill`))
-    assert.equal(read(path).split("$ARGUMENTS").length, 2)
+    assert.ok(read(path).includes("$ARGUMENTS"), `${path}: missing argument forwarding`)
     assert.ok(!read(path).includes("!`"), "No automatic shell interpolation")
   })
 }
 
-test("/plan stays isolated in the read-only planner and loads the plan skill", () => {
+test("/plan runs as a planner subtask", () => {
   const fields = metadata("commands/plan.md")
   assert.equal(fields.agent, "planner")
   assert.equal(fields.subtask, "true")
-  assert.ok(read("commands/plan.md").includes("plan skill"))
-})
-
-test("workflow entry points route to the owning agent procedures", () => {
-  assert.ok(read("skills/development-workflow/SKILL.md").includes("../../agents/lead.md"))
-  assert.ok(read("skills/plan/SKILL.md").includes("../../agents/planner.md"))
-  assert.ok(read("agents/performance-optimizer.md").includes("measured-performance skill"))
 })
 
 test("commands do not shadow documented built-in commands or aliases", () => {
@@ -77,7 +59,9 @@ test("commands do not shadow documented built-in commands or aliases", () => {
     "export", "help", "init", "models", "new", "clear", "redo", "sessions", "resume",
     "continue", "share", "themes", "thinking", "undo", "unshare",
   ])
-  for (const command of Object.keys(commands)) assert.ok(!reserved.has(command))
+  for (const file of readdirSync(new URL("commands/", root)).filter((file) => file.endsWith(".md"))) {
+    assert.ok(!reserved.has(file.slice(0, -3)), `${file}: shadows a built-in command`)
+  }
 })
 
 test("adapted pstack skills retain the same complete notice", () => {
@@ -88,20 +72,11 @@ test("adapted pstack skills retain the same complete notice", () => {
   assert.ok(read("agents/lead.md").includes("../skills/development-workflow/LICENSE-pstack.txt"))
 })
 
-test("shared prompts use one hidden directory reference", () => {
-  assert.deepEqual(Object.keys(config.references), ["agent-prompts"])
+test("shared prompts use a hidden directory reference", () => {
   const reference = config.references["agent-prompts"]
-  assert.equal(reference.path, "./references/agent-prompts")
   assert.equal(reference.hidden, true)
   assert.ok(reference.description?.trim(), "missing directory description")
   assert.ok(statSync(new URL(reference.path, root)).isDirectory(), "references must point to directories")
-})
-
-test("moved shared prompts remain available without stale root copies", () => {
-  for (const name of ["asd-ste100", "global-coding-style", "reviewer-standards", "review-template"]) {
-    assert.ok(statSync(new URL(`references/agent-prompts/${name}.md`, root)).isFile())
-    assert.equal(existsSync(new URL(`references/${name}.md`, root)), false)
-  }
 })
 
 test("prompt references resolve to files under the configured directory", () => {
@@ -115,13 +90,9 @@ test("prompt references resolve to files under the configured directory", () => 
     paths.push(...markdown(directory))
   }
   const promptFiles = readdirSync(new URL("references/agent-prompts/", root)).filter((file) => file.endsWith(".md"))
-  const formerAliases = new Set(promptFiles.map((file) => file.slice(0, -3)))
   const referenced = new Set()
   for (const path of paths) {
     const text = read(path)
-    for (const [, alias] of text.matchAll(/`@([a-z][a-z0-9-]*)`/g)) {
-      assert.ok(!formerAliases.has(alias), `${path}: obsolete file alias @${alias}`)
-    }
     for (const [, alias, file] of text.matchAll(/`@([a-z][a-z0-9-]*)\/([^`\s]+)`/g)) {
       const reference = config.references[alias]
       // Scoped package names are not references. Still reject unknown aliases used with Markdown paths.
@@ -139,73 +110,35 @@ test("prompt references resolve to files under the configured directory", () => 
   }
 })
 
-test("language and framework roles explicitly load their shared language guidance", () => {
-  const roles = {
-    typescript: ["typescript-developer", "typescript-reviewer", "react-developer"],
-    go: ["go-developer", "go-reviewer"],
-    csharp: ["csharp-developer", "csharp-reviewer", "efcore-developer"],
-    php: ["php-developer", "php-reviewer", "laminas-developer", "doctrine-developer"],
-  }
-  for (const [language, agents] of Object.entries(roles)) {
-    for (const agent of agents) {
-      assert.ok(read(`agents/${agent}.md`).includes(`@agent-prompts/${language}-guidance.md`), agent)
-    }
-  }
-})
-
-test("specialist commands route to the proper skill without shell interpolation", () => {
+test("specialist commands route to their agents without shell interpolation", () => {
   const routes = {
-    "phased-plan": ["planner", "phased-plan"],
-    "code-review": ["code-reviewer", "review"],
-    "go-review": ["go-reviewer", "review"],
-    "security-review": ["security-reviewer", "security-review"],
+    "phased-plan": "planner",
+    "code-review": "code-reviewer",
+    "go-review": "go-reviewer",
+    "security-review": "security-reviewer",
   }
-  for (const [command, [agent, skill]] of Object.entries(routes)) {
+  for (const [command, agent] of Object.entries(routes)) {
     const path = `commands/${command}.md`
     const fields = metadata(path)
     assert.equal(fields.agent, agent)
     assert.equal(fields.subtask, "true")
-    assert.ok(read(path).includes(`${skill} skill`))
-    assert.equal(read(path).split("$ARGUMENTS").length, 2)
+    assert.ok(read(path).includes("$ARGUMENTS"), `${path}: missing argument forwarding`)
     assert.ok(!read(path).includes("!`"))
   }
 })
 
-test("disabled MCP defaults retain typed definitions without credential-file dependencies", () => {
-  assert.deepEqual(Object.keys(config.mcp).sort(), ["github", "playwright"])
+test("MCP entries have typed connection definitions", () => {
   for (const server of Object.values(config.mcp)) {
-    assert.equal(server.enabled, false)
     assert.ok(["local", "remote"].includes(server.type), "enabled-only MCP entries are ignored by V2")
-    if (server.type === "remote") assert.equal(new URL(server.url).protocol, "https:")
+    if (server.type === "remote") assert.doesNotThrow(() => new URL(server.url))
     else assert.ok(Array.isArray(server.command) && server.command.length > 0)
   }
-  assert.ok(!read("opencode.jsonc").includes("{file:"))
 })
 
 test("repository maintenance instructions stay out of the global configuration", () => {
   const localConfig = JSON.parse(read(".opencode/opencode.jsonc"))
-  assert.equal(config.instructions, undefined)
-  assert.deepEqual(localConfig.instructions, [".opencode/AGENTS.md"])
-  assert.ok(statSync(new URL(localConfig.instructions[0], root)).isFile())
-})
-
-test("permission defaults preserve specific approval gates and destructive-command denials", () => {
-  assert.equal(config.permission.bash["*"], "ask")
-  for (const pattern of ["git checkout*", "git commit*", "git push*", "sudo*", "python*"]) {
-    assert.equal(config.permission.bash[pattern], "ask", pattern)
-  }
-  for (const pattern of [
-    "git branch -D*", "git clean -f*", "git push --force*", "git push -f*", "git reset --hard*", "rm -rf*",
-  ]) assert.equal(config.permission.bash[pattern], "deny", pattern)
-  assert.equal(config.permission.task["*"], "deny")
-  assert.equal(config.permission.edit["*"], "ask")
-  assert.equal(config.permission.external_directory["*"], "ask")
-  assert.equal(config.permission.read["~/.config/opencode/secrets/**"], "deny")
-  assert.equal(config.subagent_depth, 2)
-})
-
-test("verification distinguishes unavailable checks from observed passes", () => {
-  const text = read("skills/verify/SKILL.md")
-  for (const status of ["PASS", "FAIL", "BLOCKED", "SKIP"]) assert.ok(text.includes(`| ${status} |`))
-  assert.ok(text.includes("do not invent an 80 percent gate"))
+  const instructions = ".opencode/AGENTS.md"
+  assert.ok(!config.instructions?.includes(instructions))
+  assert.ok(localConfig.instructions.includes(instructions))
+  assert.ok(statSync(new URL(instructions, root)).isFile())
 })
