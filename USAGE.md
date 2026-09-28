@@ -1,52 +1,36 @@
 # Usage guide
 
-Use this guide to choose commands and skills for work in an existing project.
-For installation, configuration, and the full command list, see the [README](README.md).
+Use this guide to choose and combine this configuration's commands and skills for development work.
+The examples cover common tasks in an existing project and the evidence to expect from each approach.
 
 ## Contents
 
-- [Start a task](#start-a-task): commands, skills, and useful prompt details.
+- [Choose the development route](#choose-the-development-route): decide how much planning the task needs.
 - [Choose a starting point](#choose-a-starting-point): select a route for your task.
 - [Worked examples](#worked-examples): prompts and expected results for common changes.
-- [Inspect, review, and finish](#inspect-review-and-finish): understand code and check a change.
-- [Pause and resume](#pause-and-resume): continue work across sessions.
-- [Further reference](#further-reference): source procedures and OpenCode documentation.
+- [Combine supporting commands](#combine-supporting-commands): understand code, check progress, and finish a change.
+- [Continue a long task](#continue-a-long-task): preserve decisions and evidence between work sessions.
 
-## Start a task
+## Choose the development route
 
-After setup, start OpenCode from the project you want to change and confirm that `lead` is active.
-Enter the examples in OpenCode chat. Each code block is a separate message.
-The examples describe hypothetical project features; replace their details with your actual requirements.
+Use `/workflow` as the default for a development task with a clear outcome.
+The lead coordinates planning, implementation, specialist reviews, and final verification.
+Start with observable acceptance examples and the behavior that must remain unchanged.
+This gives the planner and reviewers a shared basis for judging the result.
 
-| Tool | How to use it |
-| --- | --- |
-| Command | Enter a slash command, such as `/workflow`, followed by the task description. |
-| Skill | Ask for a named procedure, such as `test-first`, in your prompt. The agent loads it when needed. |
-| Agent | Let `lead` select the specialist for the task. Command definitions can also select a specialist. |
+Use a separate planning command when you want to settle a specific decision before implementation:
 
-The files in [commands/](commands/) define the custom slash commands.
-The procedures in [skills/](skills/) support those commands and other agent work.
-A skill name does not by itself define a slash command.
+| Decision to settle | Command | Useful result |
+| --- | --- | --- |
+| What should the feature do? | `/spec` | Confirmed requirements, edge cases, and acceptance examples. |
+| Which approach fits the project? | `/design` | Alternatives, tradeoffs, and a recommended design. |
+| What will implementation change? | `/plan` | File scope, ordered work, preserved behavior, and planned checks. |
+| How can the change roll out safely? | `/phased-plan` | Compatibility, phase checks, and rollback limits. |
 
-Use `/workflow` when you want the agent to take a task through planning, implementation, review, and verification.
-It selects the necessary supporting procedures. You do not need to invoke every planning and review command yourself.
-For substantial changes, review the proposed plan and approve it before implementation starts.
-Trivial corrections use a shorter process. Project instructions and tool permissions still apply.
-
-Use `/spec`, `/design`, or `/plan` when you want to examine requirements or an approach before implementation.
-These commands return their findings without implementing the change.
-When ready, return to `/workflow` in the same lead session and refer to those findings.
-The lead checks the plan, required reviews, and existing approval before continuing.
-
-Give the agent these details when available:
-
-- The result you want and a concrete example of correct behavior.
-- The feature or files in scope, with actual paths when known.
-- Behavior that must remain unchanged, including error cases and public interfaces.
-- Relevant constraints, such as compatibility, dependencies, or rollout requirements.
-- Existing test commands or a reproducible failure.
-
-You can describe a feature without knowing its file paths. Ask the agent to locate and inspect the implementation.
+Use only the planning steps that resolve an actual uncertainty. A defined feature can go directly to `/workflow`.
+A complex feature does not automatically need all four commands or a phased rollout.
+When you return to `/workflow`, reference the decisions already made so the lead can reuse them.
+Substantial implementation follows a reviewed plan and user approval; trivial corrections use a shorter process.
 
 ## Choose a starting point
 
@@ -76,7 +60,7 @@ Use the existing test tools and the test-first skill for the new behavior.
 
 The expected result is a small plan, tests for the new option, and a change that preserves default output.
 After you approve the plan, the lead coordinates implementation and the applicable reviews and checks.
-There is no need for a separate requirements interview when the behavior is already clear.
+`test-first` makes the acceptance examples executable before the implementation changes.
 
 If you only want the plan, use `/plan` with the same task description.
 
@@ -93,7 +77,6 @@ Inspect the existing report and job infrastructure before asking questions.
 ```
 
 The expected result is a specification with confirmed decisions, acceptance examples, and unresolved questions.
-The specification stays in the conversation unless you authorize saving it.
 
 If a consequential design choice remains, compare the options:
 
@@ -221,7 +204,7 @@ Future changes can reuse these tests when they cover the changed behavior.
 New behavior still needs its own acceptance cases. `/verify` runs available checks; it does not generate these tests.
 
 Use `project-standards` only when you deliberately want to adopt or change test tooling, conventions, or CI.
-For example, send this message to the lead if the project has no suitable test setup:
+For a project without a suitable test setup, first request a tooling proposal:
 
 ```text
 Use the project-standards skill to propose a test setup for this project.
@@ -230,98 +213,82 @@ Inspect the current stack and conventions first. Explain the target files, depen
 
 Ordinary test authoring can use the current tools without a standards-adoption task.
 
-## Inspect, review, and finish
+## Combine supporting commands
 
-### Understand the code before changing it
+### Investigate before planning a change
+
+Use `/explain` before `/workflow` when you need to understand an unfamiliar code path or a safeguard you plan to change.
+Use its source findings to identify behavior that the implementation must preserve.
 
 ```text
 /explain Trace how a report request reaches the exporter, including validation, data ownership, and failure handling.
 ```
 
-Expect an explanation tied to actual source paths, with unknowns identified.
-For optional learning questions, follow it with:
+If the explanation exposes a mechanism you will maintain, use `/quiz` to test your understanding of its failure cases:
 
 ```text
 /quiz The report-export path we just reviewed, especially its failure handling and data ownership.
 ```
 
-The agent waits for your answers before explaining them. Quiz results are a learning aid.
+Use the answers to resolve gaps in your understanding before changing the mechanism.
+The implementation still needs its own tests and reviews.
 
-### Select the check you need
+### Check progress or request a focused review
 
-| Command | Use it when you want to... |
+Use `/verify` at a development milestone when you want results from the existing checks without applying fixes.
+Use those results to identify the next implementation task.
+If the checks do not cover an acceptance case, request the missing test through `/workflow`.
+
+Use a standalone review when you want feedback on a specific concern or on changes made outside `/workflow`:
+
+| Concern | Command |
 | --- | --- |
-| `/code-review` | Review staged and unstaged changes, or pass an explicit target. |
-| `/review <target>` | Review a specified feature, file, or change. It asks for scope if none is supplied. |
-| `/security-review` | Inspect security concerns in local changes, or pass an explicit target. |
-| `/go-review` | Request a Go-specific review of local changes or an explicit target. |
-| `/verify` | Run configured project checks and report results without applying fixes. |
-| `/finish` | Collect final checks, applicable reviews, blockers, and readiness evidence. |
-| `/update-docs <scope>` | Update the requested documentation from the current source. |
+| Correctness or maintainability of local changes | `/code-review` |
+| A particular feature, file, or change | `/review <target>` |
+| Access control, input handling, or sensitive data | `/security-review <target>` |
+| Go-specific correctness and conventions | `/go-review <target>` |
 
-Standalone reviews return findings. Ask the lead to address findings when you want implementation work to follow.
-The normal `/workflow` process already includes applicable reviews and final verification.
-Use a standalone command when you need that step independently or the relevant source has changed.
+Give the reviewer the intended behavior and the question you want answered.
+Bring findings back to the lead for fixes, then repeat the affected checks and reviews.
+The normal `/workflow` process already arranges applicable reviews. Reuse current findings for unchanged scope.
 
-For example, after making changes outside the workflow:
+### Finish the development task
+
+Use `/update-docs` once the behavior is settled and the change affects user instructions or an interface contract:
+
+```text
+/update-docs Update the report-export guide to match the implemented access rules, retries, and failure behavior.
+```
+
+Use `/finish` to assess the final change against its acceptance criteria and collect checks and applicable reviews.
+This is useful after a standalone cleanup or after changes made outside `/workflow`:
 
 ```text
 /finish Check the report-export changes against the agreed behavior and collect the applicable reviews.
 ```
 
-Read the reported checks and limitations. `PASS` means a check ran successfully on the stated source.
-`FAIL` means it ran and found a failure. `BLOCKED` means it could not complete.
-`SKIP` means the check does not apply or is not configured.
-Local results do not establish CI success, and review findings alone do not establish merge readiness.
+`/workflow` already includes this final handoff. Repeat `/finish` when subsequent changes make the evidence stale.
+Use `/summarize-branch` to prepare a review summary of the branch changes.
+`/commit` and `/push` remain separate, explicitly authorized steps after the development checks.
 
-### Commit and push when ready
+## Continue a long task
 
-`/finish` ends with a handoff.
-Commits, pushes, pull requests, merges, and deployments need authorization for each action.
-When you want to commit, name the files or scope you intend to include:
-
-```text
-/commit Commit only the report-export implementation, tests, and related documentation from this task.
-```
-
-After confirming the commit and branch, you can request:
-
-```text
-/push
-```
-
-These requests authorize their stated actions, subject to project rules and tool permissions.
-Keep task notes and checkpoints out of commits unless you explicitly authorize their inclusion.
-Use `/summarize-branch` when you want a summary of branch changes before preparing a pull request.
-
-## Pause and resume
-
-For work that spans sessions, save a task handoff in the work project:
+Use `/checkpoint` when a task has decisions, ownership boundaries, or verification evidence that must survive a handoff.
+Useful points include an approved design, a completed migration phase, or a blocker that requires later work.
 
 ```text
 /checkpoint report-export
 ```
 
-This request authorizes a new checkpoint. The agent confirms the destination and preserves unrelated notes.
-Use the exact handoff path returned by that command when you resume:
+The checkpoint should capture the approved scope, completed work, current evidence, blockers, and next action.
+Resume the task with that handoff:
 
 ```text
 /resume-work <handoff-path-returned-by-checkpoint>
 ```
 
-Replace the placeholder with the actual path. The lead checks current source, instructions, evidence, and authorization
-before continuing. Changed inputs can make earlier checks or reviews stale.
-The built-in `/resume` selects an OpenCode session; `/resume-work` reads a project handoff.
-For short tasks, the current conversation may contain all the context you need.
+The lead rechecks the source before continuing. Refresh checks and reviews whose inputs have changed.
+Keep a checkpoint scoped to the unfinished development work so the next session can resume from a clear decision point.
 
-## Further reference
-
-- [Lead workflow](agents/lead.md) and [planner procedure](agents/planner.md).
-- [Command definitions](commands/) and [skill definitions](skills/).
-- [Test-first](skills/test-first/SKILL.md) and [measured-performance](skills/measured-performance/SKILL.md).
-- [Verification](skills/verify/SKILL.md) and [finish](skills/finish/SKILL.md).
-- OpenCode documentation for [commands](https://opencode.ai/docs/commands/)
-  and [skills](https://opencode.ai/docs/skills/).
-
-These examples follow this repository's current configuration. Use the README's setup and compatibility guidance
-for your installed OpenCode version.
+For the full procedures, see the [lead workflow](agents/lead.md), [command definitions](commands/),
+and [skill definitions](skills/).
