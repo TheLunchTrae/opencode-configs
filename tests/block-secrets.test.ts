@@ -42,7 +42,7 @@ const assertBlocked = async (tool: string, args: Record<string, unknown>, rawPat
       assert.ok(error instanceof Error)
       assert.match(error.message, /blocked by block-secrets plugin/)
       assert.ok(error.message.includes(rawPath))
-      assert.match(error.message, /see plugins\/README\.md/)
+      assert.match(error.message, /see README\.md#secret-path-protection/)
       assert.doesNotMatch(error.message, /ALLOWED_BASENAMES/)
       return true
     },

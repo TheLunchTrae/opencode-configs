@@ -1,117 +1,147 @@
 # OpenCode Global Configuration
 
-This repository is a personal global configuration for OpenCode. It is not an application, an installer, or a configuration synchronization tool.
-
-The default primary agent is `lead`. It coordinates planning, specialist work, reviews, and verification. The configuration supplies shared rules, slash commands, skills, a secret-path blocking plugin, and quota preferences.
+Personal global configuration for OpenCode, with specialist agents, slash commands, reusable skills,
+shared prompts, secret-path checks, and quota display preferences.
+The default agent is `lead`. It coordinates planning, implementation, review, and verification.
 
 ## Contents
 
 | Path | Purpose |
 | --- | --- |
-| [`AGENTS.md`](AGENTS.md) | Shared rules for all sessions. |
-| [`agents/`](agents/README.markdown) | Agent roles, model pins, and delegation rules. |
-| [`commands/`](commands/README.markdown) | Slash commands. |
-| [`skills/`](skills/README.md) | Task procedures. |
-| [`references/agent-prompts/`](references/agent-prompts/) | Shared prompt guidance through one hidden directory reference. |
-| [`plugins/`](plugins/README.md) | Local plugins, including `block-secrets.ts`. |
-| [`opencode.jsonc`](opencode.jsonc) | Global agent, permission, MCP, shell, and plugin settings. |
+| [`AGENTS.md`](AGENTS.md) | Shared instructions for all sessions. |
+| [`agents/`](agents/) | Agent prompts, roles, and model choices. |
+| [`commands/`](commands/) | Slash commands listed below. |
+| [`skills/`](skills/) | Reusable task procedures. |
+| [`references/agent-prompts/`](references/agent-prompts/) | Shared prompt guidance. |
+| [`plugins/`](plugins/) | Local plugins, including secret-path checks. |
+| [`opencode.jsonc`](opencode.jsonc) | Global models, permissions, MCP servers, shell, and plugin settings. |
 | [`tui.jsonc`](tui.jsonc) | TUI plugin settings. |
 | [`opencode-quota/quota-toast.jsonc`](opencode-quota/quota-toast.jsonc) | Quota display preferences. |
 
 ## Setup
 
 1. Install OpenCode. See <https://opencode.ai/docs/>.
-2. Authenticate the provider that you want to use. Use the official
-   `/connect` flow when it supports that provider.
+2. Authenticate your provider through `/connect` when supported.
 3. Back up your existing global configuration directory.
 4. Obtain a checkout or download of this repository.
-5. For a complete setup, copy `AGENTS.md`, `opencode.jsonc`, `tui.jsonc`,
-   `agents/`, `commands/`, `skills/`, `references/`, `plugins/`, and `opencode-quota/` into
-   the global configuration directory. Preserve the repository layout.
+5. Copy `README.md`, `AGENTS.md`, `opencode.jsonc`, `tui.jsonc`, `agents/`, `commands/`, `skills/`,
+   `references/`, `plugins/`, and `opencode-quota/` into the global configuration directory.
+   Preserve the layout and merge your existing settings.
 
-The global configuration directory is `~/.config/opencode`. On Windows, it is
-`%USERPROFILE%\.config\opencode`. Merge changes rather than blindly overwrite
-your existing configuration.
+The global configuration directory is `~/.config/opencode` or `%USERPROFILE%\.config\opencode` on Windows.
+No `npm install` step is required for normal setup. OpenCode installs configured npm plugins when needed.
 
-Do not copy credentials, tokens, `node_modules`, or `.idea`. The repository
-`.opencode/` directory contains maintenance instructions. OpenCode does not
-require it for normal global configuration installation.
+Do not copy credentials, tokens, `node_modules`, `.idea`, or work-project checkpoints.
+The repository's `.opencode/` directory contains maintenance guidance and is not needed for global installation.
+When copying selected skills, include their supporting files, license notices, owning agents, and references.
 
-No `npm install` step is required for normal setup.
+This setup retains V1 plugin and configuration conventions. Before using V2, port the bundled V1 plugin and
+review the delegation-depth setting. V2 does not run V1 plugins and ignores top-level `subagent_depth`.
+See the [V2 migration guide](https://opencode.ai/v2/docs/migrate-v1/).
 
-Copy each selected skill folder with its supporting files, including license notices.
-Skills that route to an agent require that agent and its references too.
-Do not copy work-project checkpoints into the global configuration.
+## Configure before first launch
 
-When upgrading, copy `AGENTS.md`, `agents/`, `skills/`, `references/agent-prompts/`, and `opencode.jsonc` together.
-The previous per-file aliases are no longer configured. Shared prompts use the `agent-prompts` directory reference.
-Update custom prompts to use paths such as `@agent-prompts/reviewer-standards.md`.
-Remove the old root reference copies of `asd-ste100.md`, `global-coding-style.md`, `reviewer-standards.md`,
-and `review-template.md` after the new paths are in place. Preserve unrelated references.
+1. Set `shell` in `opencode.jsonc` to an installed shell.
+   The supplied value is `C:/Program Files/Git/bin/bash.exe`; change it or remove it on other systems.
+2. Select models available from your authenticated provider. Global defaults and built-in overrides are in
+   `opencode.jsonc`; custom agent model and variant choices are in `agents/*.md`.
+   A global model change does not override those agent choices.
+3. Use reasoning and sampling options supported by the selected models.
+4. Remove `opencode` from `disabled_providers` if you want to use that provider.
+5. Review the global and per-agent permissions. These settings affect every project; `lead` can edit files.
 
-## Configure Before First Launch
+GitHub and Playwright MCP servers are configured but disabled. Review their connection settings before enabling them.
+Configure GitHub authentication in your local environment, then set `enabled` to `true` for a server you want to use.
+The supplied GitHub entry has OAuth disabled; configure a supported authentication method when enabling it.
+Keep tokens out of version control.
 
-1. Set `shell` in `opencode.jsonc`. This repository uses `C:/Program Files/Git/bin/bash.exe`. On another operating system, set the path to an installed Bash executable or remove `shell`.
-2. Select models that are available from your authenticated provider. Update
-   global `model` and `small_model` values, built-in agent overrides in
-   `opencode.jsonc`, and applicable `agents/*.md` frontmatter values. A global
-   model does not override an agent model pin.
-3. Set `options.reasoningEffort` only when the selected model supports it.
-4. Keep `opencode` out of `disabled_providers` when you want to use that
-   provider.
-5. Review `AGENTS.md`, `opencode.jsonc` permissions, and per-agent permission
-   overrides. These global settings apply to every project. The `lead` agent
-   can edit files; permission behavior can differ by agent.
-
-The `github` and `playwright` MCP entries are disabled. They contain no server definitions or credential references.
-To enable either server, add its complete configuration in your local or project settings and set `enabled` to `true`.
-Use the server's supported authentication flow. Do not copy secrets or add tokens inline.
-
-Local `*.ts` files in the global `plugins/` directory load when OpenCode
-starts. OpenCode installs npm plugins named in the `plugin` setting. The
-configured quota plugin has preferences only for `openai`. Keep its defaults,
-or remove the quota plugin from both `opencode.jsonc` and `tui.jsonc` to opt
-out.
+The quota plugin is configured for OpenAI. To opt out, remove its entries from both `opencode.jsonc` and `tui.jsonc`.
 
 ## Use
 
-Quit and restart OpenCode after configuration changes. Run `opencode` from
-your project directory. Run `/plan` to prepare a change, `/review` to review
-code, and `/verify` to run available checks. Confirm that `lead` is the active
-agent and that the slash commands are available.
+Restart OpenCode after configuration changes, then run `opencode` from your work project.
+Confirm that `lead` is active and the custom slash commands are available.
+Project settings and explicit session model choices can override global defaults.
 
-For configuration fields, see <https://opencode.ai/docs/config/>. For plugin
-behavior, see <https://opencode.ai/docs/plugins/>.
+Use `/workflow <task>` for a complete development task. Substantial implementation includes a plan for your approval.
+Use `/plan` or `/design` for read-only planning, and `/finish` for final checks without shipping the changes.
+Commits, pushes, pull requests, merges, and deployments need authorization for that action.
 
-## Development workflow
+Specialists cover TypeScript, JavaScript, Go, C#, PHP, React, EF Core, Doctrine, Laminas, GitHub Actions, and GitLab CI.
+Other agents handle architecture, security, performance, cleanup, and documentation.
+See [agent definitions](agents/) for individual roles and model choices.
 
-[The lead prompt](agents/lead.md) owns workflow, approvals, specialist routing, and required reviews.
-[The planner prompt](agents/planner.md) owns planning. Commands and entry-point skills route to those roles.
-Shared guidance lives in `references/agent-prompts/`. One `agent-prompts` reference points to that directory
-and has `hidden: true` in `opencode.jsonc`. Agents read individual files such as
-`@agent-prompts/reviewer-standards.md` and `@agent-prompts/global-coding-style.md`.
-See the [OpenCode reference documentation](https://opencode.ai/docs/references/) for directory reference syntax.
-Hidden affects `@` autocomplete only. The reference remains available to agents, and normal tool permissions apply.
+### Commands
 
-Use `/workflow <task>` for a routed task, or keep using `/plan`, `/review`, and `/verify`.
-Use `/spec <feature>` when consequential requirements remain unclear.
-Use `/checkpoint <task-id>` before a context reset and `/resume-work <handoff-path>` to validate saved state.
-The built-in `/resume` still selects a session; `/resume-work` does not replace it.
-Use `/finish` to collect final checks and reviews without shipping.
-Use `/explain <feature>` and `/quiz <topic>` for optional, read-only learning.
+| Command | Purpose |
+| --- | --- |
+| `/workflow <task>` | Plan, implement, review, and verify a development task. |
+| `/spec <feature>` | Clarify requirements before implementation. |
+| `/plan <task>` | Produce a read-only implementation plan. |
+| `/phased-plan <task>` | Plan a phased rollout and rollback when requested or needed. |
+| `/design <problem>` | Compare architecture and design alternatives. |
+| `/verify` | Run available project checks and report results without fixes. |
+| `/finish` | Collect final verification and reviews without committing or publishing. |
+| `/checkpoint <task-id>` | Save a handoff in the current work project. |
+| `/resume-work <handoff-path>` | Resume from a handoff after checking saved state. |
+| `/explain <feature>` | Explain the current implementation from source. |
+| `/quiz <topic>` | Ask optional questions about the code and wait for answers. |
+| `/review <target>` | Review the requested scope; ask when it is unclear. |
+| `/code-review [target]` | Review code; default to local changes. |
+| `/security-review [target]` | Review security risks; default to local changes. |
+| `/go-review [target]` | Review Go code; default to local changes. |
+| `/refactor-clean <scope>` | Find and remove verified dead code and duplicates. |
+| `/update-docs <scope>` | Update documentation from current code. |
+| `/commit` | Stage and commit authorized changes with secret checks. |
+| `/push` | Push the current branch with authorization. |
+| `/summarize-branch` | Summarize branch commits before a pull request. |
 
-The workflow starts with one writer. It allows at most two disjoint writers and two repair attempts per failed target.
-These are prompt-level operating limits, not filesystem isolation or an autonomous loop.
-The workflow requires no additional service, MCP server, background process, provider, or package installation.
+`/resume-work` reads a project handoff. The built-in `/resume` selects an OpenCode session.
+Checkpoints stay in the work project. Learning questions and quiz scores are optional.
 
-The [command catalog](commands/README.markdown) and [skill catalog](skills/README.md) describe the entry points.
+### Additional skills
 
-## Configuration checks
+Skills provide procedures used by agents and commands. You can also request these by name:
 
-Run the dependency-free configuration checks from the repository root:
+| Skill | Purpose |
+| --- | --- |
+| `test-first` | Verify a failing behavior with a test, then implement and check the fix. |
+| `measured-performance` | Compare performance before and after a change under matching conditions. |
+| `project-standards` | Propose deliberate changes to project conventions, test tooling, or CI. |
 
-```sh
-node --test tests/workflow-config.test.mjs
-```
+## Secret-path protection
 
-These checks validate authored metadata, routing, and shared-reference contracts. They do not launch OpenCode or prove agent behavior.
+The `block-secrets` plugin rejects recognized sensitive path arguments before a tool runs.
+It covers `.env` files, common private-key and credential files, `.ssh/` content, `.aws/credentials`,
+and paths containing a complete `secrets` segment. It shows an error toast when available.
+
+Template basenames `.env.example`, `.env.sample`, `.env.template`, `.env.defaults`, and `.env.dist` are allowed
+unless the path contains a `secrets` segment. Matching is case-insensitive on every operating system.
+
+This plugin is a path check, not a sandbox or complete secret protection:
+
+- Shell expansion, aliases, or symlinks can hide the accessed path.
+- A search starting in a parent directory can read sensitive content without a blocked path argument.
+- Approved commands, scripts, and hooks can access secrets.
+- Project settings, per-agent permissions, and saved approvals can change effective access.
+
+Normal tool permissions still apply. Shell approval defaults to `ask`, with explicit denials for selected
+destructive commands. Check an approval prompt's scope before saving an approval.
+
+## Upgrade an existing installation
+
+Back up the configuration first. Update `README.md`, `AGENTS.md`, `agents/`, `commands/`, `skills/`,
+`references/agent-prompts/`, `plugins/`, and `opencode.jsonc` together, preserving local overrides and license notices.
+
+Shared prompts now use the hidden `agent-prompts` directory reference.
+Update custom prompts to use paths such as `@agent-prompts/reviewer-standards.md`.
+Hidden references stay available to agents while being omitted from interactive reference selectors.
+See the [reference documentation](https://opencode.ai/docs/references/).
+
+After installing the new files, remove the old root reference copies of `asd-ste100.md`, `global-coding-style.md`,
+`reviewer-standards.md`, and `review-template.md` from `references/`. Preserve unrelated references.
+The former directory READMEs are also obsolete: `agents/README.markdown`, `commands/README.markdown`,
+`skills/README.md`, and `plugins/README.md`. User documentation is now in this file.
+
+Restart OpenCode and confirm agent, command, and skill availability in a work project.
+For other settings, see the [configuration documentation](https://opencode.ai/docs/config/).

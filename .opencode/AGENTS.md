@@ -1,59 +1,128 @@
 # OpenCode Config Repository
 
-## Scope and configuration
+## Scope and instruction loading
 
-- Keep this repository limited to reusable OpenCode configuration, usage and maintenance documentation,
-  supporting tests, and required license notices.
-- Describe the current configuration directly. Do not add research catalogs, source-comparison reports,
-  task-specific completion reports, or references to unrelated private resources.
-- Keep change-specific plans, test results, and open review items in the pull request, not tracked report files.
-- Root `AGENTS.md` is the global instruction file for all OpenCode sessions. Keep repository-only guidance here, not in that file.
-- The repository root is the live global OpenCode configuration directory, not an application. Changes to its agents, skills, plugins, and permissions affect other projects after restarting OpenCode.
-- Put configuration and instructions that apply only to work in this repository in `.opencode/`. Root-level configuration files define global settings; do not use them for repository-only settings. This file gives maintenance instructions for the whole repository.
-- Custom agent `model` and `variant` settings belong in `agents/*.md` frontmatter. Built-in overrides remain in `opencode.jsonc`; preserve their explicit `options.reasoningEffort` values.
-- `lead` is the default agent; built-in `build` and `plan` are disabled. Do not confuse `plan` with the custom `planner` agent.
+- This repository supplies reusable global OpenCode configuration, supporting tests, and license notices.
+  Its files can be installed directly in the live global configuration directory.
+- Root `AGENTS.md` applies to all OpenCode sessions. Keep repository maintenance guidance in this file.
+  Put repository-only configuration in `.opencode/opencode.jsonc`.
+- The local config's `instructions` array names `.opencode/AGENTS.md`. V1 resolves that pattern through the
+  project directory ancestry. Do not move it into the shipped root config.
+- V2 currently accepts `instructions` without loading its entries. When maintaining this repository in V2,
+  read this file explicitly; do not assume that the array loaded it.
+- Keep README content relevant to users: installation, configuration, usage, upgrades, and operational limits.
+  Keep editing rules, verification procedures, and implementation notes here.
+- Describe the current setup directly. Do not add research catalogs, source-comparison reports, task completion
+  reports, or references to unrelated private resources. Put change-specific plans and results in the pull request.
+- Keep workflow, approval, and role policy in the applicable agent prompt. This maintenance file describes how
+  to edit the configuration; it must not become another copy of the runtime workflow.
+
+Read the relevant source before editing it. Use [the user README](../README.md) to check documented behavior.
+Check the installed version against the [V1 documentation](https://opencode.ai/docs/) or
+[V2 documentation](https://opencode.ai/v2/docs/). Do not infer runtime compatibility from JSON parsing alone.
+
+## Agents and model settings
+
+- Custom agent `model` and `variant` settings belong in `agents/*.md` frontmatter.
+  Root `opencode.jsonc` owns global defaults and built-in overrides.
 - Agent Markdown bodies are prompts. Do not add a separate `prompt` frontmatter field.
+- `lead` is the primary agent. Built-in `build` and `plan` are disabled; custom `planner` is a separate agent.
+- Read the affected agent definitions for identities, models, and permissions. Do not maintain a second allocation
+  table or hardcoded role inventory in documentation.
+- The existing allocation was checked against OpenCode 1.18.29. Before changing it, inspect current provider
+  metadata with `opencode models openai --verbose` when available. Verify model IDs and variant support.
+  Metadata is not proof of actual model dispatch or quality.
+- Preserve explicit `options.reasoningEffort` defaults for built-in `title` and `compaction`.
+  In V1, small calls skip variant selection and request variants can override agent options.
+  Keep fallback values aligned with the selected agent variant; do not assume a title setting controls every
+  `small_model` call. Check the runtime request path before removing a fallback.
+- Check model sampling capabilities before adding temperature settings. A metadata capability of
+  `temperature: false` means unsupported; it is not an agent configuration value.
+  Do not add null or boolean temperature overrides to the title agent.
+- Model-pinned children do not inherit the lead's model. Diagnose the effective configuration and session
+  selection before changing pins. A supported model change requires restarting and checking the affected route.
 
-## Documentation
+## Prompt ownership, commands, and skills
 
-Use the [OpenCode documentation](https://opencode.ai/docs/) to check configuration fields and behavior. Check that the documentation applies to the installed version before you make changes.
+- [Lead](../agents/lead.md) owns orchestration, approvals, review routing, budgets, and shipping authorization.
+  [Planner](../agents/planner.md) owns planning. Each specialist owns its scope and escalation behavior.
+- Shared prompt content belongs in `references/agent-prompts/`. Register that directory once as the hidden
+  `agent-prompts` reference, with a description, in root `opencode.jsonc`.
+  Use full paths such as `@agent-prompts/reviewer-standards.md`; verify every referenced file exists.
+- Hidden affects interactive visibility. It does not remove agent context or grant tool permissions.
+- Each agent must explicitly read the references it needs. Framework agents do not inherit another agent's body.
+  Keep language guidance shared with the matching developer, reviewer, and framework roles.
+- Commands and entry-point skills route to the owning agent. Do not duplicate workflow or approval procedures there.
+  Preserve command names, argument handling, intended target defaults, and agent routing.
+- `/verify` and lead workflow commands run in the active lead session. `/plan` remains a read-only planner subtask.
+  Preserve the built-in `/resume` session selector; `/resume-work` consumes a project handoff.
+- Skills do not grant permissions. Preserve their supporting files and license notices when moving content.
+  Keep project contracts, checkpoints, and lessons in their work project, not in this global configuration.
+- `project-standards` handles deliberate tooling and convention changes. Ordinary tests, routine checks, and defect
+  fixes do not require adopting new tooling through that skill.
 
-Read the relevant README before you change a component. Do not load all READMEs for every task. The following links are relative to this file:
+## Permissions and delegation
 
-| Document | When to read it |
-| --- | --- |
-| [Repository README](../README.md) | Read for the repository structure and setup information. |
-| [Agent README](../agents/README.markdown) | Read before you change agent definitions or model settings. |
-| [Command README](../commands/README.markdown) | Read before you change slash commands. |
-| [Plugin README](../plugins/README.md) | Read before you change plugins. |
-| [Skill README](../skills/README.md) | Read before you change skills or their procedures. |
+- Preserve explicit Bash `ask` rules. A project wildcard override can coexist with inherited specific rules.
+  Do not remove specific rules merely because the global wildcard currently has the same value.
+- Keep global Task access denied by default. Exact agent allowlists are authoritative; do not expand them during
+  documentation cleanup or infer permissions from a role description.
+- Preserve leaf restrictions and the configured depth limit. When changing permissions, verify that leaf delegation
+  is denied and approved parents can reach only their listed targets in a fresh session.
+- Research-only assignments limit the task, not the developer's edit capability. Preserve the parent's sole-editor
+  requirement and validation of citations, scope, and uncertainty in the relevant agent prompts.
+- Keep GitHub and Playwright MCP definitions typed and disabled, without credential-file interpolation.
+  V2 discards enabled-only V1 MCP entries without a `type`; `{ "enabled": false }` is not a portable disable rule.
+- Never inspect or inline secret files while checking configuration.
 
-Use these READMEs as reference material, not replacements for applicable agent instructions.
-Verify referenced files and current configuration before you follow a procedure.
-Workflow and approval policy belongs in the relevant agent prompt. Shared prompt content belongs in
-`references/agent-prompts/`. Register that directory once as the hidden `agent-prompts` reference in `opencode.jsonc`.
-Use full reference paths such as `@agent-prompts/reviewer-standards.md` in prompts.
+## Plugin maintenance
+
+Read [block-secrets.ts](../plugins/block-secrets.ts) and its tests before changing the plugin.
+Preserve these contracts:
+
+- Check `filePath`, `file_path`, and `path`; treat `pattern` as a path only for glob.
+- Normalize backslashes and match case-insensitively, including on POSIX systems.
+- A complete `secrets` path segment takes precedence over allowed template basenames.
+- Bash token checks are heuristic. They do not parse shell expansion or resolve symlinks and aliases.
+  A search from a parent directory can avoid a sensitive path argument.
+- Reject the tool call even when the best-effort error toast fails.
+- Keep the user-facing error's documentation pointer aligned with the README's secret-path protection section.
+  Document access limitations there; do not describe the plugin as a sandbox.
+
+The current plugin uses the V1 `@opencode-ai/plugin` hook API. A V2 port is a separate implementation change.
+V2 also ignores top-level `subagent_depth`; its supported setting is `experimental.subagent_depth`.
+Consult the [migration guide](https://opencode.ai/v2/docs/migrate-v1/) and verify behavior before claiming V2 support.
 
 ## Verification
 
-- Run `npx --no-install tsc --project tsconfig.json` from the repository root for type checking.
-  The config includes `plugins/**/*.ts` and `tests/**/*.ts`. It does not validate Markdown, JSONC, or `.opencode/` code.
-- Run `node --experimental-strip-types --test tests/block-secrets.test.ts` for the plugin tests.
-- Run `node --test tests/workflow-config.test.mjs` for configuration and reference checks.
-- Dependency manifests are local editor support and are not tracked. No CI workflow is present.
-  Check available tooling; do not assume `npm test`, `npm run lint`, or `npm run build` exists.
-- If local root or `.opencode/package.json` manifests exist, inspect the relevant one before changing dependencies.
-- Type checking cannot prove OpenCode config loads. Validate changed configuration separately and restart OpenCode to exercise config-time changes.
+Run applicable existing checks from the repository root:
 
-## Operational traps
-- Preserve explicit Bash `ask` rules. Project configuration can override the wildcard while inheriting specific rules.
-- MCP entries are disabled placeholders. Enabling one requires a complete local or project server definition.
-- Never inspect or inline secret files when checking configuration.
+```sh
+node --test tests/workflow-config.test.mjs
+node --experimental-strip-types --test tests/block-secrets.test.ts
+npx --no-install tsc --project tsconfig.json
+```
 
-# Markdown Style
-Style rules for config-related Markdown files in this repository.
-Line length: 120 characters maximum. Only exceed when the content cannot be split (for example, Long URLs, command
-output, or YAML frontmatter strings that cannot be folded).
-- Indentation: 2 spaces for YAML frontmatter, 4 spaces for code blocks.
-- Line endings: LF (Unix-style)
-  Markdown flavor: GitLab Flavored Markdown.
+- Configuration tests check metadata, routing, and shared references. They do not launch OpenCode or prove behavior.
+- Plugin tests use mocked hooks and synthetic paths. They do not access real secrets or establish V2 compatibility.
+- Type checking includes `plugins/**/*.ts` and `tests/**/*.ts`.
+  It does not validate Markdown, JSONC, or `.opencode/` code.
+- Dependency manifests are untracked local editor support. Inspect an existing root or `.opencode/package.json`
+  before changing dependencies. Check available tooling; do not assume npm scripts or a CI workflow exist.
+- Report unavailable dependencies and checks explicitly. Do not install unrelated tooling to hide a missing check.
+- Check internal links, moved-file consumers, command routing, and unchanged model and permission fields.
+  After runtime configuration changes, restart OpenCode and test the relevant discovery and permission behavior
+  when the native runtime is available. A harmless approval check must not use real secrets.
+- Distinguish source checks, mocked tests, native loading, and model-assisted execution in the pull request.
+  Do not claim an independent review for a self-review.
+
+## Markdown and documentation
+
+Apply `@agent-prompts/asd-ste100.md` to technical documentation. If the official writing rules and dictionary are
+unavailable, report that formal compliance could not be verified.
+Preserve code, identifiers, commands, paths, URLs, literal values, and quotations.
+
+- Use LF line endings and GitLab Flavored Markdown.
+- Limit lines to 120 characters, except indivisible URLs, literal output, or frontmatter strings.
+- Use two spaces for YAML indentation and four spaces for indented code blocks.
+- Keep the main README as the single user guide. Do not recreate per-directory README instruction catalogs.

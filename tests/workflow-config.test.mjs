@@ -171,9 +171,22 @@ test("specialist commands route to the proper skill without shell interpolation"
   }
 })
 
-test("disabled MCP defaults do not require credentials or package execution", () => {
-  assert.deepEqual(config.mcp, { github: { enabled: false }, playwright: { enabled: false } })
+test("disabled MCP defaults retain typed definitions without credential-file dependencies", () => {
+  assert.deepEqual(Object.keys(config.mcp).sort(), ["github", "playwright"])
+  for (const server of Object.values(config.mcp)) {
+    assert.equal(server.enabled, false)
+    assert.ok(["local", "remote"].includes(server.type), "enabled-only MCP entries are ignored by V2")
+    if (server.type === "remote") assert.equal(new URL(server.url).protocol, "https:")
+    else assert.ok(Array.isArray(server.command) && server.command.length > 0)
+  }
   assert.ok(!read("opencode.jsonc").includes("{file:"))
+})
+
+test("repository maintenance instructions stay out of the global configuration", () => {
+  const localConfig = JSON.parse(read(".opencode/opencode.jsonc"))
+  assert.equal(config.instructions, undefined)
+  assert.deepEqual(localConfig.instructions, [".opencode/AGENTS.md"])
+  assert.ok(statSync(new URL(localConfig.instructions[0], root)).isFile())
 })
 
 test("permission defaults preserve specific approval gates and destructive-command denials", () => {

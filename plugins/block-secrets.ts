@@ -73,7 +73,7 @@ const notifyBlocked = (client: Client, path: string, pattern: string): void => {
 const reject = (client: Client, path: string, pattern: string, reason: string): never => {
   notifyBlocked(client, path, pattern)
   throw new Error(
-    `blocked by block-secrets plugin: ${reason}. Sensitive-file access is denied by policy (see plugins/README.md).`,
+    `blocked by block-secrets plugin: ${reason}. Sensitive-file access is denied by policy (see README.md#secret-path-protection).`,
   )
 }
 
