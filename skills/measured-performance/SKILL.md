@@ -26,5 +26,3 @@ Do not invent an improvement percentage, significance claim, or fixed speedup qu
 If no measurement can run safely, report the blocked measurement and a proposed measurement plan. Set task status
 using the common response rules; a measurement-plan assignment can be complete without executing the measurement.
 Preserve original benchmark evidence. Do not delete user work or alter the acceptance target to hide a regression.
-
-Retain [the MIT notice](LICENSE-pstack.txt) when copying this skill.

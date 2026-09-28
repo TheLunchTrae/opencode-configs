@@ -2,7 +2,7 @@
 
 ## Scope and instruction loading
 
-- This repository supplies reusable global OpenCode configuration, supporting tests, and license notices.
+- This repository supplies reusable global OpenCode configuration and supporting tests.
   Its files can be installed directly in the live global configuration directory.
 - Root `AGENTS.md` applies to all OpenCode sessions. Keep repository maintenance guidance in this file.
   Put repository-only configuration in `.opencode/opencode.jsonc`.
@@ -68,10 +68,21 @@ Check the installed version against the [V1 documentation](https://opencode.ai/d
   wrapper skills or role commands. Preserve supporting files and notices when moving procedures.
 - Utility commands retain the selected agent and its permissions. Do not silently switch a focused lead to a writer.
   Preserve argument handling and the built-in `/resume` session selector; `/resume-work` consumes a project handoff.
-- Skills do not grant permissions. Preserve their supporting files and license notices when moving content.
+- Skills do not grant permissions. Preserve their supporting files and applicable license notices when moving content.
   Keep project contracts, checkpoints, and lessons in their work project, not in this global configuration.
 - `project-standards` handles deliberate tooling and convention changes. Ordinary tests, routine checks, and defect
   fixes do not require adopting new tooling through that skill.
+
+## Third-party material
+
+- Compare the actual source and check its license before copying or adapting third-party text or code.
+- Store required third-party notices in the top-level `notices/` directory. Preserve the complete required text,
+  and identify the covered files and upstream source in the root README. Create the directory when a notice is needed.
+- Keep references used only for inspiration in a short section at the end of the root README.
+  Do not add a third-party license solely for general ideas, standard methods, or independently authored guidance.
+  Base retention decisions on the material reused and its license, not an earlier attribution label.
+- Include applicable notices when distributing covered material, including standalone agents or skills.
+  Keep the repository's own root `LICENSE` separate from third-party notices.
 
 ## Permissions and delegation
 

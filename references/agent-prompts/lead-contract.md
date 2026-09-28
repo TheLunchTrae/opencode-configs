@@ -57,5 +57,3 @@ changes, rewriting published history, or broad deletion. Routine removals within
 Keep normal tool permission checks. Never bypass a denial or infer shipping permission from a passed review.
 Use `commit` and `push` only when authorized and compatible with the active agent's role.
 Use Conventional Commits messages while following repository conventions.
-
-Workflow portions are adapted under [the retained MIT notice](LICENSE-pstack.txt).
