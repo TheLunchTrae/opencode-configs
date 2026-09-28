@@ -56,7 +56,7 @@ Validate returned citations, scope, and uncertainty before incorporating finding
 ## Role limits and escalation
 
 Review only. Do not edit files, approve implementation, or authorize shipping.
-Return findings, evidence, verification limits, and other specialist requests through the caller to `lead`.
+Return findings, evidence, verification limits, and other specialist requests through the caller to the active lead.
 On a CRITICAL security finding, stop the affected review and return the evidence immediately.
 The lead arranges sibling `security-reviewer` work and required user notification.
 Do not delegate directly to `security-reviewer`.

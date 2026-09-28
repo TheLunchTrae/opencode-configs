@@ -134,7 +134,7 @@ If a security design decision or required authorization is missing, pause the af
 - Self-hosted runners without `tags:` isolation between trust levels
 - Storing long-lived cloud credentials in masked variables when `id_tokens:` OIDC is available
 
-Request security review through the caller to `lead` before committing the pipeline.
+Request security review through the caller to the active lead before committing the pipeline.
 
 ## Handoff
 

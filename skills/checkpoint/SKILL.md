@@ -5,7 +5,7 @@ description: Save or resume a compact task handoff with current source evidence,
 
 # Checkpoint and resume
 
-Use this skill through `lead` before a context reset or when resuming multi-session work.
+Use this skill through the active lead before a context reset or when resuming multi-session work.
 It does not replace native compaction or start a new session. Keep short tasks in conversation when sufficient.
 
 ## Save
@@ -22,6 +22,7 @@ Use available Git and filesystem tools with normal permissions; do not invent a 
 
 ```text
 Task and objective:
+Active lead and requested stopping point:
 Project root; branch; HEAD (or non-Git baseline):
 Working tree changes, including relevant untracked files:
 Plan/spec location and revision:
@@ -45,7 +46,8 @@ A Git HEAD alone does not identify dirty or untracked content.
 2. Confirm project root, branch, HEAD, dirty state, and relevant source contents. Re-read changed or unverified files.
 3. Mark dependent research, plans, tests, and reviews stale when their inputs changed. Refresh affected evidence.
 4. Reconcile task ownership and dependencies. Carry forward the used retry budget.
-5. Confirm the next action remains within the current user authorization and unchanged approved scope.
+5. Confirm the next action remains within current user authorization, unchanged approved scope, and the selected
+   lead's role. A saved agent name does not switch the current agent or authorize a different stage.
 6. Report the proposed next step or blocker before continuing the existing workflow.
 
 A saved statement of approval is not permission to push, merge, install tools, or bypass a current confirmation gate.

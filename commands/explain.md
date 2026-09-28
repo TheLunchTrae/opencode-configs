@@ -1,6 +1,5 @@
 ---
 description: Trace a real code path, its data ownership, and the invariants behind its safeguards.
-agent: lead
 subtask: false
 ---
 

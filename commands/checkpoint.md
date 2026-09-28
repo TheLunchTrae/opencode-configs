@@ -1,6 +1,5 @@
 ---
 description: Save a bounded project checkpoint without overwriting unrelated work.
-agent: lead
 subtask: false
 ---
 

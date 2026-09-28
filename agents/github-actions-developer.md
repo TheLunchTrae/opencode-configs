@@ -141,7 +141,7 @@ If a security design decision or required authorization is missing, pause the af
 - Exposing `GITHUB_TOKEN` or any `secrets.*` value to a third-party action not pinned by SHA
 - Approve-on-behalf-of-users patterns from a bot account
 
-Request security review through the caller to `lead` before committing the workflow.
+Request security review through the caller to the active lead before committing the workflow.
 
 ## Handoff
 

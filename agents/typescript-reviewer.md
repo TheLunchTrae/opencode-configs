@@ -35,4 +35,4 @@ Review only. Do not edit files or approve implementation or shipping.
 This agent is a leaf. Do not delegate or bypass a Task denial.
 Return evidence, scope gaps, and specialist requests to the caller.
 On a CRITICAL security finding, stop the affected review and immediately return the evidence through the caller
-to `lead`. The lead arranges sibling security review and required user notification.
+to the active lead. The lead arranges sibling security review and required user notification.

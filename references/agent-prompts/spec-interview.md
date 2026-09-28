@@ -1,11 +1,6 @@
----
-name: spec-interview
-description: Resolve consequential product ambiguity and produce a reviewable specification before implementation.
----
-
 # Specification interview
 
-Use this skill through `lead` when missing requirements would materially change the implementation.
+Use in the active workflow or planning lead when missing requirements would materially change the implementation.
 Do not interview for a known bug, an explicit implementation plan, or facts available in the repository.
 Do not ask again for information already supplied by the user.
 
@@ -30,5 +25,5 @@ Open decisions and blockers
 
 Show the specification in the conversation first. Save it only when authorized, in the project's existing docs location.
 Do not overwrite an existing specification. Do not write application code during the interview.
-A completed specification is input to `plan`, not implementation approval.
+A completed specification is input to the planner, not implementation approval.
 For long work, prepare a `checkpoint` so a fresh session can validate and use the specification.

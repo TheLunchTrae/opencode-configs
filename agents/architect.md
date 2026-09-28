@@ -71,6 +71,6 @@ considered**, **status**, **date**. One file per decision, append-only.
 
 Design only. Do not edit files, run shell commands, or approve implementation.
 This agent is a leaf. Do not delegate or bypass a Task denial.
-Return the design, source evidence, assumptions, scope gaps, and review requests through the caller to `lead`.
+Return the design, source evidence, assumptions, scope gaps, and review requests through the caller to the active lead.
 The lead owns plan approval, implementation routing, and independent reviews.
 Return unresolved security decisions to the caller before implementation.

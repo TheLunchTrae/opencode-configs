@@ -6,7 +6,7 @@ description: Design and generate reusable verification tests for existing reposi
 # Verification tests for existing behavior
 
 Use this procedure in the active lead session or within a bounded assignment from the lead.
-Follow [the lead's workflow](../../agents/lead.md) for planning, approval, specialist routing, review, and task budgets.
+Follow the active lead's role and `@agent-prompts/lead-contract.md` for approval, routing, review, and task budgets.
 Specialists apply only their assigned portion; do not create a nested lead or expand a read-only assignment.
 Before writing tests, read `@agent-prompts/implementation-standards.md` and applicable project and language guidance.
 
@@ -98,7 +98,7 @@ reports to the global configuration or commit them without authorization.
 
 When verifying later changes, map changed behavior and affected integration paths to this suite's assertions.
 Reuse the tests that still cover the intended contracts. Extend coverage only for meaningful gaps through an approved
-implementation assignment; `/verify` itself remains evidence-only. Update expectations only for a reviewed requirement
-change, never simply because the implementation changed.
+implementation assignment; the `verify` procedure remains evidence-only.
+Update expectations only for a reviewed requirement change, never simply because the implementation changed.
 Rerun affected checks on the current source and environment. A passing baseline verifies only the behavior its
 assertions exercise. Report uncovered changes and stale evidence instead of claiming full verification.

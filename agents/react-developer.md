@@ -112,7 +112,7 @@ If a security design decision or required authorization is missing, pause the af
 - Custom CSRF handling, cookie manipulation, or `<Suspense>` boundaries around auth state
 - `eval`, `new Function`, or dynamic imports driven by user input
 
-Request security review through the caller to `lead` before committing.
+Request security review through the caller to the active lead before committing.
 
 ## Handoff
 

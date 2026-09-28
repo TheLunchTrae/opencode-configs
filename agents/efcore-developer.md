@@ -112,7 +112,7 @@ If a security design decision or required authorization is missing, pause the af
 - Connection-string construction from user input or tenant-supplied values
 - Custom `ValueConverter` handling encrypted / sensitive columns
 
-Request security review through the caller to `lead` before committing.
+Request security review through the caller to the active lead before committing.
 
 ## Handoff
 

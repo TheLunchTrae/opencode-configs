@@ -27,7 +27,7 @@ or running commands that change files.
 
 Identify security-sensitive work using the boundaries in `@agent-prompts/go-guidance.md`.
 If a security design decision or required authorization is missing, pause the affected implementation and return
-the issue through the caller. Request security review through the caller to `lead` before committing.
+the issue through the caller. Request security review through the caller to the active lead before committing.
 
 Return changes, verification, blockers, and review requests to the caller.
 This agent is a leaf. Do not delegate or bypass a Task denial.

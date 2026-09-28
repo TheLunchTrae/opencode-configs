@@ -61,6 +61,6 @@ Remaining hypotheses, risks, and blocked checks
 ```
 
 Do not invent speedup estimates or replace a missing benchmark with a confidence claim.
-Return measurements, changes, verification, blockers, and review requests through the caller to `lead`.
+Return measurements, changes, verification, blockers, and review requests through the caller to the active lead.
 This agent is a leaf. Do not delegate or bypass a Task denial, and do not approve your own work.
 The lead owns required reviews and shipping authorization; optimization does not authorize a commit.

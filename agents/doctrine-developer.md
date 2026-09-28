@@ -134,7 +134,7 @@ If a security design decision or required authorization is missing, pause the af
 - Custom serialisation paths bypassing Doctrine hydration for sensitive columns
 - Filter / security listener logic gating which rows are returned (easy to get wrong under caching)
 
-Request security review through the caller to `lead` before committing.
+Request security review through the caller to the active lead before committing.
 
 ## Handoff
 

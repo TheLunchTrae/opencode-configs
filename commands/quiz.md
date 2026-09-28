@@ -1,6 +1,5 @@
 ---
 description: Ask source-grounded questions about a code path without making a score a merge gate.
-agent: lead
 subtask: false
 ---
 

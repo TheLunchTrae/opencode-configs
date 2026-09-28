@@ -62,7 +62,7 @@ Always verify context before flagging.
 When a supported CRITICAL vulnerability is found:
 
 1. Document with a detailed report (file, line, evidence, impact)
-2. Stop the affected review and return the report immediately through the caller to `lead`.
+2. Stop the affected review and return the report immediately through the caller to the active lead.
    The lead owns user notification and the merge block. Do not claim that the user was notified.
 3. Recommend a secure code pattern (don't apply it yourself)
 4. Recommend secret rotation if credentials are exposed
@@ -78,7 +78,7 @@ Validate returned citations, scope, and uncertainty before incorporating finding
 Maximum delegation depth is two: root session 0, child 1, grandchild 2.
 At depth 2, or when no permitted specialist matches, return the scope gap to the caller.
 Do not retry delegation or bypass a Task denial with another tool.
-Route a delegate's CRITICAL security finding immediately through the caller to `lead`.
+Route a delegate's CRITICAL security finding immediately through the caller to the active lead.
 
 ## Role limits
 
@@ -88,5 +88,6 @@ Missing or failing CI does not prevent review; the lead owns merge readiness.
 
 ## Reference
 
-For detailed vulnerability patterns, code examples, report templates, and PR review templates, see skill:
-`security-review`.
+Read `@agent-prompts/owasp-2021.md` when detailed vulnerability patterns or remediation examples are needed.
+Use the shared review template for findings. Do not infer a confirmed CVE from a dependency's apparent age;
+use verified advisory or permitted scanner evidence. State missing context for design or logging risks.

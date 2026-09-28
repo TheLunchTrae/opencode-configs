@@ -122,7 +122,7 @@ If a security design decision or required authorization is missing, pause the af
 - Session / cookie configuration outside `Laminas\Session` or Mezzio session middleware
 - Authentication flows or credential storage — defer design decisions before implementing
 
-Request security review through the caller to `lead` before committing.
+Request security review through the caller to the active lead before committing.
 
 ## Handoff
 

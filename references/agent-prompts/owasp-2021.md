@@ -1,6 +1,7 @@
 # OWASP Top 10 (2021) — Reference
 
-Detailed per-category notes for the `security-review` skill. The `security-reviewer` agent body carries the short checklist; this file expands each category with concrete patterns and fix recipes for use when a finding needs deeper context.
+Detailed category notes for `security-reviewer`. Its agent prompt carries the short checklist.
+Use this reference for concrete patterns and remediation examples when a finding needs deeper context.
 
 ## A01 Broken Access Control
 
