@@ -1,5 +1,5 @@
 import assert from "node:assert/strict"
-import { existsSync, readFileSync, readdirSync } from "node:fs"
+import { existsSync, readFileSync, readdirSync, statSync } from "node:fs"
 import { test } from "node:test"
 
 const root = new URL("../", import.meta.url)
@@ -88,40 +88,54 @@ test("adapted pstack skills retain the same complete notice", () => {
   assert.ok(read("agents/lead.md").includes("../skills/development-workflow/LICENSE-pstack.txt"))
 })
 
-test("shared prompts have one hidden registration each and stay inside their folder", () => {
-  const directory = "references/agent-prompts/"
-  const paths = Object.values(config.references).map((reference) => reference.path)
-  assert.equal(new Set(paths).size, paths.length, "duplicate reference paths")
-  for (const [alias, reference] of Object.entries(config.references)) {
-    assert.equal(reference.hidden, true, alias)
-    assert.ok(reference.description?.trim(), `${alias}: missing description`)
-    assert.ok(reference.path.startsWith(`./${directory}`), alias)
-    assert.equal(new URL(reference.path, root).href.startsWith(new URL(directory, root).href), true, alias)
-    assert.ok(existsSync(new URL(reference.path, root)), `${alias}: missing target`)
-  }
-  for (const file of readdirSync(new URL(directory, root))) {
-    if (file.endsWith(".md")) assert.ok(paths.includes(`./${directory}${file}`), `${file}: unregistered prompt`)
+test("shared prompts use one hidden directory reference", () => {
+  assert.deepEqual(Object.keys(config.references), ["agent-prompts"])
+  const reference = config.references["agent-prompts"]
+  assert.equal(reference.path, "./references/agent-prompts")
+  assert.equal(reference.hidden, true)
+  assert.ok(reference.description?.trim(), "missing directory description")
+  assert.ok(statSync(new URL(reference.path, root)).isDirectory(), "references must point to directories")
+})
+
+test("moved shared prompts remain available without stale root copies", () => {
+  for (const name of ["asd-ste100", "global-coding-style", "reviewer-standards", "review-template"]) {
+    assert.ok(statSync(new URL(`references/agent-prompts/${name}.md`, root)).isFile())
+    assert.equal(existsSync(new URL(`references/${name}.md`, root)), false)
   }
 })
 
-test("moved references preserve their public aliases without stale root copies", () => {
-  for (const alias of ["asd-ste100", "global-coding-style", "reviewer-standards", "review-template"]) {
-    assert.equal(config.references[alias].path, `./references/agent-prompts/${alias}.md`)
-    assert.equal(existsSync(new URL(`references/${alias}.md`, root)), false)
+test("prompt references resolve to files under the configured directory", () => {
+  const markdown = (directory) => readdirSync(new URL(directory, root), { withFileTypes: true }).flatMap((entry) => {
+    const path = `${directory}${entry.name}`
+    if (entry.isDirectory()) return markdown(`${path}/`)
+    return /\.(md|markdown)$/.test(entry.name) ? [path] : []
+  })
+  const paths = ["AGENTS.md", "README.md", ".opencode/AGENTS.md"]
+  for (const directory of ["agents/", "commands/", "skills/", "references/agent-prompts/"]) {
+    paths.push(...markdown(directory))
   }
-})
-
-test("agent and shared-prompt reference aliases resolve", () => {
-  const paths = ["AGENTS.md"]
-  for (const directory of ["agents/", "references/agent-prompts/"]) {
-    for (const file of readdirSync(new URL(directory, root))) {
-      if (file.endsWith(".md")) paths.push(`${directory}${file}`)
-    }
-  }
+  const promptFiles = readdirSync(new URL("references/agent-prompts/", root)).filter((file) => file.endsWith(".md"))
+  const formerAliases = new Set(promptFiles.map((file) => file.slice(0, -3)))
+  const referenced = new Set()
   for (const path of paths) {
-    for (const [, alias] of read(path).matchAll(/`@([a-z][a-z0-9-]*)`/g)) {
-      assert.ok(Object.hasOwn(config.references, alias), `${path}: unknown reference @${alias}`)
+    const text = read(path)
+    for (const [, alias] of text.matchAll(/`@([a-z][a-z0-9-]*)`/g)) {
+      assert.ok(!formerAliases.has(alias), `${path}: obsolete file alias @${alias}`)
     }
+    for (const [, alias, file] of text.matchAll(/`@([a-z][a-z0-9-]*)\/([^`\s]+)`/g)) {
+      const reference = config.references[alias]
+      // Scoped package names are not references. Still reject unknown aliases used with Markdown paths.
+      if (!reference && !file.endsWith(".md")) continue
+      assert.ok(reference, `${path}: unknown directory alias @${alias}`)
+      const directory = new URL(`${reference.path.replace(/\/$/, "")}/`, root)
+      const target = new URL(file, directory)
+      assert.ok(target.href.startsWith(directory.href), `${path}: reference escapes its directory`)
+      assert.ok(statSync(target).isFile(), `${path}: missing prompt ${file}`)
+      if (alias === "agent-prompts") referenced.add(file)
+    }
+  }
+  for (const file of promptFiles) {
+    assert.ok(referenced.has(file), `${file}: no consumer uses this shared prompt`)
   }
 })
 
@@ -133,7 +147,9 @@ test("language and framework roles explicitly load their shared language guidanc
     php: ["php-developer", "php-reviewer", "laminas-developer", "doctrine-developer"],
   }
   for (const [language, agents] of Object.entries(roles)) {
-    for (const agent of agents) assert.ok(read(`agents/${agent}.md`).includes(`@${language}-guidance`), agent)
+    for (const agent of agents) {
+      assert.ok(read(`agents/${agent}.md`).includes(`@agent-prompts/${language}-guidance.md`), agent)
+    }
   }
 })
 

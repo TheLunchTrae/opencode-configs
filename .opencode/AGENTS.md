@@ -31,7 +31,8 @@ Read the relevant README before you change a component. Do not load all READMEs 
 Use these READMEs as reference material, not replacements for applicable agent instructions.
 Verify referenced files and current configuration before you follow a procedure.
 Workflow and approval policy belongs in the relevant agent prompt. Shared prompt content belongs in
-`references/agent-prompts/` with a hidden reference in `opencode.jsonc`.
+`references/agent-prompts/`. Register that directory once as the hidden `agent-prompts` reference in `opencode.jsonc`.
+Use full reference paths such as `@agent-prompts/reviewer-standards.md` in prompts.
 
 ## Verification
 

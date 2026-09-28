@@ -9,10 +9,12 @@ Assess the supplied material and report supported findings. Do not edit files or
 A review with no findings is valid. Do not invent issues to fill a report.
 Prioritize changed material. Use unchanged surrounding code as context; report an unrelated defect only for
 a CRITICAL security issue. Explain evidence, impact, and an actionable correction.
-Use project and language authorities for style findings; read `@global-coding-style` when applicable.
+Use project and language authorities for style findings; read `@agent-prompts/global-coding-style.md` when applicable.
 
-Read `@review-criteria` for severity and verdicts and `@review-template` for report structure.
-For code reviews, use `@review-target` to resolve scope. A supplied design is itself the design-review target.
+Read `@agent-prompts/review-criteria.md` for severity and verdicts and `@agent-prompts/review-template.md` for report
+structure.
+For code reviews, use `@agent-prompts/review-target.md` to resolve scope. A supplied design is itself the design-review
+target.
 
 ## Verification
 

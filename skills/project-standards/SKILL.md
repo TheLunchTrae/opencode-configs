@@ -114,4 +114,5 @@ requires it.
 
 ## Documentation Standard
 
-Read `@asd-ste100` for documentation authority, literal preservation, and compliance verification requirements.
+Read `@agent-prompts/asd-ste100.md` for documentation authority, literal preservation, and compliance verification
+requirements.

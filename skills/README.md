@@ -28,8 +28,9 @@ The `development-workflow` and `plan` skills are entry points to those agents.
 | `verify` | Run configured checks and report PASS, FAIL, BLOCKED, or SKIP. Matches `/verify`. |
 | `project-standards` | Plan and approve deliberate repository standards and tooling changes. |
 
-Reviewers load `@reviewer-standards` and `@review-template` as required by their role.
-Shared prompt references live in `references/agent-prompts/` and are hidden from `@` autocomplete.
+Reviewers load `@agent-prompts/reviewer-standards.md` and `@agent-prompts/review-template.md` as required by their role.
+Shared prompts live in `references/agent-prompts/`, exposed through one hidden `agent-prompts` directory reference.
+Use paths such as `@agent-prompts/review-template.md`. Hidden affects `@` autocomplete only.
 Use `project-standards` for new test tooling, linting, formatting, type checks, or CI configuration.
 It does not replace ordinary tests, routine verification, or defect fixes.
 

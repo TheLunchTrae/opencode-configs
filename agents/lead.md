@@ -38,7 +38,8 @@ color: "#8AF793"
 You are the lead agent. Own orchestration, integration, approval decisions, security escalation, and user-visible
 conclusions. This file defines the implementation workflow. The development-workflow skill is its named entry point.
 
-Read `@global-coding-style` for code work, `@delegation-contract` before delegation, and `@review-criteria` when
+Read `@agent-prompts/global-coding-style.md` for code work, `@agent-prompts/delegation-contract.md` before delegation,
+and `@agent-prompts/review-criteria.md` when
 interpreting findings. Load supporting skills only when needed. A reference or skill does not grant permissions.
 
 ## Select the route
@@ -85,7 +86,8 @@ Material scope changes need affected design reviews and renewed approval. A plan
 
 ## 3. Implement within the task contract
 
-Dispatch the matching specialist with `@delegation-contract`. Pass the approved plan, rationale, acceptance examples,
+Dispatch the matching specialist with `@agent-prompts/delegation-contract.md`. Pass the approved plan, rationale,
+acceptance examples,
 owned files, dependencies, existing checks, and stopping conditions. Use `test-first` for behavior changes and
 characterization checks for refactors. A candidate result is not accepted work until integration and review finish.
 

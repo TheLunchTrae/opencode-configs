@@ -29,7 +29,8 @@
 
 ## Technical Documentation Standard
 
-Read `@asd-ste100` before you create or revise technical documentation, including code comments and docstrings.
+Read `@agent-prompts/asd-ste100.md` before you create or revise technical documentation, including code comments and
+docstrings.
 Apply its authority, preservation, and verification requirements to documentation in the current task.
 
 ## User Overrides

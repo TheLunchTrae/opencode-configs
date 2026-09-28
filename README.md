@@ -12,7 +12,7 @@ The default primary agent is `lead`. It coordinates planning, specialist work, r
 | [`agents/`](agents/README.markdown) | Agent roles, model pins, and delegation rules. |
 | [`commands/`](commands/README.markdown) | Slash commands. |
 | [`skills/`](skills/README.md) | Task procedures. |
-| [`references/agent-prompts/`](references/agent-prompts/) | Shared prompt guidance, loaded by reference alias. |
+| [`references/agent-prompts/`](references/agent-prompts/) | Shared prompt guidance through one hidden directory reference. |
 | [`plugins/`](plugins/README.md) | Local plugins, including `block-secrets.ts`. |
 | [`opencode.jsonc`](opencode.jsonc) | Global agent, permission, MCP, shell, and plugin settings. |
 | [`tui.jsonc`](tui.jsonc) | TUI plugin settings. |
@@ -43,7 +43,9 @@ Copy each selected skill folder with its supporting files, including license not
 Skills that route to an agent require that agent and its references too.
 Do not copy work-project checkpoints into the global configuration.
 
-When upgrading, copy `references/agent-prompts/` and `opencode.jsonc` together. The aliases remain unchanged.
+When upgrading, copy `AGENTS.md`, `agents/`, `skills/`, `references/agent-prompts/`, and `opencode.jsonc` together.
+The previous per-file aliases are no longer configured. Shared prompts use the `agent-prompts` directory reference.
+Update custom prompts to use paths such as `@agent-prompts/reviewer-standards.md`.
 Remove the old root reference copies of `asd-ste100.md`, `global-coding-style.md`, `reviewer-standards.md`,
 and `review-template.md` after the new paths are in place. Preserve unrelated references.
 
@@ -85,8 +87,11 @@ behavior, see <https://opencode.ai/docs/plugins/>.
 
 [The lead prompt](agents/lead.md) owns workflow, approvals, specialist routing, and required reviews.
 [The planner prompt](agents/planner.md) owns planning. Commands and entry-point skills route to those roles.
-Shared guidance lives in `references/agent-prompts/`. Each reference has `hidden: true` in `opencode.jsonc`.
-Hidden references stay out of `@` autocomplete; agents can still discover and read them. This is not access control.
+Shared guidance lives in `references/agent-prompts/`. One `agent-prompts` reference points to that directory
+and has `hidden: true` in `opencode.jsonc`. Agents read individual files such as
+`@agent-prompts/reviewer-standards.md` and `@agent-prompts/global-coding-style.md`.
+See the [OpenCode reference documentation](https://opencode.ai/docs/references/) for directory reference syntax.
+Hidden affects `@` autocomplete only. The reference remains available to agents, and normal tool permissions apply.
 
 Use `/workflow <task>` for a routed task, or keep using `/plan`, `/review`, and `/verify`.
 Use `/spec <feature>` when consequential requirements remain unclear.

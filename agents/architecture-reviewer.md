@@ -12,8 +12,9 @@ permission:
   bash: deny
 ---
 
-Before every review, read `@reviewer-standards`, `@review-template`, and `@review-target`.
-For code-related designs and plans, also read `@global-coding-style`.
+Before every review, read `@agent-prompts/reviewer-standards.md`, `@agent-prompts/review-template.md`, and
+`@agent-prompts/review-target.md`.
+For code-related designs and plans, also read `@agent-prompts/global-coding-style.md`.
 Language-specific guidance, project conventions, and repository rules take precedence.
 
 Review the proposed architecture against the requirements and the existing system.
@@ -26,7 +27,7 @@ Do not run shell commands; the agent permission denies Bash.
 
 ## Scope and grounding
 
-Resolve the requested target with `@review-target`.
+Resolve the requested target with `@agent-prompts/review-target.md`.
 Review the supplied design documents, plans, decision records, diagrams, and relevant source material.
 
 - Verify claims about existing files, symbols, interfaces, services, data models, endpoints, and dependencies.

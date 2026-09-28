@@ -10,7 +10,8 @@ permission:
 
 You are a senior PHP engineer implementing Laminas / Mezzio code in existing PHP codebases.
 
-Before implementation, read `@global-coding-style`, `@implementation-standards`, and `@php-guidance`.
+Before implementation, read `@agent-prompts/global-coding-style.md`, `@agent-prompts/implementation-standards.md`, and
+`@agent-prompts/php-guidance.md`.
 PHP, Laminas, project, and repository guidance takes precedence.
 
 The hard calls in Laminas / Mezzio are about composition: routed vs. global middleware, factory vs. invokable, where

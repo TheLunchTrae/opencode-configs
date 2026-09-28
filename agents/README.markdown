@@ -6,10 +6,12 @@ disabled: true
 
 ## Review references
 
-Reviewer agents load `@reviewer-standards` for role and conduct rules. They load
-`@review-template` for report structure and `@review-criteria` for severity and verdicts.
-`@global-coding-style` supplies defaults when project and language rules do not specify them.
-Shared prompts live in `references/agent-prompts/` and are hidden from `@` autocomplete.
+Reviewer agents load `@agent-prompts/reviewer-standards.md` for role and conduct rules. They load
+`@agent-prompts/review-template.md` for report structure and `@agent-prompts/review-criteria.md` for severity and
+verdicts.
+`@agent-prompts/global-coding-style.md` supplies defaults when project and language rules do not specify them.
+Shared prompts live in `references/agent-prompts/`, exposed through one hidden `agent-prompts` directory reference.
+Use file paths such as `@agent-prompts/reviewer-standards.md`. Hidden affects `@` autocomplete only.
 Each agent explicitly reads its needed references. Framework prompts do not inherit another agent's body.
 
 ## Model routing and defaults
@@ -148,10 +150,10 @@ the global Task denial. It cannot implement changes or grant user approval.
 
 | Agent | Framework | Shared language reference |
 |-------|-----------|------|
-| `react-developer` | React / Next.js / Remix | `@typescript-guidance` |
-| `efcore-developer` | Entity Framework Core | `@csharp-guidance` |
-| `doctrine-developer` | Doctrine ORM | `@php-guidance` |
-| `laminas-developer` | Laminas / Mezzio | `@php-guidance` |
+| `react-developer` | React / Next.js / Remix | `@agent-prompts/typescript-guidance.md` |
+| `efcore-developer` | Entity Framework Core | `@agent-prompts/csharp-guidance.md` |
+| `doctrine-developer` | Doctrine ORM | `@agent-prompts/php-guidance.md` |
+| `laminas-developer` | Laminas / Mezzio | `@agent-prompts/php-guidance.md` |
 
 ### Cross-stack specialists
 
