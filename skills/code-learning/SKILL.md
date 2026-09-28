@@ -7,7 +7,7 @@ description: Explain a real code path and its safeguards, with optional question
 
 Use this skill for a bounded explanation, not a substitute for review or tests.
 Work read-only. Use the current source and verified history; do not explain an imagined implementation.
-The lead can request focused evidence from permitted agents. Leaf agents cannot delegate.
+Request focused evidence only when the active agent's permissions allow delegation. Leaf agents cannot delegate.
 
 1. Choose one feature, recent change, failure, or unfamiliar mechanism.
 2. Trace entry point, data transformations, ownership, side effects, and result. Cite actual paths and lines.

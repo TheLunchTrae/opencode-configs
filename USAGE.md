@@ -36,6 +36,11 @@ The planning lead cannot edit files or run shell commands. The review lead canno
 checks with ordinary tool approvals. Checks can produce normal build artifacts; verification does not apply repairs.
 Neither lead can delegate to writing agents. Configured permissions still apply to every task.
 
+Specialists use [canonical response formats](references/agent-prompts/response-formats/catalog.md) for bounded tasks.
+Each response separates task completion, the result, evidence, and unresolved items. A completed task can still report
+failed checks or blocking findings. The selected lead validates the evidence and handles follow-up under its own scope.
+Specialists receive task inputs and constraints without needing the lead's identity or workflow instructions.
+
 ## Run a complete workflow
 
 With `workflow-lead` selected, describe the task once. Include known constraints and observable acceptance examples:

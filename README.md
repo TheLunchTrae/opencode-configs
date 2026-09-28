@@ -89,6 +89,11 @@ Commits, pushes, pull requests, merges, and deployments require authorization fo
 Specialists cover TypeScript, JavaScript, Go, C#, PHP, React, EF Core, Doctrine, Laminas, GitHub Actions, and GitLab CI.
 Other agents handle architecture, security, performance, cleanup, and documentation.
 See [agent definitions](agents/) for individual roles and model choices.
+Specialists return canonical Markdown reports defined in the
+[response format catalog](references/agent-prompts/response-formats/catalog.md).
+The reports share task status, result, evidence, and unresolved items, with sections for each kind of task.
+Delegating agents validate the reports and apply their own workflow rules. Specialists need only their assigned task
+and constraints; they do not depend on the invoking lead's identity.
 
 ## Secret-path protection
 
@@ -121,6 +126,8 @@ See the [reference documentation](https://opencode.ai/docs/references/).
 
 After installing the new files, remove the old root reference copies of `asd-ste100.md`, `global-coding-style.md`,
 `reviewer-standards.md`, and `review-template.md` from `references/`. Preserve unrelated references.
+Also remove `references/agent-prompts/review-template.md` if present. Update custom review prompts to read
+`@agent-prompts/response-formats/review.md`, and copy the complete `response-formats/` directory with the other references.
 The former directory READMEs are also obsolete: `agents/README.markdown`, `commands/README.markdown`,
 `skills/README.md`, and `plugins/README.md`. User documentation is in this README and the [usage guide](USAGE.md).
 

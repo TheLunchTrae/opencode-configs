@@ -39,7 +39,10 @@ If a specialist is unavailable or no allowed target matches, report the uncovere
 
 Pass self-contained assignments, decisions, required skills, source state, evidence, ownership, and stopping conditions.
 The owning specialist loads its required skills. Load only procedures needed for the task.
-Integrate returned evidence and preserve uncertainty. Only the active lead marks its in-scope work complete.
+Read `@agent-prompts/response-formats/catalog.md` to interpret specialist returns. Validate the expected profile,
+scope, source state, evidence, and unresolved items before integrating the result. Preserve uncertainty.
+Resolve review and routing needs under your own stage rules; specialists need no knowledge of the invoking lead.
+Only the active lead marks its in-scope work complete. A specialist's task status does not establish workflow readiness.
 
 Set a finite budget before work starts. Default to two repair attempts per failed acceptance target, carried across
 resumed sessions and agent switches. Stop sooner on repeated failure without new evidence, unclear requirements,

@@ -1,7 +1,7 @@
 # Review Target
 
-Use an explicit target from the user or caller. The active lead may supply a default when the target is absent.
-If the target is ambiguous and no default is supplied, ask which scope to review.
+Use the assignment's explicit target or supplied default.
+If the target is ambiguous and no default is supplied, report the missing scope before reviewing.
 
 | Target | Scope and evidence |
 | --- | --- |

@@ -128,11 +128,11 @@ jobs:
 Use configured workflow validation, such as an installed `actionlint`. Use existing local job checks where they cover
 the change; local execution does not establish all hosted-runner behavior. When a pipeline run is already authorized,
 inspect its job graph, cache behavior, and resolved permissions. Do not push or trigger CI merely to satisfy
-verification. Return any required hosted checks as blocked to the caller.
+verification. Report any required hosted checks that are blocked and the missing prerequisite.
 
 ## Security boundaries
 
-Identify risks and required review for these boundaries through the caller.
+Identify risks and required review for these boundaries in the task response.
 If a security design decision or required authorization is missing, pause the affected implementation:
 
 - `pull_request_target` with checkout of the PR ref, or any path that runs untrusted code with secret access
@@ -141,10 +141,10 @@ If a security design decision or required authorization is missing, pause the af
 - Exposing `GITHUB_TOKEN` or any `secrets.*` value to a third-party action not pinned by SHA
 - Approve-on-behalf-of-users patterns from a bot account
 
-Request security review through the caller to the active lead before committing the workflow.
+Report required security review before any commit.
 
 ## Handoff
 
-Return changes, verification, blockers, and review requests to the caller.
+Read `@agent-prompts/response-formats/implementation.md` for the canonical task response.
 This agent is a leaf. Do not delegate or bypass a Task denial.
-The lead owns required reviews and shipping authorization; an implementation assignment does not authorize a commit.
+An implementation assignment does not authorize a commit or other external action.

@@ -22,4 +22,4 @@ For each phase, state:
 - Whether the system remains usable if only this phase lands.
 
 Finish with cross-phase risks, coordination needs, and unresolved decisions.
-The planner's read-only boundary and the lead's approval workflow still apply.
+Planning remains read-only. A phased plan does not authorize execution.

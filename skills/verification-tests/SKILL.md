@@ -5,9 +5,8 @@ description: Design and generate reusable verification tests for existing reposi
 
 # Verification tests for existing behavior
 
-Use this procedure in the active lead session or within a bounded assignment from the lead.
-Follow the active lead's role and `@agent-prompts/lead-contract.md` for approval, routing, review, and task budgets.
-Specialists apply only their assigned portion; do not create a nested lead or expand a read-only assignment.
+Use this procedure within the assigned scope, authorization, review requirements, and task budget.
+Apply only the assigned portion. This skill does not expand the agent's role, permissions, or a read-only assignment.
 Before writing tests, read `@agent-prompts/implementation-standards.md` and applicable project and language guidance.
 
 Build executable coverage for established behavior. Use `test-first` when implementing a new behavior or fixing a bug.
@@ -32,7 +31,7 @@ Full verification means coverage of the agreed behavior and boundaries, with exp
 Derive expected results from documented requirements, public contracts, approved examples, or independent reference
 data. Use implementation inspection to understand execution paths. When observed behavior is the only evidence, label
 the test as characterization; an observed result does not establish that the behavior is correct.
-Surface suspected existing bugs and consequential ambiguities through the lead. Continue independent, unambiguous
+Report suspected existing bugs and consequential ambiguities as unresolved items. Continue independent, unambiguous
 coverage where possible. Do not silently preserve a suspected defect as an approved requirement or fix application code.
 
 Create a compact coverage map. For each behavior, include:
@@ -50,8 +49,8 @@ If a harness is missing, propose the smallest suitable setup using the project's
 List new dependencies, testability refactors, CI changes, and external environment needs explicitly in the design.
 Use `project-standards` only for deliberate tooling or convention adoption; routine tests do not require it.
 
-Supply the design, target files, commands, and exclusions to the lead's review and approval process before generating
-tests. Honor approval already given for that scope. A design-only request ends with the reviewed design.
+Require a reviewed and approved design covering target files, commands, and exclusions before generating tests.
+Honor approval already given for that scope. A design-only assignment returns the design with any outstanding reviews.
 
 ## Generate maintainable tests
 
@@ -70,7 +69,7 @@ tests. Honor approval already given for that scope. A design-only request ends w
 - Use clear behavior-based test names and focused assertions. Add shared helpers only for genuine repeated setup.
   Keep expected values independently derived and review meaningful snapshots before accepting them.
 - Preserve production behavior. Implement testability refactors, dependency installations, or CI changes only when
-  included in the approved scope. Return missing access or an unavailable environment through the lead.
+  included in the approved scope. Report missing access or an unavailable environment as unresolved items.
 
 ## Execute and assess the baseline
 
@@ -86,10 +85,14 @@ status; none establishes that the intended behavior passed.
 
 Investigate failures to distinguish test or fixture defects, preexisting application defects, and unavailable
 infrastructure. Report correct tests that expose existing defects as failures. Do not weaken assertions, accept new
-snapshots blindly, or alter requirements to make the baseline green. Send the suite, coverage map, and observed
-evidence for the lead's applicable implementation reviews. Resolve findings within the approved scope and budget.
+snapshots blindly, or alter requirements to make the baseline green. Return the suite, coverage map, and observed
+evidence with outstanding review needs. Resolve assigned findings within the approved scope and budget.
 
 ## Hand off and reuse
+
+Use `@agent-prompts/response-formats/plan.md` for design-only task responses and
+`@agent-prompts/response-formats/implementation.md` after test implementation. Use the research profile for inspection
+or check execution without edits. Include the coverage map under the profile's acceptance or coverage section.
 
 Update the existing test documentation with the necessary prerequisites, setup, run commands, cleanup, covered
 contracts, and known limitations. Keep this concise and colocated with established project guidance.

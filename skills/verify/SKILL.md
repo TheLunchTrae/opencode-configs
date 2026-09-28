@@ -5,8 +5,8 @@ description: Run configured checks and report source-linked PASS, FAIL, BLOCKED,
 
 # Verify
 
-Run in the active lead session, or as an explicitly permitted evidence-only assignment.
-Do not spawn a nested lead. Do not edit application code or apply fixes while verifying.
+Use for evidence-only verification within the assigned scope and the active agent's permissions.
+Do not expand the agent's role, edit application code, or apply fixes while verifying.
 Commands can produce normal build artifacts; inspect side effects and retain ordinary permission checks.
 
 1. Inspect project instructions, manifests, and configured scripts. Confirm the installed toolchain when available.
@@ -28,8 +28,8 @@ including affected integration paths, to the suite's actual assertions. Reuse ap
 current source state. A passing baseline supports only the contracts it exercises; it does not establish correctness
 of uncovered behavior or a different environment.
 
-Report coverage gaps and required follow-up separately from command results. Return test-generation work to the lead
-for an implementation assignment with `verification-tests`. Do not generate tests, fix code, or install a harness
+Report coverage gaps and required follow-up separately from command results. Identify test-generation needs for a
+separate implementation assignment with `verification-tests`. Do not generate tests, fix code, or install a harness
 during this evidence-only procedure. Changed requirements need reviewed expectations before the tests can verify them.
 
 ## Results
@@ -45,3 +45,5 @@ An exit code of zero with no expected tests collected is not proof that the acce
 Do not fall back to an invented runner or install packages to hide missing configuration.
 Do not suppress warnings or weaken assertions. Record warnings against the project's policy.
 Report action items for the implementer. A verification report does not authorize edits or remote actions.
+For delegated verification, use `@agent-prompts/response-formats/research.md`; include these check statuses in evidence.
+Task status describes completion of the verification assignment, not whether its checks passed.

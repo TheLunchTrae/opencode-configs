@@ -202,7 +202,8 @@ test("shared prompts use a hidden directory reference", () => {
 })
 
 test("prompt references resolve to files under the configured directory", () => {
-  const promptFiles = readdirSync(new URL("references/agent-prompts/", root)).filter((file) => file.endsWith(".md"))
+  const promptFiles = markdown("references/agent-prompts/")
+    .map((path) => path.slice("references/agent-prompts/".length))
   const referenced = new Set()
   for (const path of documentPaths) {
     const text = read(path)
@@ -223,11 +224,67 @@ test("prompt references resolve to files under the configured directory", () => 
   }
 })
 
+const responseDirectory = "references/agent-prompts/response-formats/"
+const responseProfiles = markdown(responseDirectory).filter((path) => !/\/(common|catalog)\.md$/.test(path))
+const sharedReferences = (path, visited = new Set()) => {
+  if (visited.has(path)) return visited
+  visited.add(path)
+  for (const [, file] of read(path).matchAll(/`@agent-prompts\/([^`\s]+)`/g)) {
+    sharedReferences(`references/agent-prompts/${file}`, visited)
+  }
+  return visited
+}
+
+test("canonical response profiles share the envelope and are discoverable from the catalog", () => {
+  const catalog = read(`${responseDirectory}catalog.md`)
+  const listed = [...catalog.matchAll(/`@agent-prompts\/response-formats\/([^`]+)`/g)]
+    .map(([, file]) => `${responseDirectory}${file}`).filter((path) => !path.endsWith("/common.md"))
+  assert.deepEqual(listed.sort(), [...responseProfiles].sort())
+  for (const path of responseProfiles) {
+    assert.ok(read(path).includes("`@agent-prompts/response-formats/common.md`"), `${path}: missing shared envelope`)
+  }
+  assert.ok(!existsSync(new URL("references/agent-prompts/review-template.md", root)))
+  assert.ok(read("README.md").includes("`references/agent-prompts/review-template.md`"), "missing upgrade removal")
+})
+
+test("every specialist selects one canonical task response profile", () => {
+  for (const [name, agent] of Object.entries(agents)) {
+    if (agent.mode !== "subagent") continue
+    const profiles = [...read(`agents/${name}.md`).matchAll(/`@agent-prompts\/response-formats\/([^`]+)`/g)]
+      .map(([, file]) => `${responseDirectory}${file}`)
+    assert.equal(profiles.length, 1, `${name}: declare exactly one default response profile`)
+    assert.ok(responseProfiles.includes(profiles[0]), `${name}: unknown task response profile`)
+  }
+})
+
+test("every delegating agent can read the canonical response catalog", () => {
+  for (const name of Object.keys(agents)) {
+    if (targets(name).length === 0) continue
+    assert.ok(sharedReferences(`agents/${name}.md`).has(`${responseDirectory}catalog.md`),
+      `${name}: no response catalog in its explicit reference chain`)
+  }
+})
+
+test("specialist references and reusable task skills do not import primary workflow procedures", () => {
+  const primaryProcedures = new Set([
+    "lead-contract", "planning-stage", "implementation-stage", "review-stage", "completion", "spec-interview",
+  ].map((name) => `references/agent-prompts/${name}.md`))
+  const paths = Object.keys(agents).filter((name) => agents[name].mode === "subagent")
+    .map((name) => `agents/${name}.md`)
+  paths.push(...skills.filter((name) => name !== "checkpoint").map((name) => `skills/${name}/SKILL.md`))
+  for (const path of paths) {
+    for (const dependency of sharedReferences(path)) {
+      assert.ok(!primaryProcedures.has(dependency), `${path}: imports primary workflow ${dependency}`)
+    }
+  }
+})
+
 test("runtime prompts do not invoke retired entrypoints", () => {
   for (const path of promptPaths) {
     const text = read(path)
     assert.ok(!text.includes("`lead`"), `${path}: obsolete lead name`)
     assert.ok(!text.includes("agents/lead.md"), `${path}: obsolete lead path`)
+    assert.ok(!text.includes("@agent-prompts/review-template.md"), `${path}: obsolete review response template`)
     for (const name of retiredCommands) {
       assert.ok(!text.includes(`\`/${name}\``), `${path}: obsolete command /${name}`)
     }

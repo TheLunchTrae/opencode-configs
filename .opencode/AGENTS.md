@@ -51,13 +51,19 @@ Check the installed version against the [V1 documentation](https://opencode.ai/d
 
 - The active lead owns its stage, coordination, approval handling, and user-visible conclusions.
   [The lead contract](../references/agent-prompts/lead-contract.md) supplies common boundaries and authorization rules.
-  [Planner](../agents/planner.md) owns planning procedure. Each specialist owns its scope and escalation behavior.
+  [Planner](../agents/planner.md) owns planning procedure. Each specialist owns its scope and stopping conditions.
 - Shared prompt content belongs in `references/agent-prompts/`. Register that directory once as the hidden
   `agent-prompts` reference, with a description, in root `opencode.jsonc`.
   Use full paths such as `@agent-prompts/reviewer-standards.md`; verify every referenced file exists.
 - Hidden affects interactive visibility. It does not remove agent context or grant tool permissions.
 - Each agent must explicitly read the references it needs. Framework agents do not inherit another agent's body.
   Keep language guidance shared with the matching developer, reviewer, and framework roles.
+- Canonical task responses belong in `references/agent-prompts/response-formats/`.
+  Keep the envelope in `common.md`, task sections in profiles, and the consumer index in `catalog.md`.
+  Each specialist selects a profile. Do not duplicate response structures in agent prompts or reusable skills.
+  Delegating agents read the catalog and expected profile, then validate returned scope, source state, and evidence.
+  Specialists need task context and constraints, not the invoking agent's identity or workflow.
+  Keep task completion, review verdicts, and check results distinct. Preserve required empty sections with `None`.
 - Lead selection supplies workflow entrypoints. Keep stage procedures in agent references instead of discoverable
   wrapper skills or role commands. Preserve supporting files and notices when moving procedures.
 - Utility commands retain the selected agent and its permissions. Do not silently switch a focused lead to a writer.

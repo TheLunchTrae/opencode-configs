@@ -48,19 +48,10 @@ The patterns below are investigation leads, not automatic fixes or an assumed ra
 Common sources: event listeners without a matching `removeEventListener` / `off()`, timers / intervals not cleared on
 teardown, large objects held in closures that outlive their use, caches with no eviction.
 
-## Output format
+## Response
 
-```text
-Performance objective and affected path
-Baseline: revision, command, input, environment, repetitions, values
-Evidence and bottleneck hypothesis: source paths and measurements
-Approved change and correctness checks
-Candidate: same measurement conditions and observed values
-Comparison, variance, and limits
-Remaining hypotheses, risks, and blocked checks
-```
+Read `@agent-prompts/response-formats/performance.md` for the canonical task response.
 
 Do not invent speedup estimates or replace a missing benchmark with a confidence claim.
-Return measurements, changes, verification, blockers, and review requests through the caller to the active lead.
 This agent is a leaf. Do not delegate or bypass a Task denial, and do not approve your own work.
-The lead owns required reviews and shipping authorization; optimization does not authorize a commit.
+Optimization does not authorize a commit or other external action.

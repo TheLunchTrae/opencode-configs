@@ -6,7 +6,7 @@ description: Observe a meaningful failing test, implement a bounded behavior cha
 # Test-first change
 
 Use this skill for a behavior fix or feature with an available test seam.
-Follow the active agent's assignment and role boundaries. The lead owns workflow, approvals, and review routing.
+Follow the assigned scope, authorization, task budget, and role boundaries.
 
 1. Inspect the relevant code and configured test command. Record existing failures before changing behavior.
 2. Define the acceptance examples independently of the proposed implementation.
@@ -25,7 +25,8 @@ Do not fabricate logs, reconstruct a failure that was never observed, or use a f
 For a pure refactor, preserve existing outputs with characterization tests before editing. Green-to-green is
 appropriate.
 For a documentation-only change, use relevant structural checks rather than inventing a unit test.
-When execution is unavailable, report `BLOCKED` with the missing dependency or environment. Describe unrun checks as
-plans.
+When execution is unavailable, record the check as `BLOCKED` with the missing dependency or environment.
+Describe unrun checks as plans. Use the common response rules for overall task status.
 Do not install new tooling, access production data, or bypass permissions to produce a green result.
-Respect the remaining task budget supplied by the lead; return blockers when it is exhausted.
+Respect the remaining task budget; return blockers when it is exhausted.
+For task responses, use `@agent-prompts/response-formats/implementation.md` with the observed red/green evidence.
