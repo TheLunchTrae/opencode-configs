@@ -8,10 +8,10 @@ The default agent is `lead`. It coordinates planning, implementation, review, an
 
 | Path | Purpose |
 | --- | --- |
-| [`USAGE.md`](USAGE.md) | Practical task examples and guidance for choosing commands and skills. |
+| [`USAGE.md`](USAGE.md) | Workflow guide, command and skill reference, and practical task examples. |
 | [`AGENTS.md`](AGENTS.md) | Shared instructions for all sessions. |
 | [`agents/`](agents/) | Agent prompts, roles, and model choices. |
-| [`commands/`](commands/) | Slash commands listed below. |
+| [`commands/`](commands/) | Slash command definitions. |
 | [`skills/`](skills/) | Reusable task procedures. |
 | [`references/agent-prompts/`](references/agent-prompts/) | Shared prompt guidance. |
 | [`plugins/`](plugins/) | Local plugins, including secret-path checks. |
@@ -58,86 +58,31 @@ Keep tokens out of version control.
 
 The quota plugin is configured for OpenAI. To opt out, remove its entries from both `opencode.jsonc` and `tui.jsonc`.
 
-## Use
+## Quick start
 
 Restart OpenCode after configuration changes, then run `opencode` from your work project.
 Confirm that `lead` is active and the custom slash commands are available.
 Project settings and explicit session model choices can override global defaults.
 
-See the [usage guide](USAGE.md) for example prompts, task selection, and ways to combine commands and skills.
+Use `/workflow [task]` to start a complete development task:
 
-Use `/workflow <task>` for a complete development task. Substantial implementation includes a plan for your approval.
-Use `/plan` or `/design` for read-only planning, and `/finish` for final checks without shipping the changes.
-Commits, pushes, pull requests, merges, and deployments need authorization for that action.
+```text
+/workflow Add a JSON output option to the existing list command. Preserve the default table output.
+```
+
+The lead inspects the project, asks for consequential missing information, and loads the skills needed for each stage.
+It presents a reviewed plan for approval before substantial implementation. After approval, it coordinates the work,
+applicable documentation, reviews, and verification. You do not need to invoke each stage as a separate command.
+With no task text or established task in the conversation, `/workflow` asks what you want to accomplish.
+
+See the [usage guide](USAGE.md) for the workflow, [command reference](USAGE.md#command-reference),
+[supporting skills](USAGE.md#supporting-skills), and worked examples.
+It also explains [verification baselines](USAGE.md#verification-tests-for-existing-code) for existing behavior.
+Commits, pushes, pull requests, merges, and deployments require authorization for that action.
 
 Specialists cover TypeScript, JavaScript, Go, C#, PHP, React, EF Core, Doctrine, Laminas, GitHub Actions, and GitLab CI.
 Other agents handle architecture, security, performance, cleanup, and documentation.
 See [agent definitions](agents/) for individual roles and model choices.
-
-### Commands
-
-| Command | Purpose |
-| --- | --- |
-| `/workflow <task>` | Plan, implement, review, and verify a development task. |
-| `/spec <feature>` | Clarify requirements before implementation. |
-| `/plan <task>` | Produce a read-only implementation plan. |
-| `/phased-plan <task>` | Plan a phased rollout and rollback when requested or needed. |
-| `/design <problem>` | Compare architecture and design alternatives. |
-| `/verification-tests [scope]` | Design and generate verification tests for established repository behavior. |
-| `/verify` | Run available project checks and report results without fixes. |
-| `/finish` | Collect final verification and reviews without committing or publishing. |
-| `/checkpoint <task-id>` | Save a handoff in the current work project. |
-| `/resume-work <handoff-path>` | Resume from a handoff after checking saved state. |
-| `/explain <feature>` | Explain the current implementation from source. |
-| `/quiz <topic>` | Ask optional questions about the code and wait for answers. |
-| `/review <target>` | Review the requested scope; ask when it is unclear. |
-| `/code-review [target]` | Review code; default to local changes. |
-| `/security-review [target]` | Review security risks; default to local changes. |
-| `/go-review [target]` | Review Go code; default to local changes. |
-| `/refactor-clean <scope>` | Find and remove verified dead code and duplicates. |
-| `/update-docs <scope>` | Update documentation from current code. |
-| `/commit` | Stage and commit authorized changes with secret checks. |
-| `/push` | Push the current branch with authorization. |
-| `/summarize-branch` | Summarize branch commits before a pull request. |
-
-`/resume-work` reads a project handoff. The built-in `/resume` selects an OpenCode session.
-Checkpoints stay in the work project. Learning questions and quiz scores are optional.
-
-### Build a verification baseline
-
-Use `/verification-tests [scope]` to add reusable coverage for an existing module, workflow, or repository.
-For example:
-
-```text
-/verification-tests the CLI's configuration loading and error handling
-/verification-tests the database import workflow
-```
-
-With no scope, the lead inspects the repository and proposes the coverage to build. The workflow reuses existing tests,
-maps required behavior to suitable test levels, and presents the design for review and your approval.
-It then generates tests and necessary fixtures, runs available checks, and documents setup and execution.
-You can request design only. Missing test infrastructure and proposed tooling changes are included in the design.
-
-Baseline tests can pass immediately. Observed legacy behavior is labeled as characterization when its intended
-contract is unconfirmed. Suspected defects and blocked checks are reported; passing tests cover only their stated
-behavior. Test code and execution instructions stay in the work project.
-
-Other agents can use the `verification-tests` skill within their assigned scope. For subsequent changes, `/verify`
-reuses relevant suites and reports coverage gaps. The lead assigns any required test additions through its normal
-implementation workflow. Use `test-first` for a new behavior or bug fix.
-
-See the [verification-test examples](USAGE.md#verification-tests-for-existing-code) for scope selection,
-design-only requests, complex infrastructure, and reuse after later changes.
-
-### Additional skills
-
-Skills provide procedures used by agents and commands. You can also request these by name:
-
-| Skill | Purpose |
-| --- | --- |
-| `test-first` | Verify a failing behavior with a test, then implement and check the fix. |
-| `measured-performance` | Compare performance before and after a change under matching conditions. |
-| `project-standards` | Propose deliberate changes to project conventions, test tooling, or CI. |
 
 ## Secret-path protection
 

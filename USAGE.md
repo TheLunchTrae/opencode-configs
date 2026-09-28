@@ -1,23 +1,124 @@
 # Usage guide
 
-Use this guide to choose and combine this configuration's commands and skills for development work.
-The examples cover common tasks in an existing project and the evidence to expect from each approach.
+Use `/workflow [task]` for guided development work. The lead selects the relevant skills and coordinates each stage.
+This guide explains that workflow, focused commands, and the evidence to expect from common tasks.
 
 ## Contents
 
-- [Choose the development route](#choose-the-development-route): decide how much planning the task needs.
+- [Run a complete workflow](#run-a-complete-workflow): start once, answer questions, and approve the plan.
+- [Command reference](#command-reference): find the available entry points.
+- [Supporting skills](#supporting-skills): understand automatic selection and request a procedure by name.
+- [Choose the development route](#choose-the-development-route): request a focused planning step when useful.
 - [Choose a starting point](#choose-a-starting-point): select a route for your task.
 - [Worked examples](#worked-examples): prompts and expected results for common changes.
 - [Verification tests](#verification-tests-for-existing-code): build and reuse a baseline for existing behavior.
 - [Combine supporting commands](#combine-supporting-commands): understand code, check progress, and finish a change.
 - [Continue a long task](#continue-a-long-task): preserve decisions and evidence between work sessions.
 
+## Run a complete workflow
+
+Describe the task once. Include known constraints and acceptance examples; leave uncertain decisions for discussion.
+
+```text
+/workflow Add background report exports. Help me decide access rules, retries, and retention.
+```
+
+You can also start with `/workflow` alone. The lead uses an established task from the conversation, or asks what you
+want to accomplish if there is none. `[task]` means optional free-form text; do not type the brackets.
+
+The lead coordinates the applicable stages in order:
+
+| Stage | What happens |
+| --- | --- |
+| Inspect and clarify | Read source and prior decisions; use `spec-interview` for consequential missing requirements. |
+| Design and plan | Select planning support; compare consequential alternatives and use `phased-plan` when needed. |
+| Review and approve | Review the design, resolve blocking findings, and request approval for implementation. |
+| Implement | Assign specialists and relevant skills; include affected documentation within the approved scope. |
+| Review and verify | Review changes and use `finish` with `verify`; refresh affected evidence after approved repairs. |
+| Hand off | Report changed behavior, checks, review findings, unresolved gaps, and the next action. |
+
+Answer questions and give approval in the same conversation. You can approve the plan, request changes or alternatives,
+or cancel. Approval covers its stated scope. The lead continues between stages without asking you to run another
+command. Existing decisions and valid approvals carry forward; a material scope change needs renewed review and
+approval. Missing access, exhausted repair budgets, and other blockers can also require a pause.
+
+The route depends on the task. A known bug does not need a requirements interview, and a small correction does not
+need every planning step. The lead selects `test-first` for testable behavior changes, characterization evidence for
+refactors, `verification-tests` for baseline coverage, and `measured-performance` for performance work.
+You do not need to name those skills. Existing tests and sufficient current reviews are reused.
+
+You can state a stopping point in the request, such as "design only" or "implement only phase 1 after approval."
+The lead respects that boundary. Standalone `/plan`, `/design`, and `/verify` retain their read-only scope.
+Verification reports distinguish checks that passed, failed, were blocked, or were skipped.
+Commits, pushes, pull requests, merges, deployments, and other shipping actions need authorization for that action.
+Saving or committing task-process files also needs authorization.
+
+## Command reference
+
+Use the focused commands when you want a particular result without starting a complete development task.
+The placeholders describe task text; replace them with your scope. Square brackets indicate optional text.
+
+| Command | Purpose |
+| --- | --- |
+| `/workflow [task]` | Guide clarification, planning, approved implementation, docs, reviews, and verification. |
+| `/spec <feature>` | Clarify requirements and return a specification without implementation. |
+| `/plan <task>` | Produce a read-only implementation plan. |
+| `/phased-plan <task>` | Plan a phased rollout and rollback when requested or needed. |
+| `/design <problem>` | Compare architecture and design alternatives without implementation. |
+| `/verification-tests [scope]` | Design and generate verification tests for established repository behavior. |
+| `/verify` | Run available project checks and report results without fixes. |
+| `/finish` | Collect final verification and reviews without committing or publishing. |
+| `/checkpoint <task-id>` | Save a handoff in the current work project. |
+| `/resume-work <handoff-path>` | Resume from a handoff after checking saved state. |
+| `/explain <feature>` | Explain the current implementation from source. |
+| `/quiz <topic>` | Ask optional questions about the code and wait for answers. |
+| `/review <target>` | Review the requested scope; ask when it is unclear. |
+| `/code-review [target]` | Review code; default to local changes. |
+| `/security-review [target]` | Review security risks; default to local changes. |
+| `/go-review [target]` | Review Go code; default to local changes. |
+| `/refactor-clean <scope>` | Find and remove verified dead code and duplicates. |
+| `/update-docs <scope>` | Update documentation from current code. |
+| `/commit` | Stage and commit authorized changes with secret checks. |
+| `/push` | Push the current branch with authorization. |
+| `/summarize-branch` | Summarize branch commits before a pull request. |
+
+See the [command definitions](commands/) for routing and prompts.
+`/resume-work` reads a project handoff. The built-in `/resume` selects an OpenCode session.
+Checkpoints stay in the work project. Learning questions and quiz scores are optional.
+
+## Supporting skills
+
+Skills provide procedures for the lead and its specialists. The lead selects them as needed, and the owning agent
+loads each skill for its assignment. You can also request a skill by name to emphasize a particular procedure.
+Naming a skill does not expand the agent's permissions or bypass planning and approval.
+
+| Skill | Purpose |
+| --- | --- |
+| [development-workflow](skills/development-workflow/SKILL.md) | Start the lead's development workflow. |
+| [spec-interview](skills/spec-interview/SKILL.md) | Resolve consequential requirements before planning. |
+| [plan](skills/plan/SKILL.md) | Prepare the implementation plan through the planner. |
+| [phased-plan](skills/phased-plan/SKILL.md) | Add compatibility, phase checks, and rollback analysis when needed. |
+| [test-first](skills/test-first/SKILL.md) | Observe a behavioral test fail, implement the change, and verify it. |
+| [verification-tests](skills/verification-tests/SKILL.md) | Build reusable coverage for established behavior. |
+| [measured-performance](skills/measured-performance/SKILL.md) | Compare performance under matching conditions. |
+| [verify](skills/verify/SKILL.md) | Run configured checks and report source-linked evidence without fixes. |
+| [review](skills/review/SKILL.md) | Apply the selected reviewer's specialty and reporting rules. |
+| [security-review](skills/security-review/SKILL.md) | Review current changes or a specified security scope. |
+| [finish](skills/finish/SKILL.md) | Collect final verification, applicable reviews, and handoff evidence. |
+| [checkpoint](skills/checkpoint/SKILL.md) | Save or resume an authorized task handoff. |
+| [code-learning](skills/code-learning/SKILL.md) | Explain source behavior and optionally ask learning questions. |
+| [project-standards](skills/project-standards/SKILL.md) | Propose deliberate convention, tooling, or CI changes. |
+| [commit](skills/commit/SKILL.md) | Stage, inspect, and commit authorized changes. |
+| [push](skills/push/SKILL.md) | Push an authorized branch. |
+
+`project-standards` is for deliberate tooling changes. Routine tests, verification, and fixes do not need that skill.
+The examples below sometimes name skills to show the intended evidence. Those names are optional with `/workflow`.
+
 ## Choose the development route
 
-Use `/workflow` as the default for a development task with a clear outcome.
-The lead coordinates planning, implementation, specialist reviews, and final verification.
-Start with observable acceptance examples and the behavior that must remain unchanged.
-This gives the planner and reviewers a shared basis for judging the result.
+`/workflow` handles the planning steps needed for the task, including clarification when the outcome is incomplete.
+Provide observable acceptance examples and behavior that must remain unchanged when you know them.
+The lead helps resolve missing decisions before implementation.
 
 Use a separate planning command when you want to settle a specific decision before implementation:
 
@@ -28,9 +129,9 @@ Use a separate planning command when you want to settle a specific decision befo
 | What will implementation change? | `/plan` | File scope, ordered work, preserved behavior, and planned checks. |
 | How can the change roll out safely? | `/phased-plan` | Compatibility, phase checks, and rollback limits. |
 
-Use only the planning steps that resolve an actual uncertainty. A defined feature can go directly to `/workflow`.
+These are optional entry points. You do not need to invoke them in sequence before `/workflow`.
 A complex feature does not automatically need all four commands or a phased rollout.
-When you return to `/workflow`, reference the decisions already made so the lead can reuse them.
+When starting `/workflow` after focused planning, reference the decisions already made so the lead can reuse them.
 Substantial implementation follows a reviewed plan and user approval; trivial corrections use a shorter process.
 
 ## Choose a starting point
@@ -38,13 +139,13 @@ Substantial implementation follows a reviewed plan and user approval; trivial co
 | Task | Start with |
 | --- | --- |
 | [Small feature](#small-feature) | `/workflow` with acceptance examples. |
-| [Complex feature](#complex-feature) | `/spec` for unclear requirements; `/workflow` when requirements are clear. |
-| [Staged migration](#staged-migration) | `/phased-plan` when deployment or compatibility requires stages. |
+| [Complex feature](#complex-feature) | `/workflow`; the lead asks about consequential missing requirements. |
+| [Staged migration](#staged-migration) | `/workflow` with deployment constraints and the phase scope. |
 | [Refactor](#refactor) | `/workflow` with explicit behavior to preserve. |
-| [Unused-code cleanup](#unused-code-cleanup) | `/refactor-clean` with a bounded removal scope. |
-| [Bug fix](#bug-fix) | `/workflow` with a reproduction and `test-first`. |
-| [Performance improvement](#performance-improvement) | `/workflow` with `measured-performance`. |
-| [Verification tests for existing code](#verification-tests-for-existing-code) | `/verification-tests [scope]`. |
+| [Unused-code cleanup](#unused-code-cleanup) | `/workflow`, or `/refactor-clean` for a focused cleanup. |
+| [Bug fix](#bug-fix) | `/workflow` with a reproduction and expected behavior. |
+| [Performance improvement](#performance-improvement) | `/workflow` with the slow operation and relevant workload. |
+| [Verification baseline](#verification-tests-for-existing-code) | `/workflow` or `/verification-tests [scope]`. |
 
 ## Worked examples
 
@@ -68,55 +169,40 @@ If you only want the plan, use `/plan` with the same task description.
 ### Complex feature
 
 Suppose users need to export large reports in the background, but access rules and failure behavior are undecided.
-Start with the questions that affect the design:
+Start the workflow with the known outcome and the decisions you need help making:
 
 ```text
-/spec Add background report exports to the existing application.
+/workflow Add background report exports to the existing application.
 Users should request an export, check its progress, and download the result when ready.
 Help me decide access rules, cancellation, retries, retention, and behavior after a worker restart.
 Inspect the existing report and job infrastructure before asking questions.
+If the infrastructure choice matters, compare extending our current job runner with a separate worker.
+Explain ownership, failure recovery, operational cost, and tradeoffs before recommending a design.
 ```
 
-The expected result is a specification with confirmed decisions, acceptance examples, and unresolved questions.
+The lead uses `spec-interview` for unresolved requirements and architectural assistance for consequential alternatives.
+Answer the questions in the same conversation. The lead carries confirmed decisions into planning and design review,
+then presents the plan for approval. It coordinates implementation, documentation, reviews, and verification afterward.
+You do not need separate `/spec`, `/design`, or `/finish` commands. Complexity alone does not require a staged rollout.
 
-If a consequential design choice remains, compare the options:
-
-```text
-/design For the report-export specification above, compare extending our current job runner with a separate worker.
-Use the actual project infrastructure. Explain ownership, failure recovery, operational cost, and tradeoffs.
-```
-
-When the requirements and approach are settled, request implementation:
-
-```text
-/workflow Implement the report-export feature from the specification and chosen design above.
-Reuse the confirmed decisions. Plan observable acceptance cases and identify affected interfaces and checks.
-```
-
-Review and approve the implementation plan. The lead selects the relevant developers and reviewers.
-Use `/workflow` directly if you already know the requirements; it can request the planning support the task needs.
-Complexity alone does not require a staged rollout.
+Use `/spec` or `/design` separately when you want to end with those results before deciding whether to implement.
 
 ### Staged migration
 
-Use a phased plan when deployment must preserve compatibility across independently released components.
+Describe deployment constraints when a migration must preserve compatibility across independently released components.
 For example, an API field may need to coexist with its replacement while consumers upgrade.
 
 ```text
-/phased-plan Replace the existing report status field with a structured status object.
+/workflow Replace the existing report status field with a structured status object.
 The API and its consumers deploy independently. Keep existing consumers working during the transition.
 Include compatibility checks, removal criteria, and rollback limits for each phase.
+Plan the full migration, but implement only phase 1 after I approve it. Leave later phases out of scope.
 ```
 
-The expected result is a plan with independently usable phases and clear conditions for advancing or rolling back.
-The command does not implement the migration.
-
-To implement only the first phase after its plan is reviewed and approved:
-
-```text
-/workflow Implement only phase 1 of the approved report-status migration plan above.
-Keep later phases out of scope. Reuse the phase acceptance criteria and rollback constraints.
-```
+The lead has the planner load `phased-plan`. Expect independently usable phases with conditions for advancing or
+rolling back. Review and approve the first phase in the same conversation. The lead implements, reviews, and verifies
+only that phase, then hands off its results. Later phases require authorization for their scope.
+Use `/phased-plan` separately when you want the rollout plan without implementation.
 
 ### Refactor
 
@@ -136,8 +222,9 @@ The expected result is clearer structure with evidence that the agreed behavior 
 
 ### Unused-code cleanup
 
-Use `/refactor-clean` for unused code, unused dependencies, or duplicate logic within a defined scope.
-This command can edit files, so supply the removal boundaries in the request.
+Use `/workflow` to coordinate cleanup through final verification. Use `/refactor-clean` for a focused cleanup of
+unused code, unused dependencies, or duplicate logic within a defined scope.
+The focused command can edit files, so supply the removal boundaries in the request.
 
 ```text
 /refactor-clean Remove verified unused internal helpers in the report module.
@@ -151,11 +238,13 @@ Public API removals require explicit authorization covering the removal.
 
 For a read-only assessment before authorizing cleanup, use `/plan` to request a cleanup plan.
 Use `/finish` after a standalone cleanup to collect the final checks and applicable reviews.
+Starting the same task with `/workflow` includes those final steps automatically.
 
 ### Bug fix
 
 Provide the failure, the expected result, and any known reproduction.
-Request `test-first` when the existing test setup can exercise the behavior.
+The lead selects `test-first` when the existing test setup can exercise the behavior.
+You can name the skill explicitly, as in this example, but the workflow does not require it.
 
 ```text
 /workflow Fix duplicate records when fetching the second page of report results.
@@ -171,6 +260,7 @@ If execution is blocked, the agent should report the missing requirement and whi
 ### Performance improvement
 
 Describe the slow operation and the workload that matters. Request a comparable baseline before accepting a speed claim.
+The lead selects `measured-performance` for this route; naming the skill in the prompt is optional.
 
 ```text
 /workflow Investigate and improve report generation for a large local fixture dataset.
@@ -185,6 +275,7 @@ If the agent cannot run a safe measurement, the useful result is a measurement p
 ### Verification tests for existing code
 
 Use `/verification-tests [scope]` to design and generate reusable tests for established repository behavior.
+Describing the same baseline task to `/workflow` selects this procedure automatically.
 Generated tests and run instructions belong in the repository being verified.
 The [command](commands/verification-tests.md) uses the [verification-tests skill](skills/verification-tests/SKILL.md).
 It follows the lead's planning, approval, implementation, and review process.
@@ -327,7 +418,8 @@ Specialists can use the skill within their assigned scope. Naming it does not ex
 
 ### Investigate before planning a change
 
-Use `/explain` before `/workflow` when you need to understand an unfamiliar code path or a safeguard you plan to change.
+The workflow inspects the relevant source as part of the task. Use `/explain` separately when you want to understand
+an unfamiliar code path or a safeguard before deciding to change it.
 Use its source findings to identify behavior that the implementation must preserve.
 
 ```text
@@ -364,7 +456,8 @@ The normal `/workflow` process already arranges applicable reviews. Reuse curren
 
 ### Finish the development task
 
-Use `/update-docs` once the behavior is settled and the change affects user instructions or an interface contract:
+`/workflow` coordinates documentation updates within the approved scope before its final checks.
+Use `/update-docs` separately for documentation changes outside that workflow:
 
 ```text
 /update-docs Update the report-export guide to match the implemented access rules, retries, and failure behavior.
