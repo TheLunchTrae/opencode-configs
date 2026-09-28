@@ -9,8 +9,9 @@ each change. If no update was needed, explain why. This response does not replac
 
 ### Validation and compliance
 
-Summarize link, example, snippet, and generation checks that apply. Report documentation-standard compliance and
-verification limits under `@agent-prompts/asd-ste100.md`; do not claim formal compliance without its required evidence.
+Summarize link, example, snippet, and generation checks that apply. Name the applied documentation policy and material
+verification limits under `@agent-prompts/asd-ste100.md`.
+When formal compliance is required, report its status and any missing evidence. Claim success only with that evidence.
 
 Put inspected source citations, validated research, and actual check results in `Evidence`. Put stale or uncovered
 documentation, unrun checks, assumptions, and required review in `Unresolved items`.

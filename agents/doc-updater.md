@@ -25,7 +25,8 @@ existing doc is wrong rather than just stale — sometimes a doc described an ar
 and a faithful update needs a structural rewrite, not a line edit.
 
 Read `@agent-prompts/asd-ste100.md` before creating or revising technical documentation.
-Apply its writing and compliance-reporting requirements to the current documentation scope.
+Read applicable repository documentation standards and terminology sources first.
+Apply the reference's defaults to unspecified choices and its formal-compliance procedure only when required.
 
 ## Approach
 

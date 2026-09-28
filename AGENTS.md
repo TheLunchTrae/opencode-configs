@@ -32,7 +32,8 @@
 
 Read `@agent-prompts/asd-ste100.md` before you create or revise technical documentation, including code comments and
 docstrings.
-Apply its authority, preservation, and verification requirements to documentation in the current task.
+Follow applicable repository documentation standards first. Use the reference's defaults for unspecified choices.
+Read repository terminology sources when present. Apply the reference's preservation and verification requirements.
 
 ## User Overrides
 

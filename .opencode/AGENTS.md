@@ -132,8 +132,8 @@ npx --no-install tsc --project tsconfig.json
 
 ## Markdown and documentation
 
-Apply `@agent-prompts/asd-ste100.md` to technical documentation. If the official writing rules and dictionary are
-unavailable, report that formal compliance could not be verified.
+Read `@agent-prompts/asd-ste100.md` for technical documentation. Repository documentation rules take precedence.
+Use its practical defaults for unspecified choices. Formal-compliance reporting applies when explicitly required.
 Preserve code, identifiers, commands, paths, URLs, literal values, and quotations.
 
 - Use LF line endings and GitLab Flavored Markdown.
