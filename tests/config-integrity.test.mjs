@@ -7,9 +7,11 @@ const read = (path) => readFileSync(new URL(path, root), "utf8")
 const config = JSON.parse(read("opencode.jsonc"))
 const skills = [
   "development-workflow", "spec-interview", "test-first", "measured-performance",
-  "checkpoint", "finish", "code-learning", "plan", "verify",
+  "checkpoint", "finish", "code-learning", "plan", "verify", "verification-tests",
 ]
-const leadCommands = ["workflow", "spec", "checkpoint", "resume-work", "finish", "explain", "quiz", "verify"]
+const leadCommands = [
+  "workflow", "spec", "checkpoint", "resume-work", "finish", "explain", "quiz", "verify", "verification-tests",
+]
 
 // This checks our flat command/skill metadata, not arbitrary YAML or runtime loading.
 const metadata = (path) => {

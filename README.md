@@ -83,6 +83,7 @@ See [agent definitions](agents/) for individual roles and model choices.
 | `/plan <task>` | Produce a read-only implementation plan. |
 | `/phased-plan <task>` | Plan a phased rollout and rollback when requested or needed. |
 | `/design <problem>` | Compare architecture and design alternatives. |
+| `/verification-tests [scope]` | Design and generate verification tests for established repository behavior. |
 | `/verify` | Run available project checks and report results without fixes. |
 | `/finish` | Collect final verification and reviews without committing or publishing. |
 | `/checkpoint <task-id>` | Save a handoff in the current work project. |
@@ -101,6 +102,32 @@ See [agent definitions](agents/) for individual roles and model choices.
 
 `/resume-work` reads a project handoff. The built-in `/resume` selects an OpenCode session.
 Checkpoints stay in the work project. Learning questions and quiz scores are optional.
+
+### Build a verification baseline
+
+Use `/verification-tests [scope]` to add reusable coverage for an existing module, workflow, or repository.
+For example:
+
+```text
+/verification-tests the CLI's configuration loading and error handling
+/verification-tests the database import workflow
+```
+
+With no scope, the lead inspects the repository and proposes the coverage to build. The workflow reuses existing tests,
+maps required behavior to suitable test levels, and presents the design for review and your approval.
+It then generates tests and necessary fixtures, runs available checks, and documents setup and execution.
+You can request design only. Missing test infrastructure and proposed tooling changes are included in the design.
+
+Baseline tests can pass immediately. Observed legacy behavior is labeled as characterization when its intended
+contract is unconfirmed. Suspected defects and blocked checks are reported; passing tests cover only their stated
+behavior. Test code and execution instructions stay in the work project.
+
+Other agents can use the `verification-tests` skill within their assigned scope. For subsequent changes, `/verify`
+reuses relevant suites and reports coverage gaps. The lead assigns any required test additions through its normal
+implementation workflow. Use `test-first` for a new behavior or bug fix.
+
+See the [verification-test examples](USAGE.md#verification-tests-for-existing-code) for scope selection,
+design-only requests, complex infrastructure, and reuse after later changes.
 
 ### Additional skills
 

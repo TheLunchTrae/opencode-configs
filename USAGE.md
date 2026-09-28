@@ -8,6 +8,7 @@ The examples cover common tasks in an existing project and the evidence to expec
 - [Choose the development route](#choose-the-development-route): decide how much planning the task needs.
 - [Choose a starting point](#choose-a-starting-point): select a route for your task.
 - [Worked examples](#worked-examples): prompts and expected results for common changes.
+- [Verification tests](#verification-tests-for-existing-code): build and reuse a baseline for existing behavior.
 - [Combine supporting commands](#combine-supporting-commands): understand code, check progress, and finish a change.
 - [Continue a long task](#continue-a-long-task): preserve decisions and evidence between work sessions.
 
@@ -43,7 +44,7 @@ Substantial implementation follows a reviewed plan and user approval; trivial co
 | [Unused-code cleanup](#unused-code-cleanup) | `/refactor-clean` with a bounded removal scope. |
 | [Bug fix](#bug-fix) | `/workflow` with a reproduction and `test-first`. |
 | [Performance improvement](#performance-improvement) | `/workflow` with `measured-performance`. |
-| [Verification tests for existing code](#verification-tests-for-existing-code) | `/workflow` scoped to tests. |
+| [Verification tests for existing code](#verification-tests-for-existing-code) | `/verification-tests [scope]`. |
 
 ## Worked examples
 
@@ -183,35 +184,144 @@ If the agent cannot run a safe measurement, the useful result is a measurement p
 
 ### Verification tests for existing code
 
-Use a separate task to establish a reusable test baseline for an existing feature.
-Ask the agent to discover the public behavior, fixtures, setup, and test boundaries before proposing cases.
+Use `/verification-tests [scope]` to design and generate reusable tests for established repository behavior.
+Generated tests and run instructions belong in the repository being verified.
+The [command](commands/verification-tests.md) uses the [verification-tests skill](skills/verification-tests/SKILL.md).
+It follows the lead's planning, approval, implementation, and review process.
+
+#### When to use it
+
+Use this command when an existing feature has little coverage, a workflow is difficult to test, or a refactor needs
+a baseline. The suite can include unit, integration, contract, CLI, API, or end-to-end tests.
+The agent selects test types from the behavior and boundaries you need to verify.
+
+| Your goal | Use |
+| --- | --- |
+| Add reusable coverage for established behavior. | `/verification-tests [scope]`. |
+| Run existing checks against the current source. | `/verify`. |
+| Implement a new behavior or fix a defect. | `/workflow` with `test-first` when a test seam is available. |
+
+Baseline tests can pass on their first run. They do not need an artificial failure before they can be useful.
+Characterization tests record observed behavior when its intended contract is unconfirmed.
+Review surprising behavior before accepting it as a requirement; an existing result can be defective.
+
+#### Choose a scope
+
+`[scope]` means optional free-form task text. Replace the placeholder with a capability, module, workflow, or repository
+scope. You can include requirements and constraints in the same message; special flags are unnecessary.
+Provide known interfaces, examples, test commands, environment limits, and behavior that must remain unchanged.
+
+For example, suppose a CLI has a documented configuration contract:
 
 ```text
-/workflow Design and add verification tests for the existing report-export feature.
-This task establishes a baseline for future changes. Preserve application behavior.
-Inspect current requirements, interfaces, tests, and test infrastructure before proposing cases.
-Cover the main user flow, important failures, and observable side effects with the appropriate test types.
-Keep expected results independent of the implementation. Flag ambiguous or apparently defective behavior for review.
-Use safe local fixtures. Explain how to run the checks and what they do not cover.
+/verification-tests The existing CLI configuration loading and error handling.
+Use the documented configuration precedence and validation rules as the expected behavior.
+Cover valid files, missing optional files, malformed input, exit codes, and user-visible error output.
+Reuse the current test runner and exercise the real CLI where process behavior matters.
+Preserve application behavior. Include isolated fixtures, cleanup, and repeatable run instructions.
 ```
 
-Review the proposed cases before approving implementation.
-Unit, integration, or end-to-end tests may fit different cases.
-The expected result is a runnable baseline with setup instructions, meaningful assertions, and explicit coverage limits.
-Tests for unchanged valid behavior can pass from the start. A separate bug fix can require red-to-green evidence.
+The expected result is a reviewed coverage design followed by tests and execution instructions for that scope.
+Existing tests should be reused where their assertions already establish the required behavior.
 
-Future changes can reuse these tests when they cover the changed behavior.
-New behavior still needs its own acceptance cases. `/verify` runs available checks; it does not generate these tests.
-
-Use `project-standards` only when you deliberately want to adopt or change test tooling, conventions, or CI.
-For a project without a suitable test setup, first request a tooling proposal:
+If you do not know where to start, omit the scope:
 
 ```text
-Use the project-standards skill to propose a test setup for this project.
-Inspect the current stack and conventions first. Explain the target files, dependencies, and commands for approval.
+/verification-tests
 ```
 
-Ordinary test authoring can use the current tools without a standards-adoption task.
+The lead inspects the repository and proposes coverage before generating tests.
+For an explicit repository-wide request, ask it to map important workflows and order work by risk.
+Review the proposed coverage and exclusions. A repository-wide request does not guarantee that every path is tested.
+
+#### Request a design before generating tests
+
+Use a design-only request when the scope, test boundaries, or environment costs need review:
+
+```text
+/verification-tests Design only: a verification suite for the existing report-export workflow.
+Inspect requirements, public interfaces, current tests, and available infrastructure.
+Map expected results to existing coverage and proposed cases. Identify fixtures, setup, cleanup, and run commands.
+Explain assumptions, missing infrastructure, and behavior that will remain unverified. Do not generate files.
+```
+
+This request ends with the reviewed design. To continue in the same lead session, approve a concrete scope:
+
+```text
+Implement the verification-test design above for the report-export workflow.
+The listed tests, fixtures, and run documentation are approved. Preserve application behavior.
+```
+
+For a normal generation request, the lead presents the design through its usual approval process.
+Review the expected behavior, target files, prerequisites, commands, and exclusions before approving.
+Approval already given for that scope remains valid.
+
+#### Handle complex or missing infrastructure
+
+Describe the real boundary you need to test. For example, database behavior can require persisted-state assertions
+and transaction checks that a mocked database cannot establish:
+
+```text
+/verification-tests The existing database import workflow.
+Use the documented import and transaction contracts. Cover valid imports, invalid records, duplicates, and rollback.
+Check persisted state through the real database boundary using synthetic data and isolated test resources.
+Inspect our current fixtures and setup first. Include bounded waits, cleanup after failures, and run instructions.
+If the database environment is unavailable, identify the blocked cases and the setup required to execute them.
+```
+
+If no suitable harness exists, the design proposes the smallest setup for the project's language and tools.
+New dependencies, CI changes, and testability refactors must be listed in the approved scope.
+Use `project-standards` when you deliberately want broader changes to test tooling or conventions.
+Routine test authoring does not need a separate standards task.
+
+The agent can still design coverage and generate approved tests when execution is unavailable.
+The result must distinguish executable checks that ran from tests that remain unverified.
+A mocked dependency does not prove that the real integration works.
+
+#### Read the result
+
+Expect these outputs for the agreed scope:
+
+- A coverage map with expected behavior, its source, reused tests, new cases, and remaining gaps.
+- Test files, necessary fixtures, and helpers that follow the repository's conventions.
+- Setup, configuration, run commands, and cleanup instructions in the project's test documentation.
+- Actual execution results tied to the source state, with failures and environment limits explained.
+
+Requirements and public contracts should determine expected values independently of the implementation.
+When a correct test exposes an existing defect, the result remains a failure. Request a separate fix when needed.
+Missing services, skipped checks, and zero expected tests collected do not establish a passing baseline.
+Read the [verification result statuses](skills/verify/SKILL.md#results) before treating a suite as ready for reuse.
+
+#### Reuse the suite for later changes
+
+The generated tests use the project's test tools. Run the documented commands directly, through existing CI,
+or ask `/verify` to use the suite for current changes:
+
+```text
+/verify Check the current CLI configuration changes against the existing verification suite.
+Map changed behavior and affected integrations to the actual assertions. Run the relevant checks on this source state.
+Report uncovered behavior, stale expectations, and unavailable integration checks separately from test results.
+```
+
+A passing run can serve as verification for changed functionality when the assertions cover its intended behavior
+and affected boundaries. An earlier passing run is not evidence for a later source state or different environment.
+
+`/verify` runs checks and reports gaps.
+Ask the lead for a test-generation task when existing behavior needs more coverage.
+Use `test-first` as part of implementation when adding new behavior or fixing a bug.
+Change test expectations only for a reviewed requirement change; a changed implementation alone is insufficient.
+
+#### Request the skill directly
+
+You can also name the skill in an ordinary message to the lead:
+
+```text
+Use the verification-tests skill to establish a baseline for the existing report-export workflow.
+Reuse our current tests and tooling. Propose coverage for missing behavior and document how to rerun the suite.
+```
+
+The slash command is a convenient entry point to the same procedure.
+Specialists can use the skill within their assigned scope. Naming it does not expand their permissions or assignment.
 
 ## Combine supporting commands
 

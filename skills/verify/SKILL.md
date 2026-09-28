@@ -21,6 +21,19 @@ Commands can produce normal build artifacts; inspect side effects and retain ord
    behavior.
 8. Invalidate affected results when source, dependencies, generated inputs, or configuration change.
 
+## Reuse verification suites
+
+Inspect existing verification tests and their setup instructions. Map the requested scope or changed behavior,
+including affected integration paths, to the suite's actual assertions. Reuse applicable coverage and run it on the
+current source state. A passing baseline supports only the contracts it exercises; it does not establish correctness
+of uncovered behavior or a different environment.
+
+Report coverage gaps and required follow-up separately from command results. Return test-generation work to the lead
+for an implementation assignment with `verification-tests`. Do not generate tests, fix code, or install a harness
+during this evidence-only procedure. Changed requirements need reviewed expectations before the tests can verify them.
+
+## Results
+
 | Status | Meaning |
 | --- | --- |
 | PASS | The check ran on the stated source state and satisfied its actual acceptance conditions. |
