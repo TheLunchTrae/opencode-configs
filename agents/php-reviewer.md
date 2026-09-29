@@ -3,7 +3,7 @@ description: "Senior PHP code reviewer. Reviews for security vulnerabilities, mo
 mode: subagent
 model: openai/gpt-6-astra
 variant: high
-color: "#B39DDB"
+color: "#EEF78A"
 permission:
   edit: deny
   task: deny

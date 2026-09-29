@@ -3,7 +3,7 @@ description: "Entity Framework Core developer for entity design, migrations, DbC
 mode: subagent
 model: openai/gpt-6-astra
 variant: high
-color: "#512BD4"
+color: "#8AF793"
 permission:
   edit: allow
 ---

@@ -3,7 +3,7 @@ description: 'Laminas (formerly Zend Framework) developer for Laminas MVC, Mezzi
 mode: subagent
 model: openai/gpt-5.6-sol
 variant: medium
-color: "#0077BB"
+color: "#8AF793"
 permission:
   edit: allow
 ---

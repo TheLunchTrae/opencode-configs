@@ -3,6 +3,7 @@ description: "Behavior-preserving simplification of recently-modified code. Use 
 mode: subagent
 model: openai/gpt-5.6-sol
 variant: medium
+color: "#F45AE7"
 permission:
   edit: allow
 ---

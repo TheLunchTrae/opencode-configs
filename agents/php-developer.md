@@ -3,7 +3,7 @@ description: "Senior PHP developer for implementing features, fixing bugs, and m
 mode: subagent
 model: openai/gpt-5.6-sol
 variant: medium
-color: "#777BB4"
+color: "#8AF793"
 permission:
   edit: allow
 ---

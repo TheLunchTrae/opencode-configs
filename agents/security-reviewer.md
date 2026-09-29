@@ -3,6 +3,7 @@ description: "Security vulnerability detection specialist. Use after writing cod
 mode: subagent
 model: openai/gpt-6-astra
 variant: high
+color: "#F78AB7"
 permission:
   edit: deny
   task:

@@ -31,7 +31,7 @@ permission:
     php-reviewer: allow
     general: allow
     explore: allow
-color: "#E9C46A"
+color: "#8AF793"
 ---
 
 Execute an existing reviewed, approved plan. Integrate implementation, documentation, independent

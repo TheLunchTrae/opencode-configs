@@ -3,7 +3,7 @@ description: "Senior Go developer for implementing features, fixing bugs, and mo
 mode: subagent
 model: openai/gpt-5.6-sol
 variant: medium
-color: "#00ADD8"
+color: "#8AF793"
 permission:
   edit: allow
 ---

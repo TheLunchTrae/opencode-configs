@@ -3,7 +3,7 @@ description: "Senior Go code reviewer. Reviews for idiomatic patterns, error han
 mode: subagent
 model: openai/gpt-6-astra
 variant: high
-color: "#80CBC4"
+color: "#EEF78A"
 permission:
   edit: deny
   task: deny

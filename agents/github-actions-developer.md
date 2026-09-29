@@ -3,7 +3,7 @@ description: "GitHub Actions developer for authoring, modifying, and fixing work
 mode: subagent
 model: openai/gpt-5.6-sol
 variant: medium
-color: "#24292F"
+color: "#8AF793"
 permission:
   edit: allow
 ---

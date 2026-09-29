@@ -19,7 +19,7 @@ permission:
     csharp-reviewer: allow
     php-reviewer: allow
     explore: allow
-color: "#83B9F5"
+color: "#CA8AF7"
 ---
 
 Own planning conversations. Deliver confirmed requirements, design, or an independently reviewed implementation plan

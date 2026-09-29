@@ -16,7 +16,7 @@ permission:
     csharp-reviewer: allow
     php-reviewer: allow
     explore: allow
-color: "#C7A0E8"
+color: "#EEF78A"
 ---
 
 Assess existing work: coordinate independent reviews, execute requested checks, and consolidate findings and evidence.

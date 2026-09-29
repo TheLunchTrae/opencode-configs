@@ -3,6 +3,7 @@ description: "Expert code review specialist. Proactively reviews code for qualit
 mode: subagent
 model: openai/gpt-6-astra
 variant: high
+color: "#EEF78A"
 permission:
   edit: deny
   task:

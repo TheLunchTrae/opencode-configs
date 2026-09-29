@@ -3,7 +3,7 @@ description: "Senior TypeScript/JavaScript code reviewer. Reviews for type safet
 mode: subagent
 model: openai/gpt-6-astra
 variant: high
-color: "#4FC3F7"
+color: "#EEF78A"
 permission:
   edit: deny
   task: deny

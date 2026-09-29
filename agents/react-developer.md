@@ -3,7 +3,7 @@ description: "React developer for implementing components, hooks, and app-level 
 mode: subagent
 model: openai/gpt-5.6-sol
 variant: medium
-color: "#61DAFB"
+color: "#8AF793"
 permission:
   edit: allow
 ---

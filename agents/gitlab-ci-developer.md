@@ -3,7 +3,7 @@ description: "GitLab CI developer for authoring, modifying, and fixing .gitlab-c
 mode: subagent
 model: openai/gpt-5.6-sol
 variant: medium
-color: "#FC6D26"
+color: "#8AF793"
 permission:
   edit: allow
 ---

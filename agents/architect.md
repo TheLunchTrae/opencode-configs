@@ -3,6 +3,7 @@ description: "Software architecture specialist for system design, scalability, a
 mode: subagent
 model: openai/gpt-6-astra
 variant: high
+color: "#CA8AF7"
 permission:
   edit: deny
   bash: deny

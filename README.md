@@ -17,7 +17,8 @@ Select a focused lead when you want only planning, approved implementation, or a
 | [`references/agent-prompts/`](references/agent-prompts/) | Shared prompt guidance. |
 | [`plugins/`](plugins/) | Local plugins, including secret-path checks. |
 | [`opencode.jsonc`](opencode.jsonc) | Global models, permissions, MCP servers, shell, and plugin settings. |
-| [`tui.jsonc`](tui.jsonc) | TUI plugin settings. |
+| [`tui.jsonc`](tui.jsonc) | TUI theme selection and plugin settings. |
+| [`themes/`](themes/) | Custom TUI themes. |
 | [`opencode-quota/quota-toast.jsonc`](opencode-quota/quota-toast.jsonc) | Quota display preferences. |
 
 ## Setup
@@ -26,7 +27,7 @@ Select a focused lead when you want only planning, approved implementation, or a
 2. Authenticate your provider through `/connect` when supported.
 3. Back up your existing global configuration directory.
 4. Obtain a checkout or download of this repository.
-5. Copy `README.md`, `USAGE.md`, `AGENTS.md`, `opencode.jsonc`, `tui.jsonc`, `agents/`, `commands/`, `skills/`,
+5. Copy `README.md`, `USAGE.md`, `AGENTS.md`, `opencode.jsonc`, `tui.jsonc`, `themes/`, `agents/`, `commands/`, `skills/`,
    `references/`, `plugins/`, and `opencode-quota/` into the global configuration directory.
    Preserve the layout and merge your existing settings.
 
@@ -60,6 +61,12 @@ The supplied GitHub entry has OAuth disabled; configure a supported authenticati
 Keep tokens out of version control.
 
 The quota plugin is configured for OpenAI. To opt out, remove its entries from both `opencode.jsonc` and `tui.jsonc`.
+
+The selected `pink` theme uses pink accents, pastel syntax and status colors, and neutral dark backgrounds.
+It keeps the same dark appearance in both terminal modes. Install `themes/` with `tui.jsonc` so OpenCode can find it.
+To select another theme, change `theme` in `tui.jsonc`. See the [theme documentation](https://opencode.ai/docs/themes/).
+Agent colors identify their functions. Custom-agent colors are in `agents/*.md`; built-in overrides are in
+`opencode.jsonc`. See [agent colors](https://opencode.ai/docs/agents/#color).
 
 Global file edits require approval unless the selected agent explicitly allows or denies them.
 Explore explicitly denies edits. The four primary leads can use the Question tool for structured clarification.
@@ -136,7 +143,8 @@ Check an approval prompt's scope before saving an approval.
 ## Upgrade an existing installation
 
 Back up the configuration first. Update `README.md`, `USAGE.md`, `AGENTS.md`, `agents/`, `commands/`, `skills/`,
-`references/agent-prompts/`, `plugins/`, and `opencode.jsonc` together, preserving local overrides and license notices.
+`references/agent-prompts/`, `plugins/`, `opencode.jsonc`, `tui.jsonc`, and `themes/` together,
+preserving local overrides and license notices.
 
 Shared prompts now use the hidden `agent-prompts` directory reference.
 Update custom prompts to use paths such as `@agent-prompts/reviewer-standards.md`.

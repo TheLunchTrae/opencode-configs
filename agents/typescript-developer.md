@@ -3,7 +3,7 @@ description: "Senior TypeScript/JavaScript developer for implementing features, 
 mode: subagent
 model: openai/gpt-5.6-sol
 variant: medium
-color: "#4FC3F7"
+color: "#8AF793"
 permission:
   edit: allow
 ---
