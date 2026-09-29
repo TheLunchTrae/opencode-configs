@@ -1,8 +1,7 @@
 ---
 description: "Senior Go code reviewer. Reviews for idiomatic patterns, error handling, concurrency safety, and security. Use for all Go code changes."
 mode: subagent
-model: openai/gpt-6-astra
-variant: high
+agent_group: reviewers
 color: "#EEF78A"
 permission:
   edit: deny

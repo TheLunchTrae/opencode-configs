@@ -1,8 +1,7 @@
 ---
 description: "Expert planning specialist for complex features and refactoring. Use when users request feature implementation, architectural changes, or complex refactoring. Automatically activated for planning tasks."
 mode: subagent
-model: openai/gpt-6-astra
-variant: high
+agent_group: planning
 color: "#CA8AF7"
 permission:
   edit: deny

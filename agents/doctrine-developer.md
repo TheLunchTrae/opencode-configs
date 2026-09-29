@@ -1,6 +1,7 @@
 ---
 description: "Doctrine ORM / DBAL developer for entity design, associations, DQL / QueryBuilder, repositories, and migrations. Writes type-safe entities with PHP 8 attribute mapping, explicit fetch modes, projection-aware queries, and DoctrineMigrations-based schema changes. Layers on top of php-developer for language-level concerns. Use for any Doctrine entity, repository, DQL, or migration task."
 mode: subagent
+agent_group: developers
 model: openai/gpt-6-astra
 variant: high
 color: "#8AF793"

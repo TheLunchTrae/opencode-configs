@@ -1,8 +1,7 @@
 ---
 description: "Software architecture specialist for system design, scalability, and technical decision-making. Use when planning new features, refactoring large systems, or making architectural decisions."
 mode: subagent
-model: openai/gpt-6-astra
-variant: high
+agent_group: planning
 color: "#CA8AF7"
 permission:
   edit: deny

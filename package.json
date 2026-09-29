@@ -1,0 +1,22 @@
+{
+  "name": "opencode-configs",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --experimental-strip-types --test tests/*.test.mjs tests/*.test.ts",
+    "test:native": "node --experimental-strip-types --test tests/agent-groups.native.ts",
+    "typecheck": "tsc --project tsconfig.json"
+  },
+  "dependencies": {
+    "@opencode-ai/plugin": "1.18.29",
+    "jsonc-parser": "3.3.1",
+    "yaml": "2.9.1"
+  },
+  "devDependencies": {
+    "@opentui/core": "0.4.5",
+    "@opentui/keymap": "0.4.5",
+    "@opentui/solid": "0.4.5",
+    "@types/node": "24.10.1",
+    "typescript": "5.9.3"
+  }
+}

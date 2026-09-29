@@ -1,9 +1,11 @@
 # Default
 node_modules
-package.json
-package-lock.json
-bun.lock
-.gitignore
+/bun.lock
+.agent-groups.lock
+.agent-groups-*.tmp
+.opencode/package.json
+.opencode/package-lock.json
+.opencode/bun.lock
 
 # IDE
 .idea

@@ -1,8 +1,7 @@
 ---
 description: "Senior TypeScript/JavaScript code reviewer. Reviews for type safety, async correctness, security vulnerabilities, and idiomatic patterns. Use for all TypeScript and JavaScript code changes."
 mode: subagent
-model: openai/gpt-6-astra
-variant: high
+agent_group: reviewers
 color: "#EEF78A"
 permission:
   edit: deny

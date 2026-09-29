@@ -1,8 +1,7 @@
 ---
 description: "Senior Go developer for implementing features, fixing bugs, and modifying .go code. Writes idiomatic Go with explicit error handling, proper context propagation, and safe goroutine/channel patterns. Use for any Go implementation task."
 mode: subagent
-model: openai/gpt-5.6-sol
-variant: medium
+agent_group: developers
 color: "#8AF793"
 permission:
   edit: allow

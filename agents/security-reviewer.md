@@ -1,8 +1,7 @@
 ---
 description: "Security vulnerability detection specialist. Use after writing code that handles user input, authentication, API endpoints, or sensitive data. Flags secrets, SSRF, injection, unsafe crypto, and OWASP Top 10 vulnerabilities. Reports findings only — remediation is the implementer's job."
 mode: subagent
-model: openai/gpt-6-astra
-variant: high
+agent_group: reviewers
 color: "#F78AB7"
 permission:
   edit: deny

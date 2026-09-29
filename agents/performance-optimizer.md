@@ -1,6 +1,7 @@
 ---
 description: "Performance specialist for identifying bottlenecks and improving speed, memory, and resource efficiency. Profiles code paths, flags N+1 queries and algorithmic hotspots, and proposes caching / parallelisation fixes. Use when profiler data or observed slowness indicates a performance issue rather than a functional bug."
 mode: subagent
+agent_group: refactoring
 model: openai/gpt-6-astra
 variant: high
 color: "#F45AE7"

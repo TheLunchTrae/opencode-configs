@@ -4,8 +4,7 @@ description: >-
   Checks feasibility, system boundaries, constraints, and risks. Complements code
   review; does not propose alternative architectures or implement changes.
 mode: subagent
-model: openai/gpt-6-astra
-variant: high
+agent_group: reviewers
 color: "#EEF78A"
 permission:
   edit: deny

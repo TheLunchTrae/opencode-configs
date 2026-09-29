@@ -1,8 +1,7 @@
 ---
 description: "Clarify requirements, compare designs, and coordinate an independently reviewed implementation plan. Stop before implementation."
 mode: primary
-model: openai/gpt-6-astra
-variant: high
+agent_group: planning
 permission:
   edit: deny
   bash: deny

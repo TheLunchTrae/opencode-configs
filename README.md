@@ -1,7 +1,7 @@
 # OpenCode Global Configuration
 
 Personal global configuration for OpenCode, with focused lead agents, specialists, commands, reusable skills,
-shared prompts, secret-path checks, and quota display preferences.
+shared prompts, agent group and model controls, secret-path checks, and quota display preferences.
 The default agent is `workflow-lead`. It coordinates complete development tasks.
 Select a focused lead when you want only planning, approved implementation, or assessment of existing work.
 
@@ -16,6 +16,8 @@ Select a focused lead when you want only planning, approved implementation, or a
 | [`skills/`](skills/) | Reusable task procedures. |
 | [`references/agent-prompts/`](references/agent-prompts/) | Shared prompt guidance. |
 | [`plugins/`](plugins/) | Local plugins, including secret-path checks. |
+| [`extensions/agent-groups/`](extensions/agent-groups/) | TUI settings and server-side group defaults. |
+| [`package.json`](package.json) | Pinned plugin dependencies and maintenance commands. |
 | [`opencode.jsonc`](opencode.jsonc) | Global models, permissions, MCP servers, shell, and plugin settings. |
 | [`tui.jsonc`](tui.jsonc) | TUI theme selection and plugin settings. |
 | [`themes/`](themes/) | Custom TUI themes. |
@@ -23,16 +25,17 @@ Select a focused lead when you want only planning, approved implementation, or a
 
 ## Setup
 
-1. Install OpenCode. See <https://opencode.ai/docs/>.
+1. Install OpenCode V1 1.18.29 or a compatible version with the TUI plugin API. See <https://opencode.ai/docs/>.
 2. Authenticate your provider through `/connect` when supported.
 3. Back up your existing global configuration directory.
 4. Obtain a checkout or download of this repository.
 5. Copy `README.md`, `USAGE.md`, `AGENTS.md`, `opencode.jsonc`, `tui.jsonc`, `themes/`, `agents/`, `commands/`, `skills/`,
-   `references/`, `plugins/`, and `opencode-quota/` into the global configuration directory.
+   `references/`, `plugins/`, `extensions/`, `package.json`, `package-lock.json`, and `opencode-quota/`
+   into the global configuration directory.
    Preserve the layout and merge your existing settings.
 
 The global configuration directory is `~/.config/opencode` or `%USERPROFILE%\.config\opencode` on Windows.
-No `npm install` step is required for normal setup. OpenCode installs configured npm plugins when needed.
+No `npm install` step is required for normal setup. OpenCode installs configured npm plugins and local dependencies.
 
 Do not copy credentials, tokens, `node_modules`, `.idea`, or work-project checkpoints.
 The repository's `.opencode/` directory contains maintenance guidance and is not needed for global installation.
@@ -46,9 +49,10 @@ See the [V2 migration guide](https://opencode.ai/v2/docs/migrate-v1/).
 
 1. Set `shell` in `opencode.jsonc` to an installed shell.
    The supplied value is `C:/Program Files/Git/bin/bash.exe`; change it or remove it on other systems.
-2. Select models available from your authenticated provider. Global defaults and built-in overrides are in
-   `opencode.jsonc`; custom agent model and variant choices are in `agents/*.md`.
-   A global model change does not override those agent choices.
+2. Select models available from your authenticated provider. Global and group defaults are in `opencode.jsonc`.
+   Custom agents declare `agent_group` in their frontmatter. An explicit agent model overrides its group default.
+   After launch, use `/agent-models` to select models and `/agent-groups` to assign agents to groups.
+   See [agent groups and models](USAGE.md#agent-groups-and-models) for precedence and configuration examples.
 3. Use reasoning and sampling options supported by the selected models.
 4. Remove `opencode` from `disabled_providers` if you want to use that provider.
 5. Review the global and per-agent permissions. These settings affect every project.
@@ -145,6 +149,12 @@ Check an approval prompt's scope before saving an approval.
 Back up the configuration first. Update `README.md`, `USAGE.md`, `AGENTS.md`, `agents/`, `commands/`, `skills/`,
 `references/agent-prompts/`, `plugins/`, `opencode.jsonc`, `tui.jsonc`, and `themes/` together,
 preserving local overrides and license notices.
+
+Install `extensions/`, `package.json`, and `package-lock.json` with both configuration files when adding agent groups.
+Merge existing dependencies if your installation already has a package manifest.
+Keep the server plugin tuple and its group defaults in `opencode.jsonc`, and the TUI entry in `tui.jsonc`.
+Custom agents with explicit model pins keep those models. Use **Use group defaults** to opt an agent into inheritance.
+Removing the server plugin also removes group inheritance; restore explicit models before disabling it.
 
 Shared prompts now use the hidden `agent-prompts` directory reference.
 Update custom prompts to use paths such as `@agent-prompts/reviewer-standards.md`.

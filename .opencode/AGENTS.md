@@ -27,8 +27,9 @@ Check the installed version against the [V1 documentation](https://opencode.ai/d
 
 ## Agents and model settings
 
-- Custom agent `model` and `variant` settings belong in `agents/*.md` frontmatter.
-  Root `opencode.jsonc` owns global defaults and built-in overrides.
+- Custom agent `agent_group`, explicit `model`, and `variant` settings belong in `agents/*.md` frontmatter.
+  Root `opencode.jsonc` owns global defaults, group defaults in the server plugin tuple, and built-in overrides.
+  Preserve explicit exceptions. Group inheritance fills missing models before native agent initialization.
 - Agent Markdown bodies are prompts. Do not add a separate `prompt` frontmatter field.
 - `workflow-lead` is the default primary agent. Focused leads are alternative primary entrypoints, never children.
   Built-in `build` and `plan` are disabled; custom `planner` is a separate subagent.
@@ -45,7 +46,7 @@ Check the installed version against the [V1 documentation](https://opencode.ai/d
   `temperature: false` means unsupported; it is not an agent configuration value.
   Do not add null or boolean temperature overrides to the title agent.
 - Model-pinned children do not inherit the lead's model. Diagnose the effective configuration and session
-  selection before changing pins. A supported model change requires restarting and checking the affected route.
+  selection before changing pins. Reload or restart after a model change and check the affected route.
 
 ## Prompt ownership, commands, and skills
 
@@ -128,22 +129,33 @@ The current plugin uses the V1 `@opencode-ai/plugin` hook API. A V2 port is a se
 V2 also ignores top-level `subagent_depth`; its supported setting is `experimental.subagent_depth`.
 Consult the [migration guide](https://opencode.ai/v2/docs/migrate-v1/) and verify behavior before claiming V2 support.
 
+Agent group entrypoints are in `extensions/agent-groups/`, outside auto-discovery, and explicitly registered in
+the server and TUI configuration files. Keep their runtime metadata out of provider request options.
+The settings editor must preserve unrelated configuration, prompts, comments, explicit exceptions, and permissions.
+Group names and membership are discovered from configuration; do not hardcode a group inventory in the UI.
+Use the provider API for model and variant choices. Do not synthesize model IDs from display names.
+The global update API disposes all server workspaces. Keep reload explicit and the current-workspace busy check intact.
+
 ## Verification
 
 Run applicable existing checks from the repository root:
 
 ```sh
-node --test tests/config-integrity.test.mjs
-node --experimental-strip-types --test tests/block-secrets.test.ts
-npx --no-install tsc --project tsconfig.json
+npm ci
+npm test
+npm run typecheck
+npm run test:native
 ```
 
 - Configuration tests check metadata, routing, and shared references. They do not launch OpenCode or prove behavior.
 - Plugin tests use mocked hooks and synthetic paths. They do not access real secrets or establish V2 compatibility.
-- Type checking includes `plugins/**/*.ts` and `tests/**/*.ts`.
+- Type checking includes `plugins/**/*.ts`, `extensions/**/*.ts`, and `tests/**/*.ts`.
   It does not validate Markdown, JSONC, or `.opencode/` code.
-- Dependency manifests are untracked local editor support. Inspect an existing root or `.opencode/package.json`
-  before changing dependencies. Check available tooling; do not assume npm scripts or a CI workflow exist.
+- Root dependency manifests are shipped with the local extension. Keep runtime and development dependencies pinned.
+  `.opencode/` dependency manifests remain local editor support. The checks require Node 22.18 or newer.
+- Native group tests require OpenCode V1 1.18.29 on PATH, or its executable path in `OPENCODE_BIN`.
+  They use temporary configuration and a synthetic local provider, with no real credentials or paid model calls.
+  They verify inheritance, provider dispatch, and live reload; they do not render terminal dialogs.
 - Report unavailable dependencies and checks explicitly. Do not install unrelated tooling to hide a missing check.
 - Check internal links, moved-file consumers, command routing, and unchanged model and permission fields.
   After runtime configuration changes, restart OpenCode and test the relevant discovery and permission behavior
