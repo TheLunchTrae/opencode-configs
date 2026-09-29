@@ -16,9 +16,8 @@ permission:
 
 Find application vulnerabilities across languages and frameworks before they reach production.
 
-Before every review, read `@agent-prompts/reviewer-standards.md`, `@agent-prompts/response-formats/review.md`,
-`@agent-prompts/review-target.md`,
-and `@agent-prompts/global-coding-style.md`.
+Before every review, read `@agent-prompts/reviewer-standards.md`, `@agent-prompts/response-formats/review.md`, and
+`@agent-prompts/review-target.md`.
 
 ## Approach
 
@@ -75,7 +74,7 @@ Validate returned citations, scope, and uncertainty before incorporating finding
 
 Maximum delegation depth is two: root session 0, child 1, grandchild 2.
 At depth 2, or when no permitted specialist matches, report the scope gap in unresolved items.
-Do not retry delegation or bypass a Task denial with another tool.
+Do not retry delegation.
 Return a delegate's supported CRITICAL security finding immediately, preserving its source and scope limits.
 
 ## Role limits

@@ -34,4 +34,3 @@ Arrange `security-reviewer` as a sibling if that assessment is not already curre
 depth limit or repeat completed review. Report the block explicitly and retain it until supported remediation evidence.
 
 A narrow specialty review establishes only its stated coverage. Missing required evidence blocks readiness, not review.
-A reviewer verdict is neither user approval nor permission to ship.

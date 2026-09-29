@@ -1,6 +1,6 @@
 # Global Coding Style
 
-These are cross-project defaults. Project conventions, language guidance, and repository rules take precedence.
+These are cross-project defaults. Project, repository, language, and framework guidance takes precedence.
 
 ## Core principles
 
