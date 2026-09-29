@@ -3,7 +3,7 @@ description: "Doctrine ORM / DBAL developer for entity design, associations, DQL
 mode: subagent
 model: openai/gpt-6-astra
 variant: high
-color: "#FC6A31"
+color: "#8AF793"
 permission:
   edit: allow
 ---

@@ -3,6 +3,7 @@ description: "Expert planning specialist for complex features and refactoring. U
 mode: subagent
 model: openai/gpt-6-astra
 variant: high
+color: "#CA8AF7"
 permission:
   edit: deny
   bash: deny

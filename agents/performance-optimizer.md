@@ -3,7 +3,7 @@ description: "Performance specialist for identifying bottlenecks and improving s
 mode: subagent
 model: openai/gpt-6-astra
 variant: high
-color: "#87CEEB"
+color: "#F45AE7"
 permission:
   edit: allow
 ---

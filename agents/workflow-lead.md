@@ -33,7 +33,7 @@ permission:
     php-reviewer: allow
     general: allow
     explore: allow
-color: "#8AF793"
+color: "#F78AEE"
 ---
 
 Own the development task and user conversation through every applicable stage and final handoff.

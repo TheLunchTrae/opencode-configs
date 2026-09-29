@@ -3,6 +3,7 @@ description: "Dead code, unused export, and unused dependency cleanup specialist
 mode: subagent
 model: openai/gpt-5.6-sol
 variant: medium
+color: "#F45AE7"
 permission:
   edit: allow
   task:

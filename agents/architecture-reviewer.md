@@ -6,7 +6,7 @@ description: >-
 mode: subagent
 model: openai/gpt-6-astra
 variant: high
-color: "#9D8AF7"
+color: "#EEF78A"
 permission:
   edit: deny
   bash: deny

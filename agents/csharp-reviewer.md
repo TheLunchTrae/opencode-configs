@@ -3,7 +3,7 @@ description: "Senior C# and .NET code reviewer. Reviews for security, async patt
 mode: subagent
 model: openai/gpt-6-astra
 variant: high
-color: "#CE93D8"
+color: "#EEF78A"
 permission:
   edit: deny
   task: deny

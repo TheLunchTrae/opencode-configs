@@ -3,6 +3,7 @@ description: "Documentation and codemap specialist. Updates codemaps, READMEs, g
 mode: subagent
 model: openai/gpt-5.6-terra
 variant: medium
+color: "#8AEEF7"
 permission:
   edit: allow
   task:

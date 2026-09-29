@@ -3,7 +3,7 @@ description: "Senior C#/.NET developer for implementing features, fixing bugs, a
 mode: subagent
 model: openai/gpt-5.6-sol
 variant: medium
-color: "#9B4F96"
+color: "#8AF793"
 permission:
   edit: allow
 ---
