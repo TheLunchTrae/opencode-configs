@@ -12,6 +12,7 @@ The default `workflow-lead` coordinates a complete development task. Focused lea
 - [Supporting skills](#supporting-skills): reusable procedures selected by agents.
 - [Worked examples](#worked-examples): common development tasks.
 - [Verification tests](#verification-tests-for-existing-code): build and reuse coverage for existing behavior.
+- [Limit verification](#limit-verification): accept impractical checks without blocking the requested implementation.
 - [Continue a long task](#continue-a-long-task): retain decisions and evidence between sessions.
 
 ## Choose a lead
@@ -319,11 +320,45 @@ An earlier pass is not evidence for a later source state or different environmen
 implementation assignment. Change expectations only for reviewed requirement changes, not merely changed code.
 You can name `verification-tests` explicitly in a lead request, but doing so does not expand its scope or permissions.
 
+## Limit verification
+
+You can limit agent verification for a task or establish a default in the work project's existing instructions.
+The [verification scope rules](references/agent-prompts/verification-scope.md) apply to primary agents and specialists.
+State whether the limit covers capability discovery, test generation, check execution, or infrastructure changes.
+An instruction to skip execution alone still permits requested test generation.
+
+For a large codebase with costly or inaccessible integration environments:
+
+```text
+Limit verification to existing focused checks that are practical here. Do not investigate broader verification
+capabilities, generate tests, or add infrastructure for this task. If the focused checks cannot reasonably run,
+report the limitation and continue the implementation. Do not ask again about that limitation.
+```
+
+To exclude agent verification entirely:
+
+```text
+Skip verification capability assessment, test generation, and check execution for this task.
+Implement the approved change and complete the required code reviews. Report the implementation as unverified.
+```
+
+The lead retains your boundary with the plan and passes it to specialists, reviews, and authorized handoffs.
+Accepted limits remain effective across stages, agent switches, and resumed work while their scope still applies.
+They do not trigger repeated approval requests, infrastructure work, or failure-prevention recommendations solely
+because checks remain absent. Repository size alone does not establish an exclusion.
+
+Excluded checks are reported as `SKIP`, with the decision source and unverified scope. Other unavailable required
+checks remain `BLOCKED`. Earlier attempts remain visible, and observed failures remain `FAIL`.
+An accepted limitation does not block completion of the requested implementation. It does not establish a passing
+check, a performance improvement, a resolved defect, or merge readiness. Required reviews, permission boundaries,
+and external CI or branch-protection requirements still apply.
+
 ## Continue a long task
 
 Use `/checkpoint <task-id>` or ask the active lead to save a handoff before changing sessions.
 The handoff records the selected lead and stopping point, source state including relevant untracked changes, plan
-revision, approved scope, owners, checks, review findings, remaining budget, blockers, and the next bounded action.
+revision, approved scope, verification limits and their source, owners, checks, review findings, remaining budget,
+blockers, and the next bounded action.
 It belongs in the work project. A planning or review lead returns it in chat when its permissions prevent saving.
 
 In the next session, select the appropriate lead and use `/resume-work <handoff-path>`.

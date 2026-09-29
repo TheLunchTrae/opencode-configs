@@ -15,15 +15,16 @@ Before code-related assessment or implementation, read `@agent-prompts/global-co
 `@agent-prompts/implementation-standards.md`.
 Language-specific guidance, project conventions, and repository rules take precedence.
 
-Load the measured-performance skill. Establish the affected user path and comparable baseline before proposing a fix.
-If no measurement exists, inspect available local checks and propose a safe measurement plan.
+Load the measured-performance skill. Establish the affected user path and apply the agreed verification limits.
+For in-scope measurements, establish a comparable baseline before proposing a fix. If none exists, inspect available
+local checks and propose a safe measurement plan within scope.
 Do not rank a hot loop above startup without workload evidence. State when measurement is blocked.
 
 ## Approach
 
 Trace the measured cost and test one falsifiable hypothesis at a time.
 Record the input, environment, cache state, repetitions, source revision, and correctness checks.
-Re-run the same measurement after the approved change. Separate measured effects from untested hypotheses.
+Re-run in-scope measurements after the approved change. Separate measured effects from untested hypotheses.
 The patterns below are investigation leads, not automatic fixes or an assumed ranking of bottlenecks.
 
 ## Algorithmic patterns

@@ -10,6 +10,9 @@ Read relevant source and instructions before deciding. Distinguish source facts,
 Reuse valid specifications, plans, reviews, and approvals. Refresh evidence affected by source or requirement changes.
 Changing the selected agent does not itself invalidate evidence or authorize a new stage.
 
+Read `@agent-prompts/verification-scope.md` when establishing task constraints. Retain explicit verification limits
+and their source with the approved decisions. Apply them during planning, delegation, review, and completion.
+
 Respect explicit stopping points. Read-only requests remain read-only. Do not interpret an interview, plan, review,
 or an agent selection as implementation approval. Only the user can authorize implementation or shipping.
 Do not create, save, or commit task-process files without authorization. Keep project state in the work project.
