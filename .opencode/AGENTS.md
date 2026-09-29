@@ -136,6 +136,13 @@ Group names and membership are discovered from configuration; do not hardcode a 
 Use the provider API for model and variant choices. Do not synthesize model IDs from display names.
 The global update API disposes all server workspaces. Keep reload explicit and the current-workspace busy check intact.
 
+Session tool entrypoints are in `extensions/session-tools/`. Register each TUI panel separately in `tui.jsonc`
+and the status tool in `opencode.jsonc`. Share helpers without placing them in auto-discovered plugin directories.
+Keep workflow stages attributed to completed tool records. Never infer completion or approval from idle status.
+Keep config and context views read-only. Show evidence limits instead of inventing provenance or prompt contents.
+Bookmark storage must remain scoped by project, workspace, directory, and session. Preserve invalid data on errors.
+Handoff drafts reuse checkpoint fields and require an explicit copy action; never submit a prompt automatically.
+
 ## Verification
 
 Run applicable existing checks from the repository root:
@@ -149,13 +156,16 @@ npm run test:native
 
 - Configuration tests check metadata, routing, and shared references. They do not launch OpenCode or prove behavior.
 - Plugin tests use mocked hooks and synthetic paths. They do not access real secrets or establish V2 compatibility.
-- Type checking includes `plugins/**/*.ts`, `extensions/**/*.ts`, and `tests/**/*.ts`.
+- Type checking includes `plugins/**/*.ts`, `extensions/**/*.ts`, `extensions/**/*.tsx`, and `tests/**/*.ts`.
   It does not validate Markdown, JSONC, or `.opencode/` code.
 - Root dependency manifests are shipped with the local extension. Keep runtime and development dependencies pinned.
   `.opencode/` dependency manifests remain local editor support. The checks require Node 22.18 or newer.
-- Native group tests require OpenCode V1 1.18.29 on PATH, or its executable path in `OPENCODE_BIN`.
+- Native tests require OpenCode V1 1.18.29 on PATH, or its executable path in `OPENCODE_BIN`.
   They use temporary configuration and a synthetic local provider, with no real credentials or paid model calls.
-  They verify inheritance, provider dispatch, and live reload; they do not render terminal dialogs.
+  They verify inheritance, provider dispatch, live reload, workflow tool loading, and report persistence after restart.
+  They do not render terminal dialogs. Use a native TUI check for JSX loading, command discovery,
+  and dialog interaction.
+  Set `SESSION_TOOLS_KEEP_FIXTURE=1` to retain the session-tools fixture for that check; the test prints its location.
 - Report unavailable dependencies and checks explicitly. Do not install unrelated tooling to hide a missing check.
 - Check internal links, moved-file consumers, command routing, and unchanged model and permission fields.
   After runtime configuration changes, restart OpenCode and test the relevant discovery and permission behavior

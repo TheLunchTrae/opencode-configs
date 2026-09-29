@@ -1,5 +1,12 @@
 {
   "$schema": "https://opencode.ai/tui.json",
   "theme": "pink",
-  "plugin": ["@slkiser/opencode-quota@4.9.0", "./extensions/agent-groups/tui.ts"]
+  "plugin": [
+    "@slkiser/opencode-quota@4.9.0",
+    "./extensions/agent-groups/tui.ts",
+    "./extensions/session-tools/workflow.tsx",
+    "./extensions/session-tools/config.ts",
+    "./extensions/session-tools/context.ts",
+    "./extensions/session-tools/bookmarks.tsx"
+  ]
 }
