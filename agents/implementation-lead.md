@@ -5,6 +5,7 @@ model: openai/gpt-6-astra
 variant: high
 permission:
   edit: allow
+  question: allow
   task:
     '*': deny
     code-reviewer: allow
