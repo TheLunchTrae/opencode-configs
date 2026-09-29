@@ -34,7 +34,7 @@ See [OpenCode agents](https://opencode.ai/docs/agents/).
 | `review-lead` | Reviews or existing checks. Findings and evidence without repairs, generated tests, or shipping. |
 
 The workflow lead directly coordinates specialists. It does not delegate to the focused leads.
-All leads use the same applicable stage procedures, approval rules, and evidence requirements.
+All leads use the same applicable stage procedures, approval rules, review standards, and evidence requirements.
 Focused leads stop at their boundary even if an adjacent stage becomes useful.
 
 The planning lead cannot edit files or run shell commands. The review lead cannot edit files, but can run requested
