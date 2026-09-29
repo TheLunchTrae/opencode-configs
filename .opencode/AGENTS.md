@@ -49,6 +49,8 @@ Check the installed version against the [V1 documentation](https://opencode.ai/d
 
 ## Prompt ownership, commands, and skills
 
+- Apply root `AGENTS.md`'s Instruction Authoring rules to runtime prompts. Compare obligations before and after edits,
+  including conditional reads and standalone consumers. Keep behavioral changes explicit and separately reviewable.
 - The active lead owns its stage, coordination, approval handling, and user-visible conclusions.
   [The lead contract](../references/agent-prompts/lead-contract.md) supplies common boundaries and authorization rules.
   [Planner](../agents/planner.md) owns planning procedure. Each specialist owns its scope and stopping conditions.

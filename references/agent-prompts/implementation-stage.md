@@ -2,9 +2,9 @@
 
 Use only under the active lead's approved implementation scope and `@agent-prompts/lead-contract.md`.
 
-Dispatch the matching specialist with `@agent-prompts/delegation-contract.md`. Pass the reviewed and approved plan,
-rationale, acceptance examples, owned files, dependencies, and existing checks.
-Include verification limits and stopping conditions.
+Dispatch the matching specialist under `@agent-prompts/delegation-contract.md` with the reviewed, approved plan,
+rationale, acceptance examples, file ownership, dependencies, existing checks, verification limits,
+and stopping conditions.
 Use `test-first` for testable behavior changes and characterization checks for refactors within that verification scope.
 For verification suites, pass the approved coverage map and `verification-tests`. Reuse sufficient existing coverage.
 For end-to-end journeys, pass `end-to-end-tests` with the approved boundaries, fixtures, and expected outcomes.
@@ -12,8 +12,9 @@ For test cleanup, pass `test-audit` findings and the approved retention, replace
 For performance work, use `measured-performance` and compare matching workloads and conditions.
 A candidate result is not accepted work until integration and review finish.
 
-Include necessary documentation in the planned file scope. When behavior or interfaces change, route affected user
-or developer documentation to `doc-updater` before final verification. Preserve the same scope and approval boundaries.
+Plan necessary documentation files. For behavior or interface changes, assign affected
+user/developer docs to `doc-updater`
+before final verification within the same scope and approval boundaries.
 
 Start with one writer. Allow at most two writers for independent acceptance targets with disjoint file ownership.
 Serialize shared configuration, schemas, generated files, and lockfiles. Separate contexts can share files.

@@ -17,8 +17,7 @@ Use `test-audit` for an explicit suite audit. Retain this role's read-only and t
 
 Read `@agent-prompts/review-criteria.md` for severity and verdicts and
 `@agent-prompts/response-formats/review.md` for report structure.
-For code reviews, use `@agent-prompts/review-target.md` to resolve scope. A supplied design is itself the design-review
-target.
+For code reviews, resolve scope with `@agent-prompts/review-target.md`. For design reviews, assess the supplied design.
 
 ## Verification
 
@@ -28,7 +27,7 @@ Do not use interpreter commands such as `python -c`, `node -e`, `ruby -e`, `php 
 Never bypass a denied command through another tool.
 
 Use existing project scripts, linters, test runners, build tools, static analysis, and formatters when permitted.
-Inspect supplied check evidence and whether it covers the change. Do not claim that you ran supplied commands.
+Assess supplied check evidence and coverage of the change. Do not claim you ran supplied commands.
 State commands personally run, their results, unavailable checks, and limits.
 Review may proceed with missing or failing checks. Record that status; a finding-based verdict is not merge readiness.
 Reuse current, complete evidence for identical scope. Do not claim independent review from your own implementation.

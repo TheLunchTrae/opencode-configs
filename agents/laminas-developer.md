@@ -14,9 +14,9 @@ Before implementation, read `@agent-prompts/global-coding-style.md`, `@agent-pro
 `@agent-prompts/php-guidance.md`.
 PHP, Laminas, project, and repository guidance takes precedence.
 
-The hard calls in Laminas / Mezzio are about composition: routed vs. global middleware, factory vs. invokable, where
-validation lives (InputFilter, never controller), and respecting module boundaries. Match the surrounding style — module
-layout, routing style, form vs. InputFilter-only validation — before introducing new patterns.
+Check composition: routed versus global middleware, factory versus invokable, InputFilter validation
+outside controllers,
+and module boundaries. Match existing module layout, routing, and form versus InputFilter-only validation.
 
 ## Approach
 
@@ -126,6 +126,6 @@ Report required security review before any commit.
 
 ## Handoff
 
-Read `@agent-prompts/response-formats/implementation.md` for the canonical task response.
-This agent is a leaf. Do not delegate or bypass a Task denial.
-An implementation assignment does not authorize a commit or other external action.
+Read `@agent-prompts/response-formats/implementation.md` for the canonical response.
+Leaf agent: do not delegate or bypass a Task denial.
+Implementation does not authorize commits or other external actions.

@@ -7,21 +7,21 @@ They do not expand edit, delegation, or shipping authority.
 
 ## Establish the boundary
 
-Read the user's instructions, applicable project instructions, and current approved decisions.
-Honor explicit limits for the task or project. A user can exclude all agent verification or only selected work.
+Read user and applicable project instructions and current approved decisions.
+Honor task or project limits, including exclusions of all agent verification or selected work.
 Distinguish capability discovery, test generation, check execution, and infrastructure changes.
 Skipping execution alone does not exclude requested test generation. Excluding infrastructure work does not exclude
 existing checks. Do not broaden a narrow exclusion.
 
-Keep the boundary and its source with the task constraints. Include permitted checks, excluded work, and any
-conditions for continuing when checks are impractical or unavailable. Include a reason when one was supplied.
-Carry these decisions into assignments, reviews, and authorized handoffs. Reuse them after an agent switch or resume.
-Do not require another confirmation for an applicable explicit instruction or approval.
-Revisit only affected decisions when requirements change or a material ambiguity prevents applying the boundary.
+Record the boundary and source with task constraints: permitted checks, exclusions, continuation conditions for
+impractical or unavailable checks, and any supplied reason. Carry them into assignments, reviews,
+and authorized handoffs.
+Reuse them after agent switches or resumes without reconfirming applicable instructions or approvals.
+Revisit affected decisions only for changed requirements or material ambiguity in applying the boundary.
 
 Without an explicit limit, use proportionate verification under the existing procedures.
 Repository size, complexity, missing access, and anticipated cost do not create an automatic exclusion.
-For a consequential gap, propose a bounded correction or an explicit accepted limitation for the user's decision.
+For consequential gaps, propose a bounded correction or explicit accepted limitation for the user's decision.
 Do not ask every task to choose a verification policy.
 
 ## Apply the boundary
@@ -29,12 +29,11 @@ Do not ask every task to choose a verification policy.
 - Assess capabilities only within the agreed discovery scope. Do not investigate excluded environments or coverage.
 - Generate tests and run checks only within their respective scope. Do not install tools, create a harness, or
   repair infrastructure solely to satisfy excluded verification.
-- When the user already permits continuation if a check is impractical or unavailable, apply that condition without
-  another approval request. State the known limitation and continue the remaining assigned work.
-  Do not repeatedly retry or investigate an excluded prerequisite.
-- Treat an accepted verification limitation as non-blocking for the requested implementation and its handoff.
-  Do not reopen it as a planning prerequisite, repair attempt, or project-learning recommendation solely because
-  verification remains absent. Continue required work outside the exclusion.
+- Apply approved continuation conditions for impractical or unavailable checks without asking again.
+  State the limitation and continue remaining work. Do not repeatedly retry or investigate excluded prerequisites.
+- Accepted verification limits do not block requested implementation or handoff. Do not reopen them as planning
+  prerequisites, repair attempts, or project-learning recommendations solely for absent verification.
+  Continue required work outside the exclusion.
 - Preserve required code and security reviews, known defects, consequential product questions, and permission limits.
   An exclusion does not resolve those issues. Do not weaken assertions or change acceptance criteria to hide a failure.
 - Assess merge readiness separately. Agent verification exclusions do not satisfy or disable required CI,
@@ -42,12 +41,12 @@ Do not ask every task to choose a verification policy.
 
 ## Report evidence and limits
 
-Use `SKIP` for unrun checks excluded by the user or applicable project instructions. Identify the excluded scope,
-the decision source, and what remains unverified. Do not invent commands, test counts, or exhaustive inventories
-for excluded discovery. A concise scope-level entry is sufficient.
+Use `SKIP` for unrun checks excluded by user or applicable project instructions. State scope, decision source, and
+unverified behavior. A concise scope-level entry suffices; do not invent commands, counts, or
+excluded discovery inventories.
 Use `BLOCKED` when a check remains required and cannot run. A later exclusion can remove its task prerequisite,
 but preserve any earlier attempt and result. A check that ran and found a failure remains `FAIL`.
 
-Keep accepted limitations visible without presenting them as unresolved approval requests or mandatory follow-up.
+Report accepted limitations without reopening approval or requiring follow-up.
 Report completion against the assigned scope separately from check results and merge readiness.
 Never count an exclusion as `PASS`, claim full verification, or claim an unmeasured performance improvement.

@@ -3,23 +3,22 @@ description: Initialize or refresh repository documentation rules and scoped tec
 subtask: false
 ---
 
-Initialize the current work repository's documentation settings for this request:
+Initialize the work repository's documentation settings:
 
 $ARGUMENTS
 
 Read `@agent-prompts/asd-ste100.md` for precedence, writing defaults, terminology, and formal-compliance requirements.
-Follow the selected agent's role, permissions, and approval policy. Do not switch agents or expand its authority.
-If the selected role cannot perform initialization, return the proposed setup within that role's scope.
+Honor the selected role, permissions, and approval policy. Do not switch agents or expand authority.
+If the role cannot initialize, return the proposed setup within its scope.
 
 ## Resolve the destination
 
-1. Establish the work repository's root and requested scope using available read-only tools.
+1. Establish the work repository's root and requested scope with available read-only tools.
    Do not initialize an installed global configuration directory or a repository that supplies global configuration.
-   If the work-repository boundary is unclear, resolve it before proposing file writes.
+   Resolve unclear repository boundaries before proposing writes.
 2. With no destination argument, use `AGENTS.md` at the repository root.
-   Add or update documentation rules in that file when it exists. Create it when it does not.
-3. If the user supplies a file path, use that file instead of the default.
-   If the user supplies a directory, use `AGENTS.md` inside that directory.
+   Add or update documentation rules in the existing file, or create it if missing.
+3. Use a user-supplied file instead of the default, or `AGENTS.md` inside a supplied directory.
    Resolve relative paths from the repository root. Absolute paths must remain inside the same repository.
    Treat a non-existent path with a trailing slash as a directory. Clarify other ambiguous destinations before writing.
 4. Treat remaining arguments as scope or preferences. Keep every resolved destination inside the work repository,
@@ -28,14 +27,14 @@ If the selected role cannot perform initialization, return the proposed setup wi
 ## Inspect current policy and vocabulary
 
 Read the destination, applicable agent instructions, contribution guides, documentation policies, templates, glossaries,
-and existing documentation-tool configuration. Preserve authoritative standards and link to existing term definitions.
-Do not create competing copies of established policy or vocabulary.
+and documentation-tool configuration. Preserve authoritative standards and link existing definitions
+without competing copies.
 
 Inspect manifests, representative source, public APIs, and documentation for the requested areas.
-Identify languages, frameworks, naming conventions, and domain terms from current evidence.
-Do not infer a stack solely from filenames or populate a generic language dictionary.
-Identify conflicts and gaps. Preserve explicit definitions, exclusions, and local overrides.
-Keep different meanings scoped to their language, package, path, or domain.
+Use current evidence for languages, frameworks, naming, and domain terms. Do not infer stacks solely from filenames
+or populate generic language dictionaries. Report conflicts and gaps. Preserve definitions,
+exclusions, and local overrides.
+Scope different meanings by language, package, path, or domain.
 
 Before creating an `AGENTS.md`, check existing `CLAUDE.md` or other fallback instructions that it could mask.
 Preserve their effect with an explicit read instruction when needed. Do not replace them with a partial policy.
@@ -43,10 +42,9 @@ For a nested destination, respect its actual instruction scope and applicable an
 
 ## Propose the rules
 
-Add or update a bounded documentation section in the selected file. Preserve all unrelated instructions.
-Include concise, usable rules in that section, not only a link to the global reference.
-Use the shared STE defaults for choices that the repository leaves unspecified.
-Keep the section specific to the repository rather than copying the full global reference.
+Add or update a bounded documentation section without changing unrelated instructions.
+Include concise repository-specific rules, not just a global-reference link or full copy.
+Apply shared STE defaults to unspecified choices.
 
 Include:
 
@@ -59,9 +57,8 @@ Include:
 - Formal STE requirements and the specified issue only when the user or repository explicitly requires them.
 - Existing documentation checks and actual commands when relevant.
 
-Treat local terminology as a technical-word allowlist and usage glossary that supplements ordinary English.
-It does not replace ASD's official approved-word dictionary.
-Propose a small set of terms actually used in the requested scope, with these fields:
+Local terminology is a technical-word allowlist and usage glossary supplementing ordinary English, not ASD's official
+approved-word dictionary. Propose a small set of terms used in scope, with these fields:
 
 | Field | Required content |
 | --- | --- |
@@ -71,18 +68,17 @@ Propose a small set of terms actually used in the requested scope, with these fi
 | Usage | Required wording and known misleading alternatives, when supported by repository evidence. |
 | Source | A verified repository path or authoritative definition that supports the entry. |
 
-Keep new entries in the selected file unless the repository already maintains a terminology source.
-In that case, reference the current source and include any necessary edits to it in the proposed scope.
-Keep inferred terms as proposals until reviewed. Leave unsupported definitions unresolved instead of inventing them.
-Preserve established technical terms even when they fall outside a plain-language vocabulary.
-Do not convert prose alternatives into code-renaming instructions or import ASD's full dictionary.
+Keep entries in the selected file, or reference an existing terminology source and propose necessary edits there.
+Inferred terms remain proposals until reviewed. Leave unsupported definitions unresolved.
+Preserve established technical terms beyond plain-language vocabulary. Do not turn prose alternatives into code renames
+or import ASD's full dictionary.
 
-For a custom destination, check how agents will read it. Do not claim that an arbitrary file loads automatically.
-Report any required read instruction. Include edits to another instruction file only in the approved setup.
+For custom destinations, verify how agents read them and report required read instructions. Do not
+assume automatic loading.
+Edit other instruction files only within the approved setup.
 
-Present the destination, proposed rules, terminology entries, supporting-file changes, and conflicts.
-Do this before applying the setup.
-Reuse valid approval for that exact scope. Obtain the approval required by the task or repository when it is missing.
+Before setup, present destination, proposed rules, terminology, supporting-file changes, and conflicts.
+Reuse valid same-scope approval or obtain missing approval required by the task or repository.
 
 ## Apply and verify
 
@@ -90,8 +86,8 @@ After the setup is approved, create missing files and merge approved additions i
 Do not alter global configuration, install tools, or rewrite application documentation as part of initialization.
 Do not stage, commit, push, or publish the generated files.
 
-On later runs, retain established definitions and overrides. Update only supported changes or approved new entries.
-If the current setup already covers the request, report that no changes are needed.
+On later runs, retain definitions and overrides. Make only supported updates or approved additions.
+Report when the existing setup needs no changes.
 
 Verify terminology evidence, scope, literal preservation, and the intended instruction-loading path.
 Check relative links, document structure, and applicable existing documentation checks.

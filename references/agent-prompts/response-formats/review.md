@@ -14,8 +14,8 @@ Issue: Evidence and impact.
 Fix: An actionable correction.
 ```
 
-For a finding without a source-file location, replace the `File:` line with `Location: document or section`.
-Write `None` when there are no supported findings. Do not invent a finding to fill the section.
+Without a source-file location, replace `File:` with `Location: document or section`.
+Write `None` for no supported findings. Do not invent findings to fill the section.
 
 ### Severity counts
 
@@ -34,9 +34,10 @@ Count the reported findings:
 
 Write one of `BLOCKED`, `PASSED`, or `NOT ASSESSED` with its scope and reason, using the shared review criteria.
 Task status describes completion of the assignment; the verdict describes the review outcome.
-Do not label an incomplete assessment as a passed review because no defect was found in the inspected portion.
+Do not pass an incomplete assessment because its inspected portion had no defects.
 
-Use `Evidence` for the review target, source state, inspected sources, and verification details. Separate personally
-run checks from supplied results. For design reviews, report inspected design evidence and limits without inventing
-implementation execution. Put unassessed scope, unavailable checks, and other review needs in `Unresolved items`.
-For an immediate critical report, include supported findings and explicitly mark any remaining review scope.
+Put target, source state, inspected sources, and verification details in `Evidence`. Separate
+executed checks from supplied
+results. Design reviews report inspected design evidence and limits, not invented implementation execution.
+Put unassessed scope, unavailable checks, and review needs in `Unresolved items`.
+For immediate critical reports, include supported findings and mark remaining review scope.

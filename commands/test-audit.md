@@ -5,11 +5,11 @@ subtask: false
 ---
 
 Coordinate a read-only audit with the `test-audit` skill and permitted reviewers.
-Use the context below, or an unambiguous current task when no context is supplied. If neither identifies a bounded
-target, inventory the relevant suites and ask one focused scope question before the substantive audit.
+Use the context below, otherwise an unambiguous current task. Without a bounded target, inventory relevant suites
+and ask one focused scope question before substantive auditing.
 Audit unit and end-to-end coverage by default. Honor a narrower focus such as unit tests only or E2E only.
-A source path identifies the behavior to assess. Find its related tests across the allowed repository scope,
-including unchanged tests. Preserve explicit file restrictions and report inaccessible or unassessed areas.
+A source path identifies behavior. Find related tests, including unchanged tests, within allowed repository scope.
+Honor file restrictions and report inaccessible or unassessed areas.
 
 Map expected behavior to actual assertions. Assess useful coverage, important gaps, misleading tests, duplication,
 and reliability. Run relevant existing checks within the requested verification limits and ordinary tool permissions.

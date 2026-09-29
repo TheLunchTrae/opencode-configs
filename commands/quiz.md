@@ -4,7 +4,7 @@ subtask: false
 ---
 
 Use the code-learning skill to quiz me on the topic below or the current explanation.
-Inspect the actual code, ask a few meaningful questions, and wait for my answers before giving the answer key.
+Inspect the code, ask a few meaningful questions, and wait for my answers before giving the key.
 Do not edit files. A quiz result is a learning aid, not verification or a merge gate.
 
 $ARGUMENTS

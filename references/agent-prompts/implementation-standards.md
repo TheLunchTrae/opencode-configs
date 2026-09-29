@@ -9,7 +9,7 @@ Read `@agent-prompts/verification-scope.md` before selecting tests or checks. Ap
 - Check dependency manifests, lockfiles, runtime versions, and repository instructions.
   Use documentation for the installed version. Do not assume a library or tool is available.
 - Match project conventions. Reuse existing helpers where they fit the requirement.
-- Make the smallest coherent change that satisfies the approved task.
+- Make the smallest coherent change satisfying the approved task.
   Avoid unrelated cleanup, new abstractions, or dependency changes.
 - Treat a research-only assignment as read-only, even if the agent has edit permission.
 
@@ -17,8 +17,7 @@ Read `@agent-prompts/verification-scope.md` before selecting tests or checks. Ap
 
 - For behavior or test changes, read `@agent-prompts/testing-standards.md` before selecting or writing coverage.
   Use the assigned testing skills within the approved scope. Report missing coverage without expanding the task.
-- Preserve the intended behavior, interfaces, and security boundaries.
-  Handle relevant failure paths as part of the change.
+- Preserve intended behavior, interfaces, and security boundaries. Handle relevant failure paths.
 - Add or update tests when they can detect a meaningful regression.
   Use the project's existing test framework and configured checks.
 - Inspect the final diff. Run checks that cover the affected behavior and integration points.

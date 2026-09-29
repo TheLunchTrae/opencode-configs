@@ -5,7 +5,7 @@ Read `@agent-prompts/response-formats/common.md`. Use its envelope with these se
 ### Answer
 
 Answer the assigned questions or summarize the requested check results. Distinguish source facts from interpretations.
-State whether the evidence supports the requested conclusion; do not replace missing evidence with confidence.
+State whether evidence supports the requested conclusion. Do not substitute confidence for evidence.
 
 ### Coverage
 

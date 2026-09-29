@@ -10,12 +10,12 @@ Obtain matching language review for TypeScript/JavaScript, Go, C#, or PHP change
 For structural changes, dispatch `architecture-reviewer`.
 Use `security-reviewer` for authentication, authorization, user input, database queries, file operations, external APIs,
 cryptography, payments, or sensitive data. Arrange general, architecture, and security reviewers as sibling tasks.
-For design assessments, apply the design review requirements in `@agent-prompts/planning-stage.md`.
+For design assessments, apply `@agent-prompts/planning-stage.md`'s review requirements.
 
 Supply current source or diff, intended behavior, surrounding context, verification limits, and check evidence.
 Review can start while CI is missing, pending, or failing. State those limits; unavailable evidence is not a pass.
 Reuse current complete findings for the same scope, including language evidence collected by a review coordinator.
-Delegate only uncovered scope. Do not repeat identical review work; refresh affected reviews after changes.
+Delegate only uncovered scope. Reuse identical reviews; refresh those affected by changes.
 Validate citations, source currency, scope, uncertainty, and findings before incorporating them.
 Use `@agent-prompts/response-formats/review.md` for the expected return. Require a complete assessment and `PASSED`
 verdict for each required review. `NOT ASSESSED`, unfinished scope, and missing reports do not satisfy that requirement.

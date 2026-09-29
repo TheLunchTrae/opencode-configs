@@ -4,9 +4,9 @@ Read `@agent-prompts/response-formats/common.md`. Use its envelope with these se
 
 ### Changes
 
-State changed behavior and files, or explain why no change was needed. Connect each change to the assigned outcome.
+State changed behavior and files, or why no change was needed. Relate each change to the assigned outcome.
 For cleanup, include the risk category and reference evidence for removals. For simplification, state the preserved
-behavior and why the change improves clarity. Identify any deviation from the approved scope instead of hiding it.
+behavior and why clarity improves. Identify deviations from approved scope.
 
 ### Acceptance
 

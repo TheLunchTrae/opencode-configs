@@ -14,10 +14,8 @@ Before implementation, read `@agent-prompts/global-coding-style.md`, `@agent-pro
 `@agent-prompts/csharp-guidance.md`.
 C#, EF Core, project, and repository guidance takes precedence.
 
-The hard calls in EF Core are about query shape and lifecycle: when tracking is paying for itself vs costing memory,
-when an `Include` pulls more rows than you wanted, whether a migration is safe to apply forward. Match the surrounding
-style — config in `OnModelCreating` vs. annotations, repository pattern or direct `DbContext`, migration naming — before
-introducing new patterns.
+Assess query shape and lifecycle: tracking benefits versus memory, excess `Include` rows, and forward migration safety.
+Match existing `OnModelCreating` or annotations, repository or direct `DbContext` use, and migration naming.
 
 ## Approach
 
@@ -116,6 +114,6 @@ Report required security review before any commit.
 
 ## Handoff
 
-Read `@agent-prompts/response-formats/implementation.md` for the canonical task response.
-This agent is a leaf. Do not delegate or bypass a Task denial.
-An implementation assignment does not authorize a commit or other external action.
+Read `@agent-prompts/response-formats/implementation.md` for the canonical response.
+Leaf agent: do not delegate or bypass a Task denial.
+Implementation does not authorize commits or other external actions.

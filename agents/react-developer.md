@@ -14,16 +14,16 @@ Before implementation, read `@agent-prompts/global-coding-style.md`, `@agent-pro
 `@agent-prompts/typescript-guidance.md`.
 TypeScript and React guidance, project conventions, and repository rules take precedence.
 
-The hard calls in React are render-time correctness: which boundary a component sits on (Server vs Client, sync vs
-async), whether a value should be state or computed inline, when memoisation is paying for itself. Match the surrounding
-style — component layout, hooks conventions, file naming, CSS pattern — before introducing new patterns.
+Check render-time correctness: Server/Client and sync/async boundaries, state versus derived values,
+and useful memoisation.
+Match existing component layout, hooks, filenames, and CSS before introducing patterns.
 
 ## Approach
 
 Read the target files, their immediate neighbours, and at least one parent component before editing. Check
 `package.json` for React version, framework (Next.js app/pages router, Remix, Gatsby, Vite/CRA), state and data
-libraries (TanStack Query, SWR, Redux, Zustand), and styling approach — don't assume any of these are present. Make the
-smallest change that solves the task.
+libraries (TanStack Query, SWR, Redux, Zustand), and styling. Do not assume they are present.
+Make the smallest change that solves the task.
 
 ## Idioms and anti-patterns
 
@@ -50,8 +50,8 @@ function UserCard({ id }) {
 
 ### Effects vs derived state
 
-Idiom: `useEffect` is for synchronising with external systems (DOM, network, subscriptions). Anything derivable from
-props or state should be computed inline during render, not stashed in state via an effect.
+Use `useEffect` for external synchronization (DOM, network, subscriptions). Compute values derived from props or state
+during render; do not store them through an effect.
 
 ```tsx
 // BAD: effect to derive a value
@@ -116,6 +116,6 @@ Report required security review before any commit.
 
 ## Handoff
 
-Read `@agent-prompts/response-formats/implementation.md` for the canonical task response.
-This agent is a leaf. Do not delegate or bypass a Task denial.
-An implementation assignment does not authorize a commit or other external action.
+Read `@agent-prompts/response-formats/implementation.md` for the canonical response.
+Leaf agent: do not delegate or bypass a Task denial.
+Implementation does not authorize commits or other external actions.
