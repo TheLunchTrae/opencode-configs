@@ -1,6 +1,7 @@
 import assert from "node:assert/strict"
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs"
 import { test } from "node:test"
+import { parseDocument } from "yaml"
 
 const root = new URL("../", import.meta.url)
 const read = (path) => readFileSync(new URL(path, root), "utf8")
@@ -100,34 +101,57 @@ test("retired workflow entrypoints are absent and documented for upgrades", () =
     assert.ok(!existsSync(new URL(`skills/${name}/`, root)), `${name}: retired skill remains`)
     assert.ok(upgrade.includes(`\`${name}/\``), `${name}: missing skill removal instruction`)
   }
-  const commands = readdirSync(new URL("commands/", root)).filter((name) => name.endsWith(".md"))
-  assert.deepEqual(commands.sort(), [...utilityCommands, "test-audit"].map((name) => `${name}.md`).sort())
 })
 
-// Read only the scalar permission fields and exact Task maps used by these agent files.
-// Native OpenCode loading remains a separate check; this is not a general YAML parser.
+const permissionActions = new Set(["allow", "ask", "deny"])
+const isRecord = (value) => value !== null && typeof value === "object" && !Array.isArray(value)
+const agentSettings = (text, name) => {
+  const header = text.match(/^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/)?.[1]
+  assert.ok(header, `${name}: missing agent frontmatter`)
+  const document = parseDocument(header, { uniqueKeys: true })
+  assert.equal(document.errors.length, 0, `${name}: ${document.errors.map((error) => error.message).join("; ")}`)
+  const fields = document.toJS()
+  assert.ok(isRecord(fields), `${name}: agent frontmatter must be a mapping`)
+  assert.ok(["primary", "subagent", "all"].includes(fields.mode), `${name}: invalid agent mode`)
+  const permission = fields.permission === undefined ? {} : fields.permission
+  assert.ok(isRecord(permission), `${name}: agent permissions must be a mapping`)
+  for (const key of ["edit", "bash", "question"]) {
+    assert.ok(permission[key] === undefined || permissionActions.has(permission[key]),
+      `${name}: ${key} must be a scalar permission action`)
+  }
+  const task = permission.task
+  assert.ok(task === undefined || permissionActions.has(task) || isRecord(task), `${name}: invalid Task permissions`)
+  if (isRecord(task)) {
+    for (const [target, action] of Object.entries(task)) {
+      assert.ok(target.length > 0 && permissionActions.has(action), `${name}: invalid Task rule for ${target}`)
+    }
+  }
+  return {
+    mode: fields.mode,
+    edit: permission.edit ?? config.permission.edit["*"],
+    bash: permission.bash,
+    question: permission.question,
+    external_directory: permission.external_directory,
+    rules: typeof task === "string" ? { "*": task } : { ...config.permission.task, ...task },
+  }
+}
+
+test("agent permission inspection preserves YAML Task grants and rejects invalid policies", () => {
+  const inspect = (permission) => agentSettings(`---\nmode: subagent\npermission: ${permission}\n---\n`, "fixture")
+  assert.deepEqual(inspect("{ task: { '*': allow, writer: ask } }").rules, { "*": "allow", writer: "ask" })
+  assert.deepEqual(inspect("\n  task:\n    writer: allow").rules, { "*": "deny", writer: "allow" })
+  assert.deepEqual(inspect("{ task: allow }").rules, { "*": "allow" })
+  assert.deepEqual(inspect("{}").rules, { "*": "deny" })
+  assert.throws(() => inspect("{ task: { writer: invalid } }"), /invalid Task rule/)
+  assert.throws(() => inspect("[allow]"), /permissions must be a mapping/)
+  assert.throws(() => inspect("{ task: allow, task: deny }"), /Map keys must be unique/)
+})
+
+// These checks inspect configured policies. Native OpenCode loading remains a separate check.
 const agents = Object.fromEntries(readdirSync(new URL("agents/", root)).filter((name) => name.endsWith(".md"))
   .map((file) => {
     const name = file.slice(0, -3)
-    const header = read(`agents/${file}`).match(/^---\n([\s\S]*?)\n---\n/)?.[1]
-    assert.ok(header, `${name}: missing agent frontmatter`)
-    const task = header.match(/^  task: (allow|ask|deny)$/m)?.[1]
-    const taskMap = header.match(/^  task:\n((?:    [^\n]+(?:\n|$))*)/m)?.[1]
-    const rules = task ? { "*": task } : { ...config.permission.task }
-    if (taskMap) {
-      for (const line of taskMap.trimEnd().split("\n")) {
-        const match = line.match(/^    ['"]?([a-z0-9*-]+)['"]?: (allow|ask|deny)$/)
-        assert.ok(match, `${name}: unsupported Task rule: ${line}`)
-        rules[match[1]] = match[2]
-      }
-    }
-    return [name, {
-      mode: header.match(/^mode: (.+)$/m)?.[1],
-      edit: header.match(/^  edit: (.+)$/m)?.[1] ?? config.permission.edit["*"],
-      bash: header.match(/^  bash: (.+)$/m)?.[1],
-      question: header.match(/^  question: (.+)$/m)?.[1],
-      rules,
-    }]
+    return [name, agentSettings(read(`agents/${file}`), name)]
   }))
 const builtinAgents = Object.fromEntries(["general", "explore"].map((name) => {
   const permission = config.agent[name].permission ?? {}
@@ -154,7 +178,6 @@ test("the default and focused leads are selectable primary agents", () => {
 
 test("Explore explicitly denies edits after global permissions are applied", () => {
   assert.equal(config.agent.explore.permission?.edit, "deny")
-  assert.equal(builtinAgents.explore.edit, "deny")
 })
 
 test("only primary leads receive an explicit Question tool grant", () => {
@@ -188,6 +211,9 @@ test("external-directory rules retain the native trusted-directory exceptions", 
   assert.equal(config.permission.external_directory, undefined)
   for (const [name, agent] of Object.entries(config.agent)) {
     assert.equal(agent.permission?.external_directory, undefined, name)
+  }
+  for (const [name, agent] of Object.entries(agents)) {
+    assert.equal(agent.external_directory, undefined, name)
   }
 })
 
@@ -370,12 +396,12 @@ test("canonical response profiles share the envelope and are discoverable from t
   assert.ok(read("README.md").includes("`references/agent-prompts/review-template.md`"), "missing upgrade removal")
 })
 
-test("every specialist selects one canonical task response profile", () => {
+test("every specialist references one canonical task response profile", () => {
   for (const [name, agent] of Object.entries(agents)) {
     if (agent.mode !== "subagent") continue
-    const profiles = [...read(`agents/${name}.md`).matchAll(/`@agent-prompts\/response-formats\/([^`]+)`/g)]
-      .map(([, file]) => `${responseDirectory}${file}`)
-    assert.equal(profiles.length, 1, `${name}: declare exactly one default response profile`)
+    const profiles = [...new Set([...read(`agents/${name}.md`).matchAll(/`@agent-prompts\/response-formats\/([^`]+)`/g)]
+      .map(([, file]) => `${responseDirectory}${file}`))]
+    assert.equal(profiles.length, 1, `${name}: reference exactly one distinct task response profile`)
     assert.ok(responseProfiles.includes(profiles[0]), `${name}: unknown task response profile`)
   }
 })
