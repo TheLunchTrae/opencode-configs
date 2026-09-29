@@ -5,7 +5,12 @@
   "scripts": {
     "test": "node --experimental-strip-types --test tests/*.test.mjs tests/*.test.ts",
     "test:native": "node --experimental-strip-types --test tests/*.native.ts",
-    "typecheck": "tsc --project tsconfig.json"
+    "typecheck": "tsc --project tsconfig.json",
+    "lint": "eslint . --max-warnings 0",
+    "lint:fix": "npm run lint -- --fix",
+    "format": "prettier --write plugins extensions tests package.json tsconfig.json eslint.config.mjs prettier.config.mjs",
+    "format:check": "prettier --check plugins extensions tests package.json tsconfig.json eslint.config.mjs prettier.config.mjs",
+    "check": "npm run typecheck && npm run lint && npm run format:check && npm test"
   },
   "dependencies": {
     "@opencode-ai/plugin": "1.18.29",
@@ -13,12 +18,20 @@
     "yaml": "2.9.1"
   },
   "devDependencies": {
+    "@eslint-community/eslint-plugin-eslint-comments": "4.7.2",
+    "@eslint/js": "10.0.1",
     "@opencode-ai/sdk": "1.18.29",
     "@opentui/core": "0.4.5",
     "@opentui/keymap": "0.4.5",
     "@opentui/solid": "0.4.5",
     "@types/node": "24.10.1",
+    "eslint": "10.10.0",
+    "eslint-config-prettier": "10.1.8",
+    "eslint-plugin-regexp": "3.3.0",
+    "globals": "17.12.0",
+    "prettier": "3.9.6",
     "solid-js": "1.9.12",
-    "typescript": "5.9.3"
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.69.0"
   }
 }

@@ -42,6 +42,10 @@ Do not copy credentials, tokens, `node_modules`, `.idea`, or work-project checkp
 The repository's `.opencode/` directory contains maintenance guidance and is not needed for global installation.
 When copying selected skills, include their supporting files, applicable license notices, owning agents, and references.
 
+For local editing of `plugins/` and `extensions/`, run `npm ci` from the checkout root.
+Select the workspace TypeScript version in your editor. If types remain unresolved, reopen the project or restart
+its TypeScript service. See [plugin tooling](.opencode/AGENTS.md#plugin-tooling) for lint and format commands.
+
 This setup retains V1 plugin and configuration conventions. Before using V2, port the bundled V1 plugin and
 review the delegation-depth setting. V2 does not run V1 plugins and ignores top-level `subagent_depth`.
 See the [V2 migration guide](https://opencode.ai/v2/docs/migrate-v1/).
@@ -198,6 +202,9 @@ Restart OpenCode and confirm agent, command, and skill availability in a work pr
 For other settings, see the [configuration documentation](https://opencode.ai/docs/config/).
 
 ## References
+
+[Krish's TypeScript standards](https://github.com/KrishRVH/standards/tree/f1909fdd2c55bd23604d0c5042ade09013495847/TS)
+informed the general lint and formatting rules. The local setup retains npm and OpenCode's TypeScript and OpenTUI APIs.
 
 [OpenClaw's test-audit skill](https://github.com/openclaw/openclaw/blob/main/.agents/skills/test-audit/SKILL.md)
 informed the test-value assessment and evidence required for suite cleanup.
