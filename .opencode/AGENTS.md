@@ -60,9 +60,9 @@ Check the installed version against the [V1 documentation](https://opencode.ai/d
 - Hidden affects interactive visibility. It does not remove agent context or grant tool permissions.
 - Each agent must explicitly read the references it needs. Framework agents do not inherit another agent's body.
   Keep language guidance shared with the matching developer, reviewer, and framework roles.
-- Every custom agent prompt must explicitly read `@agent-prompts/tool-selection.md` before other task work.
-  Keep the mandatory tool-selection policy in that shared reference. Root `AGENTS.md` requires the read for all
-  sessions, including built-in agents. Preserve stricter role restrictions and standalone reference reads.
+- Put universal task-agent rules in root `AGENTS.md`. OpenCode loads them for primary and subagent task sessions.
+  A child does not inherit its parent's role prompt. Keep role-specific reference reads explicit, but do not repeat
+  global rules or their read directives in each agent.
 - Canonical task responses belong in `references/agent-prompts/response-formats/`.
   Keep the envelope in `common.md`, task sections in profiles, and the consumer index in `catalog.md`.
   Each specialist selects a profile. Do not duplicate response structures in agent prompts or reusable skills.

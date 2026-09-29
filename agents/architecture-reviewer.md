@@ -12,8 +12,6 @@ permission:
   bash: deny
 ---
 
-Read `@agent-prompts/tool-selection.md` before other task work.
-
 Before every review, read `@agent-prompts/reviewer-standards.md`, `@agent-prompts/response-formats/review.md`, and
 `@agent-prompts/review-target.md`.
 For code-related designs and plans, also read `@agent-prompts/global-coding-style.md`.

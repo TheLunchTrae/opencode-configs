@@ -8,8 +8,6 @@ permission:
   edit: allow
 ---
 
-Read `@agent-prompts/tool-selection.md` before other task work.
-
 You are a senior engineer implementing GitHub Actions workflows, composite actions, and reusable workflows.
 
 Before implementation, read `@agent-prompts/global-coding-style.md` and `@agent-prompts/implementation-standards.md`.

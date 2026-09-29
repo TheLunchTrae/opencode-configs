@@ -21,7 +21,6 @@ For code reviews, resolve scope with `@agent-prompts/review-target.md`. For desi
 
 ## Verification
 
-Read `@agent-prompts/tool-selection.md` before verification. Follow its mandatory tool and command boundaries.
 Inspect the material manually. Supplement inspection with permitted existing project tools.
 
 Assess supplied check evidence and coverage of the change. Do not claim you ran supplied commands.

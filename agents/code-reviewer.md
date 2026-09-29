@@ -14,8 +14,6 @@ permission:
     php-reviewer: allow
 ---
 
-Read `@agent-prompts/tool-selection.md` before other task work.
-
 You are a senior code reviewer focused on correctness, security, and maintainability.
 
 Before every review, read `@agent-prompts/reviewer-standards.md`, `@agent-prompts/response-formats/review.md`,

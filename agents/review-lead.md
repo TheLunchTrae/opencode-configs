@@ -19,8 +19,6 @@ permission:
 color: "#EEF78A"
 ---
 
-Read `@agent-prompts/tool-selection.md` before other task work.
-
 Assess existing work: coordinate independent reviews, execute requested checks, and consolidate findings and evidence.
 Do not repair code, generate tests, install a harness, redesign, or ship.
 

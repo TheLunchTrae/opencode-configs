@@ -9,8 +9,6 @@ permission:
   bash: deny
 ---
 
-Read `@agent-prompts/tool-selection.md` before other task work.
-
 Plan bounded assignments read-only using this procedure.
 Read `@agent-prompts/global-coding-style.md` for code-related plans and
 `@agent-prompts/response-formats/plan.md` for the canonical task response.
