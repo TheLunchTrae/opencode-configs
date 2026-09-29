@@ -192,12 +192,15 @@ test("validation includes variants on linked groups and unpinned agents", async 
 
 function uiHarness(root: string) {
   let dialog: TuiDialogSelectProps<string> | TuiDialogConfirmProps | TuiDialogPromptProps | undefined
+  let onClose: (() => void) | undefined
+  const clear = () => { onClose?.(); onClose = undefined; dialog = undefined }
   let workspace: NativeModels | undefined
   let providerError = false
   const commands: { name: string; run: () => void | Promise<void> }[] = []
   const toasts: { message: string }[] = []
   const api = {
     state: { path: { config: root } },
+    route: { current: { name: "home" } },
     lifecycle: { signal: new AbortController().signal, onDispose: () => {} },
     keymap: { registerLayer: (layer: { commands: typeof commands }) => {
       commands.push(...layer.commands)
@@ -207,7 +210,11 @@ function uiHarness(root: string) {
       DialogSelect: (props: TuiDialogSelectProps<string>) => { dialog = props },
       DialogConfirm: (props: TuiDialogConfirmProps) => { dialog = props },
       DialogPrompt: (props: TuiDialogPromptProps) => { dialog = props },
-      dialog: { replace: (render: () => void) => render(), clear: () => { dialog = undefined } },
+      dialog: {
+        get open() { return dialog !== undefined },
+        replace: (render: () => void, closed?: () => void) => { onClose?.(); onClose = closed; render() },
+        clear,
+      },
       toast: (toast: { message: string }) => { toasts.push(toast) },
     },
     client: { config: {
@@ -227,10 +234,58 @@ function uiHarness(root: string) {
       assert.ok(option, `${dialog.title}: missing ${value}`)
       await dialog.onSelect!(option)
     },
-    async confirm() { await (dialog as TuiDialogConfirmProps).onConfirm!() },
+    async confirm() { const pending = (dialog as TuiDialogConfirmProps).onConfirm?.(); clear(); await pending },
+    async cancel() { const pending = (dialog as TuiDialogConfirmProps).onCancel?.(); clear(); await pending },
+    async escape() { clear(); await Promise.resolve() },
     async enter(value: string) { await (dialog as TuiDialogPromptProps).onConfirm!(value) },
   }
 }
+
+test("TUI preset creation returns through variants, models, and the name prompt without writing on cancellation", async (t) => {
+  const root = await fixture(t)
+  const original = await readFile(join(root, "opencode.jsonc"), "utf8")
+  const ui = uiHarness(root)
+  await ui.command()
+  await ui.select("+presets")
+  await ui.select("+")
+  await ui.enter("cancelled-preset")
+  await ui.select("fixture/next")
+  await ui.select("high")
+  await ui.cancel()
+  assert.equal(ui.dialog?.title, "Next: variant")
+  await ui.select("\u0000back")
+  assert.equal(ui.dialog?.title, "cancelled-preset")
+  await ui.escape()
+  assert.equal(ui.dialog?.title, "New model preset")
+  assert.equal((ui.dialog as TuiDialogPromptProps).value, "cancelled-preset")
+  await ui.escape()
+  assert.equal(ui.dialog?.title, "Model presets")
+  await ui.escape()
+  assert.equal(ui.dialog?.title, "Agent models: scope")
+  assert.equal(await readFile(join(root, "opencode.jsonc"), "utf8"), original)
+})
+
+test("TUI Back returns from native and preset reference variants to their model source menu", async (t) => {
+  const root = await fixture(t)
+  const original = await readFile(join(root, "opencode.jsonc"), "utf8")
+  const ui = uiHarness(root)
+  for (const reference of ["opencode:model", "opencode:small_model", "preset:balanced"]) {
+    await ui.command()
+    await ui.select("developers")
+    await ui.select(reference)
+    if (reference === "opencode:small_model") {
+      assert.equal(ui.dialog?.title, "Save agent settings?")
+      await ui.cancel()
+    } else {
+      assert.ok(ui.dialog?.title.includes(reference))
+      await ui.select("\u0000back")
+    }
+    assert.equal(ui.dialog?.title, "Group: developers · model source")
+    await ui.escape()
+    assert.equal(ui.dialog?.title, "Agent models: scope")
+  }
+  assert.equal(await readFile(join(root, "opencode.jsonc"), "utf8"), original)
+})
 
 test("TUI saves an effective workspace reference, shows its source, and preserves explicit pins", async (t) => {
   const root = await fixture(t)
@@ -243,8 +298,9 @@ test("TUI saves an effective workspace reference, shows its source, and preserve
   await ui.select("developers")
   await ui.select("opencode:model")
   await ui.select("low")
-  assert.match((ui.dialog as TuiDialogConfirmProps).message, /opencode:model → fixture\/next/)
-  assert.match((ui.dialog as TuiDialogConfirmProps).message, /1 explicit model overrides/)
+  assert.ok(ui.dialog && "message" in ui.dialog && typeof ui.dialog.message === "string")
+  assert.match(ui.dialog.message, /opencode:model → fixture\/next/)
+  assert.match(ui.dialog.message, /1 explicit model overrides/)
   await ui.confirm()
   const snapshot = await loadSnapshot(root)
   assert.deepEqual(snapshot.groups.developers, { modelRef: "opencode:model", variant: "low" })

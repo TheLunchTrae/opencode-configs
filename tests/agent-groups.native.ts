@@ -1,11 +1,11 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
-import { mkdtemp, mkdir, cp, symlink, writeFile, rm, readFile } from "node:fs/promises"
+import { mkdtemp, mkdir, cp, realpath, writeFile, rm, readFile } from "node:fs/promises"
 import { createServer } from "node:http"
 import { spawn, type ChildProcess } from "node:child_process"
 import { once } from "node:events"
 import { tmpdir } from "node:os"
-import { join } from "node:path"
+import { dirname, join } from "node:path"
 import { fileURLToPath } from "node:url"
 import { setTimeout } from "node:timers/promises"
 import { loadSnapshot, planChange, reloadConfiguration, savePlan } from "../extensions/agent-groups/storage.ts"
@@ -31,8 +31,10 @@ test("OpenCode resolves presets and workspace defaults and dispatches changes af
   await mkdir(join(configRoot, "agents"), { recursive: true })
   await mkdir(project)
   await cp(join(repo, "extensions"), join(configRoot, "extensions"), { recursive: true })
-  await symlink(join(repo, "node_modules"), join(configRoot, "node_modules"), "junction")
-  await writeFile(join(configRoot, "package.json"), await readFile(join(repo, "package.json")))
+  const dependencies = await realpath(join(repo, "node_modules"))
+  await cp(dependencies, join(configRoot, "node_modules"), { recursive: true })
+  await cp(join(dirname(dependencies), "package.json"), join(configRoot, "package.json"))
+  await cp(join(dirname(dependencies), "package-lock.json"), join(configRoot, "package-lock.json"))
 
   const requests: Record<string, unknown>[] = []
   const provider = createServer(async (request, response) => {

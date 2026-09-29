@@ -50,6 +50,8 @@ Specialists receive task inputs and constraints without needing the lead's ident
 
 Open the command palette and look under **Config**, or run `/agent-models` and `/agent-groups`.
 These are local settings controls. They do not send a prompt to an agent.
+Choose **← Back** or press Escape to return one menu. Escape closes the panel at its first menu.
+Canceling a prompt or confirmation returns to its parent without saving.
 The model picker reads the running server's provider catalog, including custom provider models and supported variants.
 Connect providers with `/connect` first. Models and affected variants are checked again before saving.
 
@@ -203,7 +205,8 @@ JSONC comments, YAML comments, prompt bodies, and unrelated settings are preserv
 An interrupted write can leave `.agent-groups.lock`. Remove that lock only after confirming no editor is saving.
 
 The server and TUI entrypoints target OpenCode V1 1.18.29.
-V2 needs a separate port. Install the complete `extensions/agent-groups/` directory and the package manifest.
+V2 needs a separate port. Install `extensions/agent-groups/`, the shared `extensions/tui/` directory,
+and the package manifest.
 Keep these entrypoints outside the automatically discovered `plugins/` directory to avoid loading them twice.
 Live reload records an internal `reloadToken` in the server plugin options so OpenCode invalidates its global cache.
 You do not need to edit that value.
@@ -212,6 +215,8 @@ You do not need to edit that value.
 
 These four plugins use native TUI dialogs and the selected theme. Open the command palette or use these commands.
 Open a session first for workflow, context, and bookmark actions. Inspectors do not send model requests.
+Choose **← Back** or press Escape to return to the previous view. Escape closes the panel at its first view.
+Prompts and handoff drafts return without saving when canceled. Completed bookmark changes remain saved.
 
 | Command | Action |
 | --- | --- |
@@ -290,7 +295,7 @@ See [continue a long task](#continue-a-long-task) for the lead's checkpoint and 
 
 ### Enable or disable panels
 
-Install the complete `extensions/session-tools/` directory.
+Install `extensions/session-tools/` and the shared `extensions/tui/` directory.
 Keep `extensions/agent-groups/settings.ts` installed as its shared model-resolution helper, even with the group editor disabled.
 The four TUI entries are independent:
 

@@ -16,11 +16,11 @@ function copy(api: TuiPluginApi, text: string) {
     message: "Paste into the composer, review the request, then submit it. Nothing was submitted automatically." })
 }
 
-function Draft(props: { api: TuiPluginApi; text: string }) {
+function Draft(props: { api: TuiPluginApi; text: string; view: ReturnType<typeof ui> }) {
   const dimensions = useTerminalDimensions()
   props.api.ui.dialog.setSize("large")
   let input: TextareaRenderable | undefined
-  const transfer = () => ui(props.api).run(() => {
+  const transfer = () => props.view.run(() => {
     const text = input?.plainText ?? props.text
     if (!text.trim() || text.length > 50_000) throw new PanelError("Use a nonempty handoff draft under 50,000 characters.")
     copy(props.api, `/checkpoint Save the following reviewed handoff in this work project. `
@@ -39,7 +39,9 @@ function Draft(props: { api: TuiPluginApi; text: string }) {
         textColor={theme().text} focusedTextColor={theme().text} backgroundColor={theme().backgroundPanel} />
       <box flexDirection="row" gap={2}>
         <text fg={theme().primary} onMouseUp={() => void transfer()}>ctrl+y · copy checkpoint prompt</text>
-        <text fg={theme().textMuted} onMouseUp={() => props.api.ui.dialog.clear()}>esc · close</text>
+        <text fg={theme().textMuted} onMouseUp={props.view.navigation.back}>
+          esc · {props.view.navigation.canGoBack ? "back" : "close"}
+        </text>
       </box>
     </box>
 }
@@ -60,7 +62,7 @@ export default {
     const draft = async () => {
       const data = await source()
       const text = handoff(data.session, bookmarkStore(api, data).read(), stageReport(data.entries))
-      api.ui.dialog.replace(() => <Draft api={api} text={text} />)
+      view.navigation.show(() => <Draft api={api} text={text} view={view} />)
     }
     const add = (data: Snapshot, note = "", messageID?: string) => {
       view.menu("Bookmark type", bookmarkKinds.map((kind) => ({ title: kind, value: kind, run: () => {
@@ -126,13 +128,13 @@ export default {
             }
           }
           if (api.lifecycle.signal.aborted || client !== api.client) return
-          api.ui.dialog.clear(); api.route.navigate("session", { sessionID: mark.sessionID })
+          view.navigation.close(); api.route.navigate("session", { sessionID: mark.sessionID })
         } },
         { title: "Remove bookmark…", value: "remove", run: () => {
-          api.ui.dialog.replace(() => api.ui.DialogConfirm({ title: "Remove this bookmark?", message: mark.label,
-            onCancel: () => { void view.run(open) }, onConfirm: () => { void view.run(() => {
+          view.navigation.confirm({ title: "Remove this bookmark?", message: mark.label,
+            onConfirm: () => { void view.run(() => {
               store.write((items) => items.filter((item) => item.id !== mark.id)); return open()
-            }) } }))
+            }) } })
         } },
       ])
     }
@@ -150,7 +152,7 @@ export default {
         } },
         ...marks.map((mark) => ({ title: `${mark.selected ? "[x]" : "[ ]"} ${mark.label}`, value: mark.id,
           category: mark.kind, description: clean(mark.note, 160), run: () => inspect(data, mark) })),
-      ])
+      ], true)
     }
     view.command("session-bookmarks.open", "Session bookmarks", "bookmarks", "Session", open)
     view.command("session-bookmarks.add", "Bookmark a message or note", "bookmark", "Session", chooseSource)
