@@ -185,9 +185,17 @@ test("validation includes variants on linked groups and unpinned agents", async 
   const snapshot = await loadSnapshot(root)
   const preset = planChange(snapshot, { kind: "preset", name: "balanced", choice: { model: "fixture/small" } })
   assert.throws(() => plannedChoices(preset).forEach((choice) => validateChoice(choice, catalog)), /variant/)
-  const global = planChange(snapshot, { kind: "global", field: "model", model: "fixture/small" })
-  assert.throws(() => plannedChoices(global, context.native).forEach((choice) => validateChoice(choice, catalog)), /variant/)
   assert.equal(await readFile(snapshot.configFile.path, "utf8"), snapshot.configFile.text)
+  await writeFile(snapshot.configFile.path, JSON.stringify({
+    plugin: [["./extensions/agent-groups/server.ts", { groups: { developers: { modelRef: "opencode:model" } } }]],
+    model: "fixture/fast",
+  }))
+  const agentOnly = await loadSnapshot(root)
+  assert.deepEqual(agentOnly.agents.map((agent) => [agent.name, agent.settings.variant]), [["extra", "low"]])
+  validateChoice(resolveGroup(agentOnly.groups.developers, { native: { model: "fixture/small" } }), catalog)
+  const global = planChange(agentOnly, { kind: "global", field: "model", model: "fixture/small" })
+  assert.throws(() => plannedChoices(global).forEach((choice) => validateChoice(choice, catalog)), /variant/)
+  assert.equal(await readFile(agentOnly.configFile.path, "utf8"), agentOnly.configFile.text)
 })
 
 function uiHarness(root: string) {

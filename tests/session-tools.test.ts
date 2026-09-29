@@ -72,9 +72,15 @@ test("config inspection separates global, merged, agent, group, and observed set
   const config = { model: "fixture/project", provider: { private: { options: { apiKey: "DO_NOT_DISPLAY" } } },
     plugin: [["/config/extensions/agent-groups/server.ts", { groups: { reviewers: { model: "fixture/group" } } }]] } as Config
   const facts = configFacts(agent, config, { model: "fixture/global" },
-    [entry(1, [], { agent: "reviewer", modelID: "observed" })])
-  const values = facts.map((item) => item.value)
-  for (const model of ["pinned", "project", "global", "observed", "group"]) assert.ok(values.includes(`fixture/${model}`))
+    [entry(1, [], { agent: "reviewer", modelID: "older" }),
+      entry(3, [], { agent: "other", modelID: "unrelated" }),
+      entry(2, [], { agent: "reviewer", modelID: "observed" })])
+  const value = (label: string) => facts.find((item) => item.label === label)?.value
+  assert.equal(value("Agent default (server-resolved)"), "fixture/pinned")
+  assert.equal(value("Workspace default (merged)"), "fixture/project")
+  assert.equal(value("Global file default"), "fixture/global")
+  assert.equal(value("Last recorded model for this agent"), "fixture/observed")
+  assert.equal(value("Configured group default"), "fixture/group")
   assert.ok(!JSON.stringify(facts).includes("DO_NOT_DISPLAY"))
   assert.match(facts.find((item) => item.label === "Group inheritance")!.value, /does not prove/)
   assert.match(facts.find((item) => item.label === "Origin file")!.value, /not exposed/)
@@ -89,6 +95,7 @@ test("bookmarks persist by project, workspace, directory, and session without ov
   store.write((items) => [...items, mark()])
   assert.equal(bookmarkStore(api, { session: session() }).read()[0]?.label, "Output contract")
   assert.deepEqual(bookmarkStore(api, { session: session("other") }).read(), [])
+  assert.deepEqual(bookmarkStore(api, { session: { ...session(), projectID: "other" } }).read(), [])
   assert.notEqual(bookmarkKey(session()), bookmarkKey({ ...session(), workspaceID: "other" }))
   assert.notEqual(bookmarkKey(session()), bookmarkKey({ ...session(), directory: "/other" }))
   const invalid = { version: 2, bookmarks: [] }
@@ -115,7 +122,7 @@ test("handoff drafts include only selected notes and preserve checkpoint evidenc
   assert.throws(() => handoff(session(), Array.from({ length: 21 }, (_, i) => mark(String(i)))), /at most 20/)
 })
 
-test("terminal control sequences do not enter displayed metadata or saved notes", () => {
+test("metadata sanitizer strips terminal controls and enforces the length limit", () => {
   assert.equal(clean("before\x1b]52;c;SECRET\x07\x1b[31mafter\x00"), "beforeafter")
   assert.equal(clean("hello\nworld", 7), "hello\nw")
 })
@@ -153,7 +160,7 @@ test("workflow collection preserves partial results and never follows a child cy
   assert.equal((await loadWorkflow(api, "session-a", controller.signal)).statuses["session-a"], undefined)
 })
 
-test("config and context plugins register native commands and open real read-only views", async () => {
+test("config and context register commands and open mocked menus with completed-request usage", async () => {
   const commands = new Map<string, () => Promise<void>>()
   let shown: { title: string; options: { title: string; value: string; description?: string }[] } | undefined
   const api = {

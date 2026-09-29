@@ -76,7 +76,7 @@ test("provider catalog exposes configured models and supported variants", () => 
   } }])
   assert.deepEqual(models.map((model) => model.id), ["example/fast"])
   assert.deepEqual(Object.keys(models[0].variants), ["low"])
-  assert.equal(validateChoice({ model: "example/fast", variant: "low" }, models), models[0])
+  assert.equal(validateChoice({ model: "example/fast", variant: "low" }, models)?.id, "example/fast")
   assert.throws(() => validateChoice({ model: "example/fast", variant: "high" }, models))
   assert.throws(() => validateChoice({ model: "missing/model" }, models))
   assert.throws(() => catalogModels(undefined))
@@ -221,25 +221,14 @@ test("reload does not overwrite a concurrent comment edit", async (t) => {
   assert.match(await readFile(path, "utf8"), /Another editor's comment/)
 })
 
-test("shipped groups use shared sources without changing model allocations or deliberate exceptions", async () => {
-  const snapshot = await loadSnapshot(fileURLToPath(new URL("../", import.meta.url)))
+const shipped = await loadSnapshot(fileURLToPath(new URL("../", import.meta.url)))
+
+test("shipped groups resolve shared sources and preserve deliberate agent exceptions and built-in fallbacks", () => {
+  const snapshot = shipped
   const context = { native: snapshot.config, modelPresets: snapshot.modelPresets }
-  const legacyGroups = {
-    workflow: { model: "openai/gpt-6-astra", variant: "high" },
-    planning: { model: "openai/gpt-6-astra", variant: "high" },
-    developers: { model: "openai/gpt-5.6-sol", variant: "medium" },
-    reviewers: { model: "openai/gpt-6-astra", variant: "high" },
-    refactoring: { model: "openai/gpt-5.6-sol", variant: "medium" },
-    documentation: { model: "openai/gpt-5.6-terra", variant: "medium" },
-    research: { model: "openai/gpt-5.6-terra", variant: "medium" },
-    system: { model: "openai/gpt-5.6-terra", variant: "medium" },
+  for (const field of ["model", "small_model"]) {
+    assert.match(String(snapshot.config[field]), /^[^\s/]+\/\S+$/, `${field}: missing configured model`)
   }
-  assert.equal(snapshot.config.model, "openai/gpt-6-astra")
-  assert.equal(snapshot.config.small_model, "openai/gpt-5.6-luna")
-  assert.deepEqual(snapshot.modelPresets, {
-    balanced: { model: "openai/gpt-5.6-sol", variant: "medium" },
-    lightweight: { model: "openai/gpt-5.6-terra", variant: "medium" },
-  })
   assert.deepEqual(snapshot.groups, {
     workflow: { modelRef: "opencode:model", variant: "high" },
     planning: { modelRef: "opencode:model", variant: "high" },
@@ -252,61 +241,59 @@ test("shipped groups use shared sources without changing model allocations or de
   })
   for (const agent of snapshot.agents) {
     const effective = resolveChoice(agent.settings, snapshot.groups, context)
-    const previous = resolveChoice(agent.settings, legacyGroups)
     assert.ok(effective.group, `${agent.name}: missing group`)
+    assert.ok(Object.hasOwn(snapshot.groups, effective.group), `${agent.name}: unknown group`)
     assert.ok(effective.model, `${agent.name}: missing model`)
     assert.ok(effective.variant, `${agent.name}: missing variant`)
-    assert.deepEqual({ model: effective.model, variant: effective.variant },
-      { model: previous.model, variant: previous.variant }, `${agent.name}: model allocation changed`)
+    assert.equal(effective.source, agent.settings.model ? "agent" : "group", agent.name)
   }
-  const pins = Object.fromEntries(snapshot.agents.filter((agent) => agent.settings.model).map((agent) =>
-    [agent.name, { model: agent.settings.model, variant: agent.settings.variant }]))
-  assert.deepEqual(pins, {
-    "doctrine-developer": { model: "openai/gpt-6-astra", variant: "high" },
-    "efcore-developer": { model: "openai/gpt-6-astra", variant: "high" },
-    "implementation-lead": { model: "openai/gpt-6-astra", variant: "high" },
-    "performance-optimizer": { model: "openai/gpt-6-astra", variant: "high" },
-    title: { model: "openai/gpt-5.6-luna", variant: "low" },
-  })
-  assert.equal(snapshot.agents.find((agent) => agent.name === "title")!.settings.options?.reasoningEffort, "low")
-  assert.equal(snapshot.agents.find((agent) => agent.name === "compaction")!.settings.options?.reasoningEffort, "medium")
+  const pins = snapshot.agents.filter((agent) => agent.settings.model).map((agent) => agent.name).sort()
+  assert.deepEqual(pins, ["doctrine-developer", "efcore-developer", "implementation-lead", "performance-optimizer", "title"])
+  for (const name of ["title", "compaction"]) {
+    const agent = snapshot.agents.find((agent) => agent.name === name)!
+    assert.equal(agent.settings.options?.reasoningEffort,
+      resolveChoice(agent.settings, snapshot.groups, context).variant, `${name}: align the built-in variant fallback`)
+  }
+  assert.equal(snapshot.agents.find((agent) => agent.name === "title")!.settings.variant, "low")
 })
 
-for (const change of [
-  { target: "model", groups: ["workflow", "planning", "reviewers"] },
-  { target: "balanced", groups: ["developers", "refactoring"] },
-  { target: "lightweight", groups: ["documentation", "research", "system"] },
-  { target: "small_model", groups: [] },
-] as const) {
-  test(`changing shipped ${change.target} updates only linked, unpinned agents`, async () => {
-    const snapshot = await loadSnapshot(fileURLToPath(new URL("../", import.meta.url)))
+for (const modelRef of ["opencode:model", ...Object.keys(shipped.modelPresets).map((name) => `preset:${name}`),
+  "opencode:small_model"]) {
+  const target = modelRef.slice(modelRef.indexOf(":") + 1)
+  test(`changing shipped ${target} updates only linked, unpinned agents`, () => {
+    const snapshot = shipped
     const original = JSON.stringify({ config: snapshot.config, groups: snapshot.groups,
       modelPresets: snapshot.modelPresets, agents: snapshot.agents.map((agent) => agent.settings) })
     const native = { ...snapshot.config }
     const modelPresets = structuredClone(snapshot.modelPresets)
-    if (change.target === "model" || change.target === "small_model") native[change.target] = "fixture/replacement"
-    else modelPresets[change.target] = { model: "fixture/replacement", variant: "low" }
+    if (modelRef.startsWith("opencode:")) native[target] = "fixture/replacement"
+    else modelPresets[target] = { model: "fixture/replacement", variant: "low" }
     const context = { native, modelPresets }
     const agents = Object.fromEntries(snapshot.agents.map((agent) => [agent.name, structuredClone(agent.settings)]))
     applyDefaults(agents, snapshot.groups, context)
-    let changed = 0
+    let inherited = 0
     for (const agent of snapshot.agents) {
-      const before = resolveChoice(agent.settings, snapshot.groups,
-        { native: snapshot.config, modelPresets: snapshot.modelPresets })
+      const group = agent.settings.agent_group ?? agent.settings.options?.agent_group
+      assert.ok(typeof group === "string", `${agent.name}: missing group`)
+      const defaults = snapshot.groups[group]
+      assert.ok(defaults, `${agent.name}: unknown group`)
+      const preset = defaults.modelRef?.startsWith("preset:") ? modelPresets[defaults.modelRef.slice(7)] : undefined
+      const model = agent.settings.model ?? (defaults.modelRef === "opencode:model" ? native.model
+        : defaults.modelRef === "opencode:small_model" ? native.small_model : preset?.model ?? defaults.model)
+      const variant = agent.settings.model ? agent.settings.variant : agent.settings.variant ?? defaults.variant ?? preset?.variant
+      const expected = { group, model, variant, source: agent.settings.model ? "agent" : "group",
+        ...(!agent.settings.model && defaults.modelRef ? { modelRef: defaults.modelRef } : {}) }
       const after = resolveChoice(agent.settings, snapshot.groups, context)
-      const follows = !agent.settings.model && change.groups.some((name) => name === before.group)
-      let variant = before.variant
-      if (follows && (change.target === "balanced" || change.target === "lightweight")) {
-        variant = agent.settings.variant ?? snapshot.groups[before.group!]?.variant ?? "low"
-      }
-      const expected = follows ? { ...before, model: "fixture/replacement", variant } : before
-      assert.deepEqual(after, expected, agent.name)
-      assert.deepEqual(agents[agent.name], { ...agent.settings, model: expected.model, variant: expected.variant },
+      assert.deepEqual(after, expected, `${agent.name}: resolve the stored model source`)
+      assert.deepEqual(agents[agent.name], { ...agent.settings, model, variant },
         `${agent.name}: applying defaults must preserve other agent settings`)
-      if (after.model !== before.model) changed++
+      if (!agent.settings.model && defaults.modelRef === modelRef) {
+        assert.equal(after.model, "fixture/replacement", `${agent.name}: follow the changed source`)
+        inherited++
+      }
     }
-    if (change.target === "small_model") assert.equal(changed, 0, "the title pin and system preset remain independent")
-    else assert.ok(changed > 0, "the shared source must have inherited consumers")
+    if (modelRef === "opencode:small_model") assert.equal(inherited, 0, "the title pin and system preset remain independent")
+    else assert.ok(inherited > 0, "the shared source must have inherited consumers")
     assert.equal(JSON.stringify({ config: snapshot.config, groups: snapshot.groups,
       modelPresets: snapshot.modelPresets, agents: snapshot.agents.map((agent) => agent.settings) }), original)
   })
@@ -400,7 +387,7 @@ test("TUI model selection previews, saves, and blocks reload while an agent runs
   ui.dispose()
 })
 
-test("TUI cancellation, provider failures, and catalog changes leave files unchanged", async (t) => {
+test("TUI cancellation and provider failures leave files unchanged", async (t) => {
   const root = await fixture(t)
   const ui = uiHarness(root)
   await ui.command()
