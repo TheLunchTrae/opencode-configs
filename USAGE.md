@@ -101,6 +101,24 @@ For native references, it labels differences between the running workspace and t
 A difference can reflect an override or a saved change awaiting reload; it does not establish exact file provenance.
 References are resolved again when configuration is reloaded or OpenCode restarts, not continuously during a request.
 
+### Shipped model sources
+
+The bundled [configuration](opencode.jsonc) uses main-model references and two shared presets, `balanced` and `lightweight`.
+Its `groups` object is the source of truth for assignments. Explicit agent exceptions remain in the agent configuration.
+Main-model groups retain their `high` variant. Preset-linked groups inherit the variant stored in their preset.
+
+In `/agent-models`, use **Global defaults → Main model** to change the main slot.
+Use **Model presets → balanced** or **Model presets → lightweight** to change those shared choices.
+Review the affected groups and retained pins before saving. Apply the change through an explicit reload or restart.
+
+The `system` group uses `lightweight`, not the native small-model slot.
+The `title` agent retains its explicit model and `low` variant, independently of both its group and `small_model`.
+Changing the small-model slot alone does not change these defaults.
+
+**Upgrade warning:** Adopting the bundled references makes main-model groups follow effective workspace overrides.
+Their group-level variants still apply and must be supported by the selected model.
+Back up and merge local settings before adopting the shipped configuration. Preserve deliberate agent exceptions.
+
 ### Configure group defaults and presets
 
 Add these fields inside the server plugin's options in `opencode.jsonc`. The model IDs below are placeholders:
@@ -115,7 +133,7 @@ Add these fields inside the server plugin's options in `opencode.jsonc`. The mod
       "developers": { "modelRef": "preset:balanced" },
       "refactoring": { "modelRef": "preset:balanced" },
       "reviewers": { "modelRef": "opencode:model", "variant": "high" },
-      "system": { "modelRef": "opencode:small_model" },
+      "utility": { "modelRef": "opencode:small_model" },
       "research": { "model": "provider/another-model-id" },
       "fallback": {}
     }
@@ -126,7 +144,8 @@ Add these fields inside the server plugin's options in `opencode.jsonc`. The mod
 Keep your other plugin entries. Register `./extensions/agent-groups/tui.ts` in the `plugin` array of `tui.jsonc`.
 Group and preset names use lowercase kebab-case, start with a letter, and contain at most 64 characters.
 Use a model and variant supported by your provider. Set the referenced native slots before assigning their references.
-Presets are optional. Existing groups with concrete models require no migration, and installing the feature creates no links.
+Presets are optional. Updating the plugin alone does not convert existing concrete models into references.
+The bundled configuration already uses references; merge those settings explicitly when upgrading an installation.
 
 A group accepts either `model` or `modelRef`, never both. A preset accepts only a concrete `model` and optional `variant`.
 Presets cannot reference other presets or native defaults. Groups cannot reference other groups.
@@ -170,6 +189,9 @@ Server dispatch also rejects unsupported variants for referenced defaults when t
 Models that the native provider cannot resolve remain errors. These checks do not prove that credentials or model calls work.
 
 ### Editing and compatibility
+
+Install the updated `extensions/agent-groups/` directory with `opencode.jsonc` before using the shipped model sources.
+Older plugin versions reject the `modelRef` and `modelPresets` fields. Do not update the configuration alone.
 
 The editor manages this installation's global `opencode.jsonc` or `opencode.json` and its `agents/` or `agent/` files.
 Run it where the TUI and server share the same global configuration filesystem. Remote configuration editing and

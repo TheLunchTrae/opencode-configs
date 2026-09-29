@@ -221,17 +221,96 @@ test("reload does not overwrite a concurrent comment edit", async (t) => {
   assert.match(await readFile(path, "utf8"), /Another editor's comment/)
 })
 
-test("shipped groups supply defaults and preserve the deliberate exceptions", async () => {
+test("shipped groups use shared sources without changing model allocations or deliberate exceptions", async () => {
   const snapshot = await loadSnapshot(fileURLToPath(new URL("../", import.meta.url)))
+  const context = { native: snapshot.config, modelPresets: snapshot.modelPresets }
+  const legacyGroups = {
+    workflow: { model: "openai/gpt-6-astra", variant: "high" },
+    planning: { model: "openai/gpt-6-astra", variant: "high" },
+    developers: { model: "openai/gpt-5.6-sol", variant: "medium" },
+    reviewers: { model: "openai/gpt-6-astra", variant: "high" },
+    refactoring: { model: "openai/gpt-5.6-sol", variant: "medium" },
+    documentation: { model: "openai/gpt-5.6-terra", variant: "medium" },
+    research: { model: "openai/gpt-5.6-terra", variant: "medium" },
+    system: { model: "openai/gpt-5.6-terra", variant: "medium" },
+  }
+  assert.equal(snapshot.config.model, "openai/gpt-6-astra")
+  assert.equal(snapshot.config.small_model, "openai/gpt-5.6-luna")
+  assert.deepEqual(snapshot.modelPresets, {
+    balanced: { model: "openai/gpt-5.6-sol", variant: "medium" },
+    lightweight: { model: "openai/gpt-5.6-terra", variant: "medium" },
+  })
+  assert.deepEqual(snapshot.groups, {
+    workflow: { modelRef: "opencode:model", variant: "high" },
+    planning: { modelRef: "opencode:model", variant: "high" },
+    developers: { modelRef: "preset:balanced" },
+    reviewers: { modelRef: "opencode:model", variant: "high" },
+    refactoring: { modelRef: "preset:balanced" },
+    documentation: { modelRef: "preset:lightweight" },
+    research: { modelRef: "preset:lightweight" },
+    system: { modelRef: "preset:lightweight" },
+  })
   for (const agent of snapshot.agents) {
-    const effective = resolveChoice(agent.settings, snapshot.groups)
+    const effective = resolveChoice(agent.settings, snapshot.groups, context)
+    const previous = resolveChoice(agent.settings, legacyGroups)
     assert.ok(effective.group, `${agent.name}: missing group`)
     assert.ok(effective.model, `${agent.name}: missing model`)
     assert.ok(effective.variant, `${agent.name}: missing variant`)
+    assert.deepEqual({ model: effective.model, variant: effective.variant },
+      { model: previous.model, variant: previous.variant }, `${agent.name}: model allocation changed`)
   }
-  const pins = snapshot.agents.filter((a) => a.settings.model).map((a) => a.name)
-  assert.deepEqual(pins, ["doctrine-developer", "efcore-developer", "implementation-lead", "performance-optimizer", "title"])
+  const pins = Object.fromEntries(snapshot.agents.filter((agent) => agent.settings.model).map((agent) =>
+    [agent.name, { model: agent.settings.model, variant: agent.settings.variant }]))
+  assert.deepEqual(pins, {
+    "doctrine-developer": { model: "openai/gpt-6-astra", variant: "high" },
+    "efcore-developer": { model: "openai/gpt-6-astra", variant: "high" },
+    "implementation-lead": { model: "openai/gpt-6-astra", variant: "high" },
+    "performance-optimizer": { model: "openai/gpt-6-astra", variant: "high" },
+    title: { model: "openai/gpt-5.6-luna", variant: "low" },
+  })
+  assert.equal(snapshot.agents.find((agent) => agent.name === "title")!.settings.options?.reasoningEffort, "low")
+  assert.equal(snapshot.agents.find((agent) => agent.name === "compaction")!.settings.options?.reasoningEffort, "medium")
 })
+
+for (const change of [
+  { target: "model", groups: ["workflow", "planning", "reviewers"] },
+  { target: "balanced", groups: ["developers", "refactoring"] },
+  { target: "lightweight", groups: ["documentation", "research", "system"] },
+  { target: "small_model", groups: [] },
+] as const) {
+  test(`changing shipped ${change.target} updates only linked, unpinned agents`, async () => {
+    const snapshot = await loadSnapshot(fileURLToPath(new URL("../", import.meta.url)))
+    const original = JSON.stringify({ config: snapshot.config, groups: snapshot.groups,
+      modelPresets: snapshot.modelPresets, agents: snapshot.agents.map((agent) => agent.settings) })
+    const native = { ...snapshot.config }
+    const modelPresets = structuredClone(snapshot.modelPresets)
+    if (change.target === "model" || change.target === "small_model") native[change.target] = "fixture/replacement"
+    else modelPresets[change.target] = { model: "fixture/replacement", variant: "low" }
+    const context = { native, modelPresets }
+    const agents = Object.fromEntries(snapshot.agents.map((agent) => [agent.name, structuredClone(agent.settings)]))
+    applyDefaults(agents, snapshot.groups, context)
+    let changed = 0
+    for (const agent of snapshot.agents) {
+      const before = resolveChoice(agent.settings, snapshot.groups,
+        { native: snapshot.config, modelPresets: snapshot.modelPresets })
+      const after = resolveChoice(agent.settings, snapshot.groups, context)
+      const follows = !agent.settings.model && change.groups.some((name) => name === before.group)
+      let variant = before.variant
+      if (follows && (change.target === "balanced" || change.target === "lightweight")) {
+        variant = agent.settings.variant ?? snapshot.groups[before.group!]?.variant ?? "low"
+      }
+      const expected = follows ? { ...before, model: "fixture/replacement", variant } : before
+      assert.deepEqual(after, expected, agent.name)
+      assert.deepEqual(agents[agent.name], { ...agent.settings, model: expected.model, variant: expected.variant },
+        `${agent.name}: applying defaults must preserve other agent settings`)
+      if (after.model !== before.model) changed++
+    }
+    if (change.target === "small_model") assert.equal(changed, 0, "the title pin and system preset remain independent")
+    else assert.ok(changed > 0, "the shared source must have inherited consumers")
+    assert.equal(JSON.stringify({ config: snapshot.config, groups: snapshot.groups,
+      modelPresets: snapshot.modelPresets, agents: snapshot.agents.map((agent) => agent.settings) }), original)
+  })
+}
 
 function uiHarness(root: string, globalDirectory = root) {
   let dialog: TuiDialogSelectProps<string> | TuiDialogConfirmProps | TuiDialogPromptProps | undefined
