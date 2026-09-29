@@ -1,6 +1,6 @@
 # OpenCode Global Configuration
 
-Personal global configuration for OpenCode, with focused lead agents, specialists, utility commands, reusable skills,
+Personal global configuration for OpenCode, with focused lead agents, specialists, commands, reusable skills,
 shared prompts, secret-path checks, and quota display preferences.
 The default agent is `workflow-lead`. It coordinates complete development tasks.
 Select a focused lead when you want only planning, approved implementation, or assessment of existing work.
@@ -12,7 +12,7 @@ Select a focused lead when you want only planning, approved implementation, or a
 | [`USAGE.md`](USAGE.md) | Workflow guide, command and skill reference, and practical task examples. |
 | [`AGENTS.md`](AGENTS.md) | Shared instructions for all sessions. |
 | [`agents/`](agents/) | Agent prompts, roles, and model choices. |
-| [`commands/`](commands/) | Optional utility shortcuts that retain the selected agent. |
+| [`commands/`](commands/) | Utility shortcuts and the focused test-audit entrypoint. |
 | [`skills/`](skills/) | Reusable task procedures. |
 | [`references/agent-prompts/`](references/agent-prompts/) | Shared prompt guidance. |
 | [`plugins/`](plugins/) | Local plugins, including secret-path checks. |
@@ -54,11 +54,20 @@ See the [V2 migration guide](https://opencode.ai/v2/docs/migrate-v1/).
    `workflow-lead` and `implementation-lead` can edit files; planning and review leads have narrower roles.
 
 GitHub and Playwright MCP servers are configured but disabled. Review their connection settings before enabling them.
+If enabled, their tools require approval through the `github_*` and `playwright_*` permission rules.
 Configure GitHub authentication in your local environment, then set `enabled` to `true` for a server you want to use.
 The supplied GitHub entry has OAuth disabled; configure a supported authentication method when enabling it.
 Keep tokens out of version control.
 
 The quota plugin is configured for OpenAI. To opt out, remove its entries from both `opencode.jsonc` and `tui.jsonc`.
+
+Global file edits require approval unless the selected agent explicitly allows or denies them.
+Explore explicitly denies edits. The four primary leads can use the Question tool for structured clarification.
+Delegation remains denied by default, with exact targets in each coordinating agent's permissions.
+
+External-directory access uses OpenCode's V1 defaults. Ordinary external paths require approval.
+OpenCode permits its configured skill and reference directories and designated temporary and tool-output locations.
+Read and edit permissions still apply to those paths.
 
 ## Quick start
 
@@ -102,7 +111,11 @@ It covers `.env` files, common private-key and credential files, `.ssh/` content
 and paths containing a complete `secrets` segment. It shows an error toast when available.
 
 Template basenames `.env.example`, `.env.sample`, `.env.template`, `.env.defaults`, and `.env.dist` are allowed
-unless the path contains a `secrets` segment. Matching is case-insensitive on every operating system.
+unless the path contains a `secrets` segment. The plugin matches paths case-insensitively on every operating system.
+
+Native Read permissions also deny a complete `secrets` path segment and its contents,
+including `~/.config/opencode/secrets`.
+These rules match V1 worktree-relative paths and normalized Windows separators.
 
 This plugin is a path check, not a sandbox or complete secret protection:
 
@@ -111,8 +124,14 @@ This plugin is a path check, not a sandbox or complete secret protection:
 - Approved commands, scripts, and hooks can access secrets.
 - Project settings, per-agent permissions, and saved approvals can change effective access.
 
-Normal tool permissions still apply. Shell approval defaults to `ask`, with explicit denials for selected
-destructive commands. Check an approval prompt's scope before saving an approval.
+Normal tool permissions still apply. Shell approval defaults to `ask`, with explicit denials
+for selected destructive commands.
+The `git status *`, `git diff *`, and `git log *` rules allow routine inspection with flexible arguments.
+V1 also matches each bare command with its trailing ` *` rule. Later rules require approval for `--output` options
+and commands containing `>`, which can redirect output into a file.
+These command patterns permit normal Git helper behavior, including configured diff and text-conversion filters.
+The complete policy is in `opencode.jsonc`.
+Check an approval prompt's scope before saving an approval.
 
 ## Upgrade an existing installation
 
@@ -160,3 +179,6 @@ informed the browser-test isolation, locator, and waiting guidance. Use the work
 
 [Lauren Tan's pstack](https://github.com/cursor/plugins/tree/5bf2b1544db739998121a306340631963c2ff3de/pstack)
 informed the workflow's evidence-based task routing and performance measurement practices.
+
+[Ryan Lopopolo's harness engineering discussion](https://cloud.google.com/blog/topics/developers-practitioners/agent-factory-recap-agent-harnesses-shifting-left-and-autonomous-coding)
+informed the workflow's project context assessment and prevention of recurring failures.

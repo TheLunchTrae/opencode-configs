@@ -23,7 +23,9 @@ Do not invent available delegation targets; name the required specialty when no 
 
 ### Verification strategy
 
-Use actual project checks where available. Identify characterization, regression, integration, and measurement needs.
+State the verification boundary and its source, including accepted limitations and conditional exclusions.
+Use actual project checks within that boundary.
+Identify characterization, regression, integration, and measurement needs.
 These are proposed checks unless execution evidence was supplied; planning does not imply that they ran.
 
 ### Risks and decisions

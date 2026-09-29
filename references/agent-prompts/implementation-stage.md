@@ -3,8 +3,9 @@
 Use only under the active lead's approved implementation scope and `@agent-prompts/lead-contract.md`.
 
 Dispatch the matching specialist with `@agent-prompts/delegation-contract.md`. Pass the reviewed and approved plan,
-rationale, acceptance examples, owned files, dependencies, existing checks, and stopping conditions.
-Use `test-first` for testable behavior changes and characterization checks for refactors.
+rationale, acceptance examples, owned files, dependencies, and existing checks.
+Include verification limits and stopping conditions.
+Use `test-first` for testable behavior changes and characterization checks for refactors within that verification scope.
 For verification suites, pass the approved coverage map and `verification-tests`. Reuse sufficient existing coverage.
 For end-to-end journeys, pass `end-to-end-tests` with the approved boundaries, fixtures, and expected outcomes.
 For test cleanup, pass `test-audit` findings and the approved retention, replacement, and removal decisions.

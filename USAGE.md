@@ -8,12 +8,13 @@ The default `workflow-lead` coordinates a complete development task. Focused lea
 - [Choose a lead](#choose-a-lead): select the scope and stopping point.
 - [Run a complete workflow](#run-a-complete-workflow): start once, resolve questions, and approve the plan.
 - [Move between focused stages](#move-between-focused-stages): reuse reviewed plans, approvals, and evidence.
-- [Command reference](#command-reference): optional utilities.
+- [Command reference](#command-reference): utility shortcuts and the focused audit command.
 - [Supporting skills](#supporting-skills): reusable procedures selected by agents.
 - [Worked examples](#worked-examples): common development tasks.
 - [Test-suite audits](#audit-existing-test-suites): assess existing coverage and plan justified cleanup.
 - [End-to-end tests](#end-to-end-tests-during-feature-development): verify complete application journeys.
 - [Verification tests](#verification-tests-for-existing-code): build and reuse coverage for existing behavior.
+- [Limit verification](#limit-verification): accept impractical checks without blocking the requested implementation.
 - [Continue a long task](#continue-a-long-task): retain decisions and evidence between sessions.
 
 ## Choose a lead
@@ -72,6 +73,18 @@ every planning step. The lead selects test-first evidence for behavior changes, 
 baseline verification tests for existing behavior, and comparable measurements for performance work.
 Existing tests and sufficient current reviews are reused.
 
+For substantial work, planning identifies consequential gaps in architecture guidance, domain invariants, verification
+commands, and access to relevant fixtures or runtime evidence. The plan separates blockers from optional improvements
+and proposes the smallest necessary correction using existing project documentation, tools, and tests.
+
+Primary agents and specialists use the [project learning procedure](references/agent-prompts/project-learning.md)
+for assigned failure-prevention assessments, evidenced recurring mistakes, or repeated attempts that stop at a blocker.
+Leads also invoke it when the repair budget is exhausted. Specialists return assessments in their existing task reports.
+The lead validates the evidence, combines duplicate recommendations, and selects at most one justified
+preventive change. The assessment does not authorize another repair or a broader scope.
+Persistent changes still require applicable approval.
+If no preventive change is justified, report the missing prerequisite or next bounded investigation.
+
 You can request a stopping point such as "design only" or "implement only phase 1 after approval."
 Read-only questions do not start implementation. A plan or reviewer verdict is not implementation approval.
 Commits, pushes, pull requests, merges, deployments, and other shipping actions require authorization for that action.
@@ -122,7 +135,11 @@ Verification reports distinguish checks that passed, failed, were blocked, or we
 
 ## Command reference
 
-These optional utilities remain. They retain the active agent and cannot expand its role or permissions.
+`/test-audit [context]` runs a focused audit under `review-lead` in the main session.
+It explicitly selects that read-only lead and uses the existing `test-audit` skill.
+See [test-suite audits](#audit-existing-test-suites) for scope, focus, and examples.
+
+The utility commands below retain the active agent and cannot expand its role or permissions.
 For example, a planning or review lead cannot execute `/commit` or `/push`.
 
 | Command | Purpose |
@@ -268,8 +285,23 @@ If measurement is blocked, the result must identify the missing prerequisite ins
 
 ## Audit existing test suites
 
-Select `review-lead` and name the suite or capability to assess. The lead uses `test-audit` with a read-only reviewer.
-An explicit suite audit includes unchanged tests. Ordinary diff reviews retain their narrower scope.
+Run `/test-audit [context]` to start the audit workflow under `review-lead`.
+The lead coordinates permitted reviewers with the `test-audit` skill and returns an assessment without edits.
+The context can identify a feature, module, source directory, test suite, or the current conversation's task.
+Relevant tests can live elsewhere in the repository. Explicit file restrictions still apply.
+
+```text
+/test-audit authentication
+/test-audit packages/cli - unit tests only
+/test-audit checkout - E2E only
+/test-audit the export feature we just implemented
+```
+
+Context and focus are natural-language instructions, not shell flags.
+The default assessment includes unit and end-to-end coverage, including unchanged tests.
+With no arguments, the command uses an unambiguous current task. Otherwise it inventories suites and asks for scope.
+It does not silently start a repository-wide audit. Ordinary diff reviews retain their narrower scope.
+You can also select `review-lead` and request the same assessment directly:
 
 ```text
 Audit the existing tests for configuration loading, including tests outside the current diff.
@@ -278,8 +310,11 @@ Recommend what to retain, consolidate, rewrite, or remove, with evidence and rem
 Do not edit files.
 ```
 
-Expect test locations, protected behavior, actual failure modes, relevant history, remaining coverage, risk, and
-proposed checks. Uncertain candidates remain visible. Static tests and exact-value assertions can protect real
+Expect a coverage map, prioritized findings, candidate decisions, and a proposed improvement plan.
+Evidence includes test locations, protected behavior, actual failure modes, relevant history, remaining coverage,
+risk, and observed or proposed checks. Requested verification limits remain in effect.
+The command stops after assessment without edits or saved task reports.
+Uncertain candidates remain visible. Static tests and exact-value assertions can protect real
 contracts. A failing test can identify a product defect. Neither category is an automatic removal target.
 
 Use `workflow-lead` when you also want cleanup. It reviews and obtains approval for the proposed changes before
@@ -360,11 +395,45 @@ An earlier pass is not evidence for a later source state or different environmen
 implementation assignment. Change expectations only for reviewed requirement changes, not merely changed code.
 You can name `verification-tests` explicitly in a lead request, but doing so does not expand its scope or permissions.
 
+## Limit verification
+
+You can limit agent verification for a task or establish a default in the work project's existing instructions.
+The [verification scope rules](references/agent-prompts/verification-scope.md) apply to primary agents and specialists.
+State whether the limit covers capability discovery, test generation, check execution, or infrastructure changes.
+An instruction to skip execution alone still permits requested test generation.
+
+For a large codebase with costly or inaccessible integration environments:
+
+```text
+Limit verification to existing focused checks that are practical here. Do not investigate broader verification
+capabilities, generate tests, or add infrastructure for this task. If the focused checks cannot reasonably run,
+report the limitation and continue the implementation. Do not ask again about that limitation.
+```
+
+To exclude agent verification entirely:
+
+```text
+Skip verification capability assessment, test generation, and check execution for this task.
+Implement the approved change and complete the required code reviews. Report the implementation as unverified.
+```
+
+The lead retains your boundary with the plan and passes it to specialists, reviews, and authorized handoffs.
+Accepted limits remain effective across stages, agent switches, and resumed work while their scope still applies.
+They do not trigger repeated approval requests, infrastructure work, or failure-prevention recommendations solely
+because checks remain absent. Repository size alone does not establish an exclusion.
+
+Excluded checks are reported as `SKIP`, with the decision source and unverified scope. Other unavailable required
+checks remain `BLOCKED`. Earlier attempts remain visible, and observed failures remain `FAIL`.
+An accepted limitation does not block completion of the requested implementation. It does not establish a passing
+check, a performance improvement, a resolved defect, or merge readiness. Required reviews, permission boundaries,
+and external CI or branch-protection requirements still apply.
+
 ## Continue a long task
 
 Use `/checkpoint <task-id>` or ask the active lead to save a handoff before changing sessions.
 The handoff records the selected lead and stopping point, source state including relevant untracked changes, plan
-revision, approved scope, owners, checks, review findings, remaining budget, blockers, and the next bounded action.
+revision, approved scope, verification limits and their source, owners, checks, review findings, remaining budget,
+blockers, and the next bounded action.
 It belongs in the work project. A planning or review lead returns it in chat when its permissions prevent saving.
 
 In the next session, select the appropriate lead and use `/resume-work <handoff-path>`.

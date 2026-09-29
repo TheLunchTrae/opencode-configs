@@ -12,14 +12,15 @@ Use `security-reviewer` for authentication, authorization, user input, database 
 cryptography, payments, or sensitive data. Arrange general, architecture, and security reviewers as sibling tasks.
 For design assessments, apply the design review requirements in `@agent-prompts/planning-stage.md`.
 
-Supply current source or diff, intended behavior, surrounding context, and check evidence.
+Supply current source or diff, intended behavior, surrounding context, verification limits, and check evidence.
 Review can start while CI is missing, pending, or failing. State those limits; unavailable evidence is not a pass.
 Reuse current complete findings for the same scope, including language evidence collected by a review coordinator.
 Delegate only uncovered scope. Do not repeat identical review work; refresh affected reviews after changes.
 Validate citations, source currency, scope, uncertainty, and findings before incorporating them.
 Use `@agent-prompts/response-formats/review.md` for the expected return. Require a complete assessment and `PASSED`
 verdict for each required review. `NOT ASSESSED`, unfinished scope, and missing reports do not satisfy that requirement.
-Resolve verification gaps separately; even a complete, passed review does not prove unrun checks.
+Resolve verification gaps within the agreed scope. Preserve accepted limitations without reopening them as blockers.
+Even a complete, passed review does not prove unrun checks.
 
 ## Findings and escalation
 

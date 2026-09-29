@@ -5,7 +5,8 @@ Read `@agent-prompts/response-formats/common.md`. Use its envelope with these se
 ### Objective and hypothesis
 
 State the affected user path, objective, supported bottleneck, and falsifiable hypothesis. Separate measurements from
-untested explanations. When measurement is unavailable, give a measurement plan and identify the missing prerequisite.
+untested explanations. When required measurement is unavailable, give a measurement plan within scope and identify
+the missing prerequisite. For excluded measurements, state the accepted limitation without requiring a new plan.
 
 ### Change
 

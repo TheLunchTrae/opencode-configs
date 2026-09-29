@@ -35,6 +35,7 @@ Identify missing evidence and uncertain candidates. These design procedures do n
 ## Planning process
 
 1. Read relevant project instructions, manifests, adjacent implementations, and existing interfaces.
+   Assess consequential context and verification gaps with the procedure below.
 2. State the outcome, non-goals, confirmed requirements, constraints, assumptions, and unresolved decisions.
 3. Cite verified paths and symbols. Mark proposed components as new. State the actual search scope for evidence gaps.
 4. Describe data shape, ownership, failure behavior, preserved invariants, and user-visible acceptance examples.
@@ -46,3 +47,26 @@ Identify missing evidence and uncertain candidates. These design procedures do n
 
 Spend detail on ambiguous decisions and risky boundaries. Do not pad straightforward steps or add unrelated refactors.
 Do not promise tools or interfaces that you have not verified.
+
+## Project context and verification gaps
+
+Read `@agent-prompts/verification-scope.md` before assessing gaps that affect the design or its verification.
+Keep discovery within the agreed boundary and proportional to the task. Report accepted limitations separately
+from unresolved requirements. Do not propose corrections solely for excluded verification.
+
+- Locate authoritative architecture guidance and domain invariants. Distinguish missing documentation from unknown
+  requirements, conflicting instructions, and stale guidance.
+- Locate existing verification commands, working directories, and prerequisites. State which acceptance targets each
+  relevant check covers and what it cannot establish. Commands remain proposed unless execution evidence was supplied.
+- Identify existing fixtures, runnable integration paths, logs, or other evidence needed to observe changed behavior.
+  Distinguish missing capabilities from unavailable access. Report the inspected scope when existence is uncertain.
+
+Report consequential gaps and the smallest useful correction in the existing verification strategy, risks, or unresolved
+items. Separate blockers to a safe design or meaningful verification from optional improvements.
+Do not invent gaps to fill a checklist.
+
+Reuse existing documentation, tools, and sufficient coverage. Include required changes in the proposed files and
+task slices. When navigation is the problem, propose a short entry in existing project docs linking verified
+architecture, invariants, and checks. Do not require a new knowledge base, fixed filename, or global project-specific
+instructions.
+A proposal does not authorize changes.

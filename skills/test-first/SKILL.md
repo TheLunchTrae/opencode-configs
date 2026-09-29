@@ -7,6 +7,9 @@ description: Observe a meaningful failing test, implement a bounded behavior cha
 
 Use this skill for a behavior fix or feature with an available test seam.
 Follow the assigned scope, authorization, task budget, and role boundaries.
+Read `@agent-prompts/verification-scope.md` before applying the steps below. Honor separate limits on test generation
+and execution. Report excluded red/green checks as `SKIP`; continue the approved implementation without claiming
+an observed red/green cycle. An execution-only exclusion still permits assigned test generation.
 Read `@agent-prompts/testing-standards.md` before selecting or writing a test.
 Use `end-to-end-tests` for approved journeys that need the real application path. Reuse the same coverage design
 and failure evidence rather than adding a second test merely to satisfy both procedures.
@@ -28,7 +31,8 @@ Do not fabricate logs, reconstruct a failure that was never observed, or use a f
 For a pure refactor, preserve existing outputs with characterization tests before editing. Green-to-green is
 appropriate.
 For a documentation-only change, use relevant structural checks rather than inventing a unit test.
-When execution is unavailable, record the check as `BLOCKED` with the missing dependency or environment.
+When required execution is unavailable and no accepted exclusion applies, record the check as `BLOCKED` with the
+missing dependency or environment.
 Describe unrun checks as plans. Use the common response rules for overall task status.
 Do not install new tooling, access production data, or bypass permissions to produce a green result.
 Respect the remaining task budget; return blockers when it is exhausted.

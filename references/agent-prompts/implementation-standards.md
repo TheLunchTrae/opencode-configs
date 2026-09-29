@@ -1,6 +1,7 @@
 # Shared implementation guidance
 
 Use this reference for implementation technique within the assigned scope, permissions, and authorization.
+Read `@agent-prompts/verification-scope.md` before selecting tests or checks. Apply its boundary to the guidance below.
 
 ## Ground the change
 
