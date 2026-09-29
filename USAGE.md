@@ -6,6 +6,7 @@ The default `workflow-lead` coordinates a complete development task. Focused lea
 ## Contents
 
 - [Choose a lead](#choose-a-lead): select the scope and stopping point.
+- [Agent groups and models](#agent-groups-and-models): change models, defaults, and group membership in the TUI.
 - [Run a complete workflow](#run-a-complete-workflow): start once, resolve questions, and approve the plan.
 - [Move between focused stages](#move-between-focused-stages): reuse reviewed plans, approvals, and evidence.
 - [Command reference](#command-reference): utility shortcuts and the focused audit command.
@@ -43,6 +44,92 @@ Specialists use [canonical response formats](references/agent-prompts/response-f
 Each response separates task completion, the result, evidence, and unresolved items. A completed task can still report
 failed checks or blocking findings. The selected lead validates the evidence and handles follow-up under its own scope.
 Specialists receive task inputs and constraints without needing the lead's identity or workflow instructions.
+
+## Agent groups and models
+
+Open the command palette and look under **Config**, or run `/agent-models` and `/agent-groups`.
+These are local settings controls. They do not send a prompt to an agent.
+The model picker reads the running server's provider catalog, including custom provider models and supported variants.
+Connect providers with `/connect` first. Models are checked again before saving.
+
+| Scope in `/agent-models` | Effect |
+| --- | --- |
+| Global defaults | Change the main or small model. Group defaults and agent pins still take precedence. |
+| All defaults | Set the main model, small model, and every group's model. Preserve explicit agent overrides. |
+| A group name | Set that group's model and optional variant. Agents without explicit models inherit it. |
+| Individual agent overrides | Select an agent to set a model exception, clear its override, or change its group. |
+
+Use `/agent-groups` to create groups, select their defaults, and move agents between them.
+The list combines group names in the configuration with `agent_group` values found in agent files.
+New groups appear without a code change. Empty configured groups remain available.
+Agents without a group appear under **Ungrouped**. Disabled agents are excluded.
+Each agent belongs to one group. Moving an agent preserves its explicit model and variant.
+Choose **Use group defaults** to clear those overrides and use the new group's settings.
+Grouping does not change prompts, permissions, delegation routes, or agent colors.
+
+Review the scope and retained-override count before saving. Saved changes can be applied with **Reload now**,
+or left until the next restart. Reload affects every workspace on the same OpenCode server.
+Wait for all of their agents to finish first. The editor checks running agents in the current workspace;
+it cannot check activity in every other workspace. An existing session model selection can still take precedence.
+Use OpenCode's `/models` command when you also want to change the current session's selected model.
+
+### Configure group defaults
+
+Add group defaults to the server plugin's options in `opencode.jsonc`. For example:
+
+```jsonc
+"plugin": [
+  ["./extensions/agent-groups/server.ts", {
+    "groups": {
+      "developers": { "model": "provider/model-id", "variant": "medium" },
+      "reviewers": { "model": "provider/another-model-id" },
+      "research": {}
+    }
+  }]
+]
+```
+
+Keep your other plugin entries. Register `./extensions/agent-groups/tui.ts` in the `plugin` array of `tui.jsonc`.
+Group names use lowercase letters, digits, and hyphens, start with a letter, and contain at most 64 characters.
+Use a model and variant supported by your provider. An empty group object uses OpenCode's normal fallback.
+
+Assign a custom agent in its Markdown frontmatter:
+
+```yaml
+---
+description: Review implementation changes.
+mode: subagent
+agent_group: reviewers
+---
+Review the assigned changes.
+```
+
+For a built-in agent, add `"agent_group": "reviewers"` to its entry under `agent` in `opencode.jsonc`.
+Membership is real configuration metadata. The server plugin consumes it and removes `agent_group` from
+request options before provider dispatch.
+
+An explicit agent `model` takes precedence over the group model and prevents inheritance of the group's variant.
+With no explicit model, the agent inherits the group model and uses its own `variant` if present, then the group's.
+With neither an agent model nor a group model, OpenCode applies its normal global or parent-model fallback.
+Project configuration and session selections retain OpenCode's normal precedence.
+Groups therefore let new agents inherit defaults without adding a model to every file.
+
+### Editing and compatibility
+
+The editor manages this installation's global `opencode.jsonc` or `opencode.json` and its `agents/` or `agent/` files.
+Run it where the TUI and server share the same global configuration filesystem. Remote configuration editing and
+project-local agent editing are not supported. The editor rejects ambiguous duplicate files, agent symlinks,
+invalid configuration, and settings that changed after a dialog opened.
+Merge legacy `config.json` settings into `opencode.jsonc` before using the editor.
+An installation in a separate `OPENCODE_CONFIG_DIR` can save edits, but needs a restart to apply them.
+JSONC comments, YAML comments, prompt bodies, and unrelated settings are preserved; edited fields can be reformatted.
+An interrupted write can leave `.agent-groups.lock`. Remove that lock only after confirming no editor is saving.
+
+The server and TUI entrypoints require OpenCode V1; they were checked against 1.18.29.
+V2 needs a separate port. Install the complete `extensions/agent-groups/` directory and the package manifest.
+Keep these entrypoints outside the automatically discovered `plugins/` directory to avoid loading them twice.
+Live reload records an internal `reloadToken` in the server plugin options so OpenCode invalidates its global cache.
+You do not need to edit that value.
 
 ## Run a complete workflow
 

@@ -1,8 +1,7 @@
 ---
 description: "Expert code review specialist. Proactively reviews code for quality, security, and maintainability. Use immediately after writing or modifying code."
 mode: subagent
-model: openai/gpt-6-astra
-variant: high
+agent_group: reviewers
 color: "#EEF78A"
 permission:
   edit: deny

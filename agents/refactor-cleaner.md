@@ -1,8 +1,7 @@
 ---
 description: "Dead code, unused export, and unused dependency cleanup specialist. Detects unreferenced files, stale dependencies, and duplicate logic across the codebase using language-appropriate static analysis. Use when removing dead code, unused dependencies, or leftover scaffolding."
 mode: subagent
-model: openai/gpt-5.6-sol
-variant: medium
+agent_group: refactoring
 color: "#F45AE7"
 permission:
   edit: allow

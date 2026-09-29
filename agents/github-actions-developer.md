@@ -1,8 +1,7 @@
 ---
 description: "GitHub Actions developer for authoring, modifying, and fixing workflows under .github/workflows/, composite actions, and reusable workflows. Handles triggers, job graphs, matrices, caching, concurrency, least-privilege GITHUB_TOKEN permissions, SHA-pinned third-party actions, and OIDC-based cloud auth. Use for any GitHub Actions workflow or action implementation task."
 mode: subagent
-model: openai/gpt-5.6-sol
-variant: medium
+agent_group: developers
 color: "#8AF793"
 permission:
   edit: allow

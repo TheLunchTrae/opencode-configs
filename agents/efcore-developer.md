@@ -1,6 +1,7 @@
 ---
 description: "Entity Framework Core developer for entity design, migrations, DbContext configuration, and query work in EF Core 6/7/8+. Writes async DbContext interactions, disciplined tracking and eager-loading, projection-first queries, and safe migration patterns. Layers on top of csharp-developer for language-level concerns. Use for any EF Core model, migration, query, or persistence-layer task."
 mode: subagent
+agent_group: developers
 model: openai/gpt-6-astra
 variant: high
 color: "#8AF793"

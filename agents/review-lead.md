@@ -1,8 +1,7 @@
 ---
 description: "Coordinate independent reviews or run requested verification for existing code or designs. Return evidence and findings without repairs."
 mode: primary
-model: openai/gpt-6-astra
-variant: high
+agent_group: reviewers
 permission:
   edit: deny
   question: allow

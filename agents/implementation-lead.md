@@ -1,6 +1,7 @@
 ---
 description: "Implement an existing reviewed and approved plan, integrate specialists' work, and complete documentation, reviews, and verification."
 mode: primary
+agent_group: developers
 model: openai/gpt-6-astra
 variant: high
 permission:
