@@ -111,6 +111,10 @@ See the [usage guide](USAGE.md) for [lead selection](USAGE.md#choose-a-lead),
 It also explains [verification baselines](USAGE.md#verification-tests-for-existing-code) for existing behavior.
 Commits, pushes, pull requests, merges, and deployments require authorization for that action.
 
+Use `/project-standards` to initialize a work project from
+[KrishRVH/standards](https://github.com/KrishRVH/standards/tree/main).
+See [project standards setup](USAGE.md#initialize-project-standards) for scope and examples.
+
 Specialists cover TypeScript, JavaScript, Go, C#, PHP, React, EF Core, Doctrine, Laminas, GitHub Actions, and GitLab CI.
 Other agents handle architecture, security, performance, cleanup, and documentation.
 See [agent definitions](agents/) for individual roles and model choices.

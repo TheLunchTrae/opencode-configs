@@ -415,6 +415,7 @@ For example, a planning or review lead cannot execute `/commit` or `/push`.
 | `/resume-work <handoff-path>` | Revalidate evidence and identify the next action within the selected lead's scope. |
 | `/explain <feature>` | Explain current behavior from source. |
 | `/quiz <topic>` | Ask optional source-grounded learning questions and wait for answers. |
+| `/project-standards [context]` | Initialize or refresh project standards from KrishRVH/standards. |
 | `/init-docs [path] [notes]` | Add or update repository documentation rules and scoped technical vocabulary. |
 | `/commit [scope]` | Stage and commit authorized changes with secret checks. |
 | `/push` | Push the current branch with authorization. |
@@ -424,6 +425,42 @@ The built-in `/resume` selects an OpenCode session. `/resume-work` reads a proje
 Checkpoints stay in the work project. Learning questions and quiz scores are optional.
 See the [command definitions](commands/) for prompts.
 See [upgrade instructions](README.md#upgrade-an-existing-installation) for retired commands and skills.
+
+### Initialize project standards
+
+Run `/project-standards` from the work project to prepare its standard configuration and tooling.
+The command loads the [project-standards skill](skills/project-standards/SKILL.md),
+which uses [KrishRVH/standards](https://github.com/KrishRVH/standards/tree/main) as its default source catalog.
+Use `workflow-lead` for the complete setup or `planning-lead` for a proposal only.
+The command retains the selected lead and its permissions.
+
+For an existing project, the agent discovers its languages, frameworks, package managers, and current rules.
+For an empty repository or new project folder, supply the intended stack as context.
+The agent asks about consequential choices that it cannot discover.
+Arguments describe the current project and your preferences. They are not shell commands or destination paths.
+
+```text
+/project-standards
+/project-standards New TypeScript Node.js library using npm.
+/project-standards New React app using Vite and npm.
+/project-standards Existing Go service. Preserve the current CI and package layout.
+```
+
+The agent resolves the upstream `main` commit and reads its README, manifest, and selected files at that revision.
+It selects applicable files from `shared/` and relevant profiles, then adapts them to the actual project.
+It checks licenses and merges existing rules instead of copying the catalog wholesale or replacing local configuration.
+Catalog maintenance files and workstation setup remain outside the project baseline.
+
+The proposed plan identifies target files, dependencies, migrations, conflicts, upstream provenance,
+and validation commands.
+Approve that plan before changes. Tool migrations, such as adopting Mise or Bun, require inclusion
+in the approved scope.
+Upstream executable configuration and scripts require separate execution approval.
+A planning or review lead returns a proposal within its role and stops at its assigned boundary.
+
+Setup writes stay in the work project. The command does not initialize global OpenCode configuration or publish changes.
+Later runs preserve established rules and propose only supported updates or approved additions.
+Use `/init-docs` separately when you want repository documentation rules and technical terminology.
 
 ### Initialize repository documentation
 

@@ -35,7 +35,10 @@ const configuredAction = (permission, input, policy = config.permission) => {
 
 const skills = readdirSync(new URL("skills/", root)).filter((name) =>
   existsSync(new URL(`skills/${name}/SKILL.md`, root)))
-const utilityCommands = ["checkpoint", "resume-work", "explain", "quiz", "init-docs", "commit", "push", "summarize-branch"]
+const utilityCommands = [
+  "checkpoint", "resume-work", "explain", "quiz", "project-standards", "init-docs",
+  "commit", "push", "summarize-branch",
+]
 const leads = ["workflow-lead", "planning-lead", "implementation-lead", "review-lead"]
 const retiredCommands = [
   "workflow", "spec", "design", "plan", "phased-plan", "verification-tests", "verify", "finish",
