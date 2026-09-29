@@ -5,8 +5,8 @@ description: Establish comparable performance measurements and test one bottlene
 
 # Measured performance
 
-Use this skill for a bounded performance assignment within the active agent's specialty and permissions.
-Retain the assignment's planning, approval, security review, and correctness requirements. It grants no delegation.
+Work within the performance assignment, specialty, and permissions. Retain planning, approval, security review,
+and correctness requirements. This skill grants no delegation.
 Use `@agent-prompts/response-formats/performance.md` for the canonical performance response.
 Apply `@agent-prompts/verification-scope.md` before measurement discovery or execution. Honor excluded measurements
 without requiring a new measurement plan. Keep any approved unmeasured change distinct from a demonstrated improvement.
@@ -23,8 +23,8 @@ Prefer eliminating work before caching or parallelizing it. For a cache, specify
 For concurrency, check shared state, ordering, capacity, and failure handling. Shared outputs require one owner.
 Do not rank a hot loop over startup without evidence about the actual workload.
 
-A faster microbenchmark does not prove a faster application. A different dataset does not establish a fair comparison.
+A faster microbenchmark does not prove a faster application; different datasets do not establish fair comparisons.
 Do not invent an improvement percentage, significance claim, or fixed speedup quota.
-If required measurement cannot run safely, report it as blocked with a proposed measurement plan within scope.
-Set task status using the common response rules; a measurement-plan assignment can be complete without execution.
+Report unsafe or unavailable required measurement as blocked, with a proposed in-scope measurement plan.
+Use common task-status rules; a measurement-plan assignment can be complete without execution.
 Preserve original benchmark evidence. Do not delete user work or alter the acceptance target to hide a regression.

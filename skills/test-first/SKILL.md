@@ -11,8 +11,8 @@ Read `@agent-prompts/verification-scope.md` before applying the steps below. Hon
 and execution. Report excluded red/green checks as `SKIP`; continue the approved implementation without claiming
 an observed red/green cycle. An execution-only exclusion still permits assigned test generation.
 Read `@agent-prompts/testing-standards.md` before selecting or writing a test.
-Use `end-to-end-tests` for approved journeys that need the real application path. Reuse the same coverage design
-and failure evidence rather than adding a second test merely to satisfy both procedures.
+Use `end-to-end-tests` for approved journeys needing the real application path. Reuse coverage design and failure
+evidence; do not add a second test solely to satisfy both procedures.
 
 1. Inspect the relevant code and configured test command. Record existing failures before changing behavior.
 2. Define the acceptance examples independently of the proposed implementation.
@@ -28,11 +28,10 @@ Keep the acceptance oracle independent. Do not skip, weaken, or rewrite an asser
 When a requirement genuinely changes, surface the proposed oracle change for approval and re-review.
 Do not fabricate logs, reconstruct a failure that was never observed, or use a failed infrastructure check as proof.
 
-For a pure refactor, preserve existing outputs with characterization tests before editing. Green-to-green is
-appropriate.
+Before pure refactors, preserve existing outputs with characterization tests. Green-to-green is appropriate.
 For a documentation-only change, use relevant structural checks rather than inventing a unit test.
-When required execution is unavailable and no accepted exclusion applies, record the check as `BLOCKED` with the
-missing dependency or environment.
+Without an accepted exclusion, report unavailable required execution as `BLOCKED` with the missing
+dependency or environment.
 Describe unrun checks as plans. Use the common response rules for overall task status.
 Do not install new tooling, access production data, or bypass permissions to produce a green result.
 Respect the remaining task budget; return blockers when it is exhausted.

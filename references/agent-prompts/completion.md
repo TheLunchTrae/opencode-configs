@@ -1,22 +1,22 @@
 # Completion and final assessment
 
-Use in the active primary lead under its role boundary and `@agent-prompts/lead-contract.md`.
-Workflow and implementation leads use this before their final handoff. A review lead uses it for an explicitly
-requested final assessment and reports repairs as follow-up; it cannot execute them.
+Apply within the active primary lead's role and `@agent-prompts/lead-contract.md`.
+Workflow and implementation leads use this before final handoff. Review leads use it for explicitly requested final
+assessment and report repairs without executing them.
 
 1. Compare the current diff with the approved outcome and non-goals. Identify unexpected changes.
-   If approval evidence is unavailable in a standalone assessment, report that limit rather than inventing it.
+   Report unavailable approval evidence in standalone assessments; never invent it.
 2. In an implementation scope, consider only useful simplification and refresh evidence after changes.
 3. Apply the agreed boundary under `@agent-prompts/verification-scope.md`. Use `verify` on the final source for
    in-scope checks. If all agent verification is excluded, report that limitation without capability discovery or
-   execution. Verification is evidence-only: return in-scope fixes or coverage gaps to an authorized implementation
-   assignment. Do not generate tests or repair code inside verification.
+   execution. Return in-scope fixes or coverage gaps to authorized implementation. Verification generates evidence,
+   not tests or repairs.
 4. Collect required reviews under `@agent-prompts/review-stage.md`. Reuse current findings.
    Supply current source, acceptance criteria, context, and check evidence. State missing or failing CI explicitly.
 5. Within an approved implementation scope and remaining budget, resolve blocking findings and refresh affected checks
    and reviews. A material scope change needs design review and renewed approval. A review lead reports the blocker.
-6. Assess merge readiness separately. Require current reviews, applicable configured CI, target-branch currency, and
-   resolved conflicts for the current source. Do not invent CI requirements for a project without configured CI.
+6. Assess merge readiness separately: current reviews, applicable configured CI, current target branch, and resolved
+   conflicts for this source. Do not invent CI requirements where none are configured.
 7. Report changed behavior or assessed scope, observed checks, accepted verification limitations, review dispositions,
    blockers, residual risks, and the next action. Accepted limitations do not block implementation completion.
 
@@ -27,5 +27,5 @@ Final handoff does not authorize shipping. Use `checkpoint` before a context res
 ## Project learning
 
 When recurring mistakes have concrete evidence, read `@agent-prompts/project-learning.md`.
-Apply the lead contract's coordination and approval rules when consolidating recommendations.
-Reuse any assessment made when work stopped. Update it only when new evidence changes the cause or proposed prevention.
+Consolidate recommendations under the lead contract's coordination and approval rules.
+Reuse prior stop-time assessments. Update only when new evidence changes the cause or proposed prevention.

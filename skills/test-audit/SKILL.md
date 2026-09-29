@@ -6,28 +6,29 @@ description: Audit existing test suites for useful coverage, duplication, mislea
 # Audit an existing test suite
 
 Read `@agent-prompts/testing-standards.md` and applicable repository instructions.
-Apply only the assigned assessment or implementation portion. This skill grants no edit, execution, or delegation
-authority. An audit request means read-only assessment unless cleanup is explicitly included in an approved scope.
+Apply only assigned assessment or implementation. This skill grants no edit, execution, or delegation authority.
+Audits are read-only unless approved scope explicitly includes cleanup.
 
 ## Establish the scope
 
-Resolve the requested suite, capability, package, or repository. An explicit suite audit includes its existing tests,
-not only the current diff. If no scope is supplied, inventory the available suites and propose bounded audit batches.
-Do not silently audit only convenient files or claim complete coverage from a sample.
+Resolve the requested suite, capability, package, or repository. Suite audits include unchanged tests.
+Without scope, inventory suites and propose bounded batches. Do not silently sample convenient files
+or claim completeness
+from a sample.
 
 Read test configuration, CI selection, setup, fixtures, relevant production entry points, and existing test commands.
-Identify which tests actually run in each relevant environment. Record the source state and inspection scope.
+Identify tests that run in each relevant environment. Record source state and inspected scope.
 Use permitted existing commands for baseline evidence. A planner only proposes execution.
 Do not add tools or run custom verification scripts to bypass a reviewer's tool restrictions.
 
 ## Assess coverage and candidates
 
-Trace each candidate's assertions through the production behavior they claim to protect. Inspect callers, sibling
-paths, relevant dependency contracts, overlapping tests, and available history before judging its value.
-Separate confirmed evidence from missing history or uncertain external consumers.
+Trace candidate assertions through claimed production behavior. Inspect callers, sibling paths, relevant dependency
+contracts, overlapping tests, and available history before judging value. Separate evidence from missing history
+or uncertain external consumers.
 
-Classify each assessed candidate as retain, consolidate, rewrite, remove, or uncertain. Explain the reason.
-Include missing important coverage, incorrect test boundaries, and misleading pass conditions as findings.
+Classify each assessed candidate as retain, consolidate, rewrite, remove, or uncertain, with reasons.
+Report important coverage gaps, incorrect test boundaries, and misleading pass conditions.
 Optimize confidence and maintenance effort. Do not use a deletion quota or assume that passing tests are useful.
 
 Before recommending a removal or loss of coverage, record:
@@ -38,25 +39,25 @@ Before recommending a removal or loss of coverage, record:
 - Production and external consumers of any support code proposed for removal, including dynamic usage risks.
 - The proposed change, coverage impact, risk, and focused validation command.
 
-Missing evidence leaves the candidate uncertain. Preserve it while reporting the bounded investigation needed.
-Do not call a test redundant merely because another test executes the same lines.
+Preserve candidates with missing evidence as uncertain; report the bounded investigation needed.
+Shared line execution alone does not make tests redundant.
 Keep independently useful compatibility, security, release, storage, and other contracts under the shared standards.
-A failing retained contract can reveal a product defect. Report it instead of deleting the test to restore green.
+A failing retained contract may reveal a product defect. Report it; do not delete the test to restore green.
 
 ## Propose or perform a coherent change
 
 Return findings before edits. Group related changes around one behavior or owning component.
-For rewrites or consolidation, identify the assertions that must survive and demonstrate replacement coverage before
-removing the old proof. Preserve uncertainty and risks for the user's reviewed cleanup decision.
+Before rewrites or consolidation remove old proof, identify required assertions and demonstrate replacement coverage.
+Preserve uncertainty and risks for the user's reviewed cleanup decision.
 
-Implement only when the assigned role permits edits and the reviewed approval covers the target files and removals.
-Honor existing authorization for that scope. Public interfaces and uncertain external consumers retain their normal
-approval requirements. Do not treat a test's sole local reference as proof that a production export is unused.
+Implement only when the role permits edits and reviewed approval covers target files and removals. Reuse same-scope
+authorization. Preserve approval requirements for public interfaces and uncertain external consumers.
+A test's sole local reference does not prove a production export is unused.
 Remove unnecessary helpers or runtime hooks only after their lack of real consumers is established.
 Avoid introducing replacement wrappers or tests that reproduce the same weak evidence.
 
-Do not edit a checkout while its tests are running. Run affected tests before and after an approved change when
-available. Check sibling coverage and the actual executable behavior when replacing static assertions.
+Do not edit a checkout while its tests run. Run available affected tests before and after approved changes.
+When replacing static assertions, check sibling coverage and actual executable behavior.
 Use `verify` for results and limits. A passing reduced suite alone does not prove that removed coverage was redundant.
 Report any unavailable validation without claiming that the cleanup is verified.
 
@@ -64,7 +65,7 @@ Report any unavailable validation without claiming that the cleanup is verified.
 
 Use `@agent-prompts/response-formats/review.md` for assessment and
 `@agent-prompts/response-formats/implementation.md` for approved cleanup.
-Put candidate decisions and supporting evidence in the existing profile, with coverage gaps and uncertainty explicit.
-Distinguish inspected scope from unassessed suites. Report valuable apparent false positives, preserved contracts,
-changes to test support, checks actually run, and necessary follow-up.
+Put candidate decisions, evidence, coverage gaps, and uncertainty in the existing profile.
+Separate inspected scope from unassessed suites. Report valuable apparent false positives, preserved contracts,
+test-support changes, executed checks, and necessary follow-up.
 Keep plans and execution logs in conversation or an authorized task location. An audit does not authorize shipping.

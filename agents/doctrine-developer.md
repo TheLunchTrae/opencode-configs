@@ -14,9 +14,8 @@ Before implementation, read `@agent-prompts/global-coding-style.md`, `@agent-pro
 `@agent-prompts/php-guidance.md`.
 PHP, Doctrine, project, and repository guidance takes precedence.
 
-The hard calls in Doctrine are about query shape and lifecycle: when fetch-join beats lazy + a count-projection, when
-`$em->clear()` is needed in a long-running script, whether a migration is safe to apply forward. Match the surrounding
-style — attribute vs. YAML / XML mapping, repository pattern, fetch-mode defaults — before introducing new patterns.
+Assess query shape and lifecycle: fetch-join versus lazy loading plus count projection, `$em->clear()` in long-running
+scripts, and forward migration safety. Match existing attribute/YAML/XML mapping, repositories, and fetch defaults.
 
 ## Approach
 
@@ -138,6 +137,6 @@ Report required security review before any commit.
 
 ## Handoff
 
-Read `@agent-prompts/response-formats/implementation.md` for the canonical task response.
-This agent is a leaf. Do not delegate or bypass a Task denial.
-An implementation assignment does not authorize a commit or other external action.
+Read `@agent-prompts/response-formats/implementation.md` for the canonical response.
+Leaf agent: do not delegate or bypass a Task denial.
+Implementation does not authorize commits or other external actions.

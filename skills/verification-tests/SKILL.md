@@ -5,8 +5,8 @@ description: Design and generate reusable verification tests for existing reposi
 
 # Verification tests for existing behavior
 
-Use this procedure within the assigned scope, authorization, review requirements, and task budget.
-Apply only the assigned portion. This skill does not expand the agent's role, permissions, or a read-only assignment.
+Apply only the assigned portion within scope, authorization, review requirements, and budget.
+This skill does not expand roles, permissions, or read-only assignments.
 Read `@agent-prompts/verification-scope.md` before discovery. Apply its limits separately to coverage design,
 test generation, execution, and infrastructure changes throughout this procedure.
 Before writing tests, read `@agent-prompts/implementation-standards.md` and applicable project and language guidance.
@@ -14,84 +14,85 @@ Read `@agent-prompts/testing-standards.md` for coverage design and authoring dec
 
 Build executable coverage for established behavior. Use `test-first` when implementing a new behavior or fixing a bug.
 A verification suite can combine unit, integration, contract, CLI, API, or end-to-end tests as the scope requires.
-Full verification means coverage of the agreed behavior and boundaries, with explicit exclusions and remaining gaps.
+Full verification covers agreed behavior and boundaries, with explicit exclusions and gaps.
 
 ## Discover the scope and available evidence
 
-1. Resolve the requested capability, module, workflow, or repository scope. Inspect established behavior beyond the
-   current diff. With no scope, inspect the repository and propose coverage before generating tests.
+1. Resolve capability, module, workflow, or repository scope. Inspect established behavior beyond the diff.
+   Without scope, inspect the repository and propose coverage before generating tests.
 2. Read repository instructions, manifests, declared and installed versions, CI, test configuration, existing tests,
    fixtures, and documented commands. Verify paths and tools before proposing them.
 3. Trace relevant entry points, callers, dependencies, outputs, errors, state changes, and external side effects.
-   Identify important boundaries and explain what makes those paths difficult to test.
-4. Identify reusable tests, helpers, and fixtures. Have a permitted executor run relevant existing checks and record
-   baseline results when available. A read-only planner proposes checks; it does not execute them.
-5. For repository-wide requests, map the in-scope surfaces and order work by risk. Keep uncovered surfaces visible;
-   do not silently reduce the scope to easily tested functions.
+   Identify important boundaries and explain testing difficulties.
+4. Identify reusable tests, helpers, and fixtures. Have a permitted executor run relevant available checks and record
+   baselines. Read-only planners propose checks without executing them.
+5. For repository-wide requests, map in-scope surfaces and prioritize risk. Report uncovered surfaces;
+   do not silently limit scope to easily tested functions.
 
 ## Establish expectations and design the suite
 
-Derive expected results from documented requirements, public contracts, approved examples, or independent reference
-data. Use implementation inspection to understand execution paths. When observed behavior is the only evidence, label
-the test as characterization; an observed result does not establish that the behavior is correct.
-Report suspected existing bugs and consequential ambiguities as unresolved items. Continue independent, unambiguous
-coverage where possible. Do not silently preserve a suspected defect as an approved requirement or fix application code.
+Derive expectations from documented requirements, public contracts, approved examples, or independent reference data.
+Inspect implementation for execution paths. When observation is the only evidence, label tests as characterization;
+observation does not establish correctness.
+Report suspected bugs and consequential ambiguities as unresolved items. Continue independent, unambiguous coverage
+where possible. Do not approve suspected defects as requirements or fix application code.
 
 Create a compact coverage map. For each behavior, include:
 
-- The expected observable result and its source; distinguish requirements from characterization assumptions.
-- Relevant normal, boundary, invalid-input, failure, recovery, and side-effect cases, with a reason for each.
-- Existing coverage to reuse and the gap each proposed test addresses.
-- The appropriate test level and real entry point, with any substituted dependencies and their limits.
+- Expected observable result and source; distinguish requirements from characterization assumptions.
+- Relevant normal, boundary, invalid-input, failure, recovery, and side-effect cases, each with a reason.
+- Reusable coverage and the gap each proposed test addresses.
+- Appropriate test level, real entry point, substituted dependencies, and their limits.
 - Fixtures, environment prerequisites, setup, cleanup, isolation, and execution command with working directory.
 - Dependencies, risks, and behavior that will remain unverified.
 
-Choose the smallest test level that exercises the relevant contract. Use integration or end-to-end coverage when
-unit tests cannot establish the required behavior. Use `end-to-end-tests` for complete application journeys and
-include its boundaries and fixtures in this coverage map. Follow the framework agent's provider and runtime guidance.
-If an in-scope harness is missing, propose the smallest suitable setup using the project's language and available tools.
-Do not propose a harness for excluded infrastructure work. Report the accepted limit and reuse permitted coverage.
-List new dependencies, testability refactors, CI changes, and external environment needs explicitly in the design.
+Choose the smallest level exercising the contract. Use integration or end-to-end coverage when unit
+tests are insufficient.
+Use `end-to-end-tests` for complete journeys; include its boundaries and fixtures in this map.
+Follow the framework agent's provider and runtime guidance.
+For missing in-scope harnesses, propose the smallest suitable setup using the project's language and available tools.
+For excluded infrastructure, report the accepted limit and reuse permitted coverage without proposing a harness.
+Explicitly list new dependencies, testability refactors, CI changes, and external environment needs in the design.
 Use `project-standards` only for deliberate tooling or convention adoption; routine tests do not require it.
 
-Require a reviewed and approved design covering target files, commands, and exclusions before generating tests.
-Honor approval already given for that scope. A design-only assignment returns the design with any outstanding reviews.
+Before generating tests, require a reviewed, approved design covering files, commands, and
+exclusions. Reuse same-scope approval.
+Design-only assignments return the design and outstanding reviews.
 
 ## Generate maintainable tests
 
-- Extend the existing suite and conventions. Reuse sufficient tests instead of duplicating them.
-  Keep tests, fixtures, helpers, and test documentation in the target repository.
+- Extend existing suites and conventions. Reuse sufficient tests without duplication.
+  Keep tests, fixtures, helpers, and test docs in the target repository.
 - Exercise application behavior or the actual declarative contract. Avoid assertions that merely echo the input,
   repeat the implementation algorithm, inspect incidental source text, or verify a mock's configured answer.
 - Assert relevant outputs, errors, persisted state, and observable side effects. Prefer public interfaces over private
   helpers unless the project has an established reason to test those helpers directly.
-- Keep the subject and the behavior under verification real. Substitute dependencies only at a justified boundary;
-  state which integration claims those substitutes cannot establish.
-- Control time, randomness, fixture state, and external services where they affect repeatability. Isolate mutable data
-  between tests. Use bounded waits and cleanup that also runs after failure. Follow project parallel-execution rules.
+- Keep the subject and tested behavior real. Substitute dependencies only at justified boundaries;
+  state integration claims the substitutes cannot establish.
+- Control time, randomness, fixture state, and external services affecting repeatability. Isolate mutable test data.
+  Bound waits and clean up after success or failure. Follow project parallel-execution rules.
 - Use disposable test resources and synthetic data. Do not depend on production data, personal credentials, or a
   developer's machine state. Expose required configuration through the project's existing test conventions.
-- Use clear behavior-based test names and focused assertions. Add shared helpers only for genuine repeated setup.
+- Use clear behavior-based names and focused assertions. Add shared helpers only for genuine repeated setup.
   Keep expected values independently derived and review meaningful snapshots before accepting them.
 - Preserve production behavior. Implement testability refactors, dependency installations, or CI changes only when
   included in the approved scope. Report missing access or an unavailable environment as unresolved items.
 
 ## Execute and assess the baseline
 
-Run the generated tests against the recorded source state. New baseline tests can pass on their first execution;
-an artificial red/green cycle is unnecessary. Inspect whether the assertions could detect the relevant regressions.
-Where practical, demonstrate this with a known counterexample or a controlled fault in an isolated disposable copy.
-Do not modify the working application's behavior to force a failure or introduce mutation tooling for a checklist.
+Run generated tests against recorded source. Baselines can pass immediately; do not require artificial red/green cycles.
+Assess regression detection. Where practical, demonstrate it with a known counterexample or controlled fault in an
+isolated disposable copy. Do not force failures in the working application or add checklist mutation tooling.
 
-Use [verify](../verify/SKILL.md) for execution evidence and result statuses. Record actual commands, working directory,
-source state, collected tests, results, and environment limits. Check the relevant suite and integration boundaries.
-Treat zero expected tests collected, skipped checks, missing services, and harness failures according to their actual
-status; none establishes that the intended behavior passed.
+Use [verify](../verify/SKILL.md) for execution evidence and statuses. Record actual commands, working directory, source
+state, collected tests, results, and environment limits. Check relevant suites and integration boundaries.
+Report zero expected tests, skipped checks, missing services, and harness failures by actual status;
+none proves passing behavior.
 
-Investigate failures to distinguish test or fixture defects, preexisting application defects, and unavailable
-infrastructure. Report correct tests that expose existing defects as failures. Do not weaken assertions, accept new
-snapshots blindly, or alter requirements to make the baseline green. Return the suite, coverage map, and observed
-evidence with outstanding review needs. Resolve assigned findings within the approved scope and budget.
+Distinguish test/fixture defects, preexisting application defects, and unavailable infrastructure.
+Report correct tests exposing existing defects as failures. Do not weaken assertions, blindly accept snapshots, or alter
+requirements for a green baseline. Return the suite, coverage map, observed evidence, and outstanding review needs.
+Resolve assigned findings within approved scope and budget.
 
 ## Hand off and reuse
 
@@ -99,14 +100,13 @@ Use `@agent-prompts/response-formats/plan.md` for design-only task responses and
 `@agent-prompts/response-formats/implementation.md` after test implementation. Use the research profile for inspection
 or check execution without edits. Include the coverage map under the profile's acceptance or coverage section.
 
-Update the existing test documentation with the necessary prerequisites, setup, run commands, cleanup, covered
-contracts, and known limitations. Keep this concise and colocated with established project guidance.
-Keep task plans and execution logs in the conversation or the project's authorized task location; do not add process
-reports to the global configuration or commit them without authorization.
+Update existing test documentation with prerequisites, setup, commands, cleanup, covered contracts, and known limits.
+Keep it concise and colocated with project guidance. Keep plans and execution logs in conversation or the authorized
+project task location. Do not add process reports to global configuration or commit them without authorization.
 
-When verifying later changes, map changed behavior and affected integration paths to this suite's assertions.
-Reuse the tests that still cover the intended contracts. Extend coverage only for meaningful gaps through an approved
-implementation assignment; the `verify` procedure remains evidence-only.
+For later changes, map changed behavior and affected integrations to suite assertions. Reuse tests covering intended
+contracts. Extend meaningful gaps only through approved implementation; `verify` remains evidence-only.
 Update expectations only for a reviewed requirement change, never simply because the implementation changed.
-Rerun affected checks on the current source and environment. A passing baseline verifies only the behavior its
-assertions exercise. Report uncovered changes and stale evidence instead of claiming full verification.
+Rerun affected checks on current source and environment. Passing baselines verify only behavior
+exercised by their assertions.
+Report uncovered changes and stale evidence; do not claim full verification.

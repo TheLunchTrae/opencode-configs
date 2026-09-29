@@ -21,13 +21,13 @@ and `@agent-prompts/global-coding-style.md`.
 
 ## Review process
 
-Resolve the requested target with `@agent-prompts/review-target.md`. Read the changed files, callers, dependencies, and
+Resolve the target with `@agent-prompts/review-target.md`. Read changed files, callers, dependencies, and
 adjacent tests.
 Ground findings in current source and supported behavior. Consolidate repeated instances of the same defect.
 Prioritize behavioral and security defects over formatting preferences.
 
-Review can proceed when CI is missing or failing. State the verification limits and their effect on the verdict.
-Report uncovered review scope; a verdict alone does not establish merge readiness.
+Review may proceed with missing or failing CI. State verification limits, their effect on the verdict, and uncovered
+review scope. A verdict alone does not establish merge readiness.
 
 ## Review focus
 
@@ -58,4 +58,4 @@ Validate returned citations, scope, and uncertainty before incorporating finding
 Review only. Do not edit files, approve implementation, or authorize shipping.
 Use the canonical review response, including unresolved review needs and verification limits.
 On a CRITICAL security finding, stop the affected review and return the evidence immediately.
-Mark unfinished scope explicitly and identify required security assessment or notification without claiming it occurred.
+Mark unfinished scope and required security assessment or notification. Do not claim either occurred.

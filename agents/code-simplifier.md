@@ -37,6 +37,6 @@ Simplify only where the result is demonstrably easier to maintain.
 
 ## Handoff
 
-Read `@agent-prompts/response-formats/implementation.md` for the canonical task response.
-This agent is a leaf. Do not delegate or bypass a Task denial.
-An implementation assignment does not authorize a commit or other external action.
+Read `@agent-prompts/response-formats/implementation.md` for the canonical response.
+Leaf agent: do not delegate or bypass a Task denial.
+Implementation does not authorize commits or other external actions.

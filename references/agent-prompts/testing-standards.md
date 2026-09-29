@@ -1,7 +1,7 @@
 # Testing standards
 
-Apply these standards when planning, writing, reviewing, or removing tests. Follow applicable project and language
-rules. Keep the work within the assigned scope, permissions, and approved verification boundaries.
+Apply when planning, writing, reviewing, or removing tests. Follow project and language rules within assigned scope,
+permissions, and approved verification boundaries.
 Read `@agent-prompts/verification-scope.md` before applying these standards. Honor its separate limits on discovery,
 test generation, execution, and infrastructure changes throughout the work.
 
@@ -15,17 +15,17 @@ For each proposed test or material test change, identify:
 - The real entry point and dependencies needed to observe that defect, including any limits introduced by substitutes.
 
 Use the least costly level that can prove the claim. Unit checks can cover detailed rules, integration checks can
-cover collaborating components, and end-to-end checks can cover complete journeys through the application.
+cover collaborating components, and end-to-end checks can cover complete application journeys.
 Do not repeat every case at every level. Explain the distinct risk when more than one level covers related behavior.
 Load `end-to-end-tests` when a changed user journey or integration risk needs coverage through the application.
 Do not require an end-to-end test for every small edit or an arbitrary coverage percentage.
 
-Prefer public behavior and established interfaces. Do not expose private functions or add runtime flags solely to
-make incidental implementation details testable. Propose a necessary testability change explicitly and preserve
-production contracts. A legitimate dependency boundary or stable test identifier is not inherently a bad test seam.
+Prefer public behavior and established interfaces. Do not expose private functions or add runtime flags solely to test
+incidental implementation details. Explicitly propose needed testability changes and preserve production contracts.
+Legitimate dependency boundaries and stable test identifiers are not inherently bad test seams.
 
-Honor explicit exclusions and verification limits approved for the task. Keep their consequences visible in the
-coverage map and handoff. Do not invent infrastructure work to satisfy a checklist or report excluded checks as passed.
+Honor approved exclusions and verification limits; report their effects in the coverage map and handoff.
+Do not invent checklist infrastructure work or report excluded checks as passing.
 
 ## Inspect the test's claim
 
@@ -45,17 +45,18 @@ Inspect for these failure modes:
 - A check passes without observing an outcome, such as optional assertions, swallowed failures, or no collected cases.
 - The name or claimed coverage exceeds the input, execution path, or assertions actually exercised.
 
-Treat these as investigation signals for existing tests, not automatic deletion rules. For new tests, resolve the
-problem or identify the independent contract before accepting the test.
+Investigate these signals in existing tests; do not automatically delete tests. Before accepting new tests,
+resolve the problem or identify the independent contract.
 Static checks, exact bytes, call order, snapshots, exports, and inventories can be the contract for protocols,
 configuration, compatibility, security, packaging, generated artifacts, or migrations. Judge their actual failure
-mode and consumer. Preserve a useful contract even when its cheapest independent check inspects source.
-Slowness, age, test count, or resemblance to implementation alone does not justify removal.
+mode and consumer. Preserve useful contracts even when the cheapest independent check inspects source.
+Slowness, age, count, or resemblance to implementation alone does not justify removal.
 
 ## Keep evidence trustworthy
 
-Keep the application behavior under test real. Substitute only dependencies outside the claimed boundary and state
-what the substitutes cannot establish. A mocked service response does not prove that service's integration works.
+Keep tested application behavior real. Substitute only dependencies outside the claimed boundary and
+state evidence limits.
+A mocked service response does not prove that service's integration.
 Use isolated synthetic data, controlled nondeterminism, bounded synchronization, and cleanup after failures.
 Do not add retries or broad tolerances to conceal flaky assertions. Report initial failures and retry results.
 
@@ -64,5 +65,5 @@ skip its assertions, or approve a new snapshot merely to obtain a passing run.
 Use `verify` for source-linked execution evidence. Distinguish generated tests, inspected code, and checks actually run.
 Keep missing infrastructure, approved exclusions, and uncovered behavior separate from passing results.
 
-Use `test-audit` for an explicit assessment or cleanup of existing suites. Keep ordinary feature reviews within
-their requested scope. Do not turn a test-quality observation into an unrequested repository-wide audit.
+Use `test-audit` for explicit suite assessment or cleanup. Keep feature reviews within requested scope;
+test-quality observations do not authorize repository-wide audits.
