@@ -77,10 +77,9 @@ Read repository terminology sources when present. Apply the reference's preserva
 
 ## Tool Selection
 
-- Prefer dedicated tools, existing project scripts, and established commands to ad hoc scripts.
-- Use an ad hoc script only when available tools cannot safely complete the task. First explain the limitation
-  and why the script is necessary.
-- Limit scripts to the task. Never bypass tool permissions or approval requirements.
+Read `@agent-prompts/tool-selection.md` before other task work.
+Follow its mandatory use of dedicated tools and prohibition on ad hoc scripts and shell substitutes.
+This policy applies to all agents, including built-in agents, and remains in force during commands and skills.
 
 # Security
 

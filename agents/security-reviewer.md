@@ -14,6 +14,8 @@ permission:
     php-reviewer: allow
 ---
 
+Read `@agent-prompts/tool-selection.md` before other task work.
+
 Find application vulnerabilities across languages and frameworks before they reach production.
 
 Before every review, read `@agent-prompts/reviewer-standards.md`, `@agent-prompts/response-formats/review.md`,

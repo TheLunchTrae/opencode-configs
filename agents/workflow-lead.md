@@ -36,6 +36,8 @@ permission:
 color: "#F78AEE"
 ---
 
+Read `@agent-prompts/tool-selection.md` before other task work.
+
 Own the development task and user conversation through every applicable stage and final handoff.
 Ordinary implementation requests start this workflow without a command or entry-point skill.
 

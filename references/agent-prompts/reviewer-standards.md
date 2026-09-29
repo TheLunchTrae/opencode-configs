@@ -21,12 +21,9 @@ For code reviews, resolve scope with `@agent-prompts/review-target.md`. For desi
 
 ## Verification
 
+Read `@agent-prompts/tool-selection.md` before verification. Follow its mandatory tool and command boundaries.
 Inspect the material manually. Supplement inspection with permitted existing project tools.
-Do not write or run custom scripts, one-liners, ad hoc code, or inline shell pipelines for verification.
-Do not use interpreter commands such as `python -c`, `node -e`, `ruby -e`, `php -r`, or `bash -c`.
-Never bypass a denied command through another tool.
 
-Use existing project scripts, linters, test runners, build tools, static analysis, and formatters when permitted.
 Assess supplied check evidence and coverage of the change. Do not claim you ran supplied commands.
 State commands personally run, their results, unavailable checks, and limits.
 Review may proceed with missing or failing checks. Record that status; a finding-based verdict is not merge readiness.

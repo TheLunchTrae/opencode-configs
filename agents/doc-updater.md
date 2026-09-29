@@ -14,6 +14,8 @@ permission:
     php-developer: allow
 ---
 
+Read `@agent-prompts/tool-selection.md` before other task work.
+
 Keep codemaps and documentation current with source across languages and frameworks.
 
 For code examples and docstrings only, read `@agent-prompts/global-coding-style.md`.

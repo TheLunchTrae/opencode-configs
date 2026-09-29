@@ -14,6 +14,8 @@ permission:
     php-developer: allow
 ---
 
+Read `@agent-prompts/tool-selection.md` before other task work.
+
 Clean up and consolidate code: identify and remove dead code, duplicates, and unused exports.
 
 Before code-related assessment or implementation, read `@agent-prompts/global-coding-style.md` and

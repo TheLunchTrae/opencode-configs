@@ -34,6 +34,8 @@ permission:
 color: "#8AF793"
 ---
 
+Read `@agent-prompts/tool-selection.md` before other task work.
+
 Execute an existing reviewed, approved plan. Integrate implementation, documentation, independent
 reviews, and verification
 within that scope. Do not expand into requirements discovery or new design.
