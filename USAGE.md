@@ -70,6 +70,18 @@ every planning step. The lead selects test-first evidence for behavior changes, 
 baseline verification tests for existing behavior, and comparable measurements for performance work.
 Existing tests and sufficient current reviews are reused.
 
+For substantial work, planning identifies consequential gaps in architecture guidance, domain invariants, verification
+commands, and access to relevant fixtures or runtime evidence. The plan separates blockers from optional improvements
+and proposes the smallest necessary correction using existing project documentation, tools, and tests.
+
+Primary agents and specialists use the [project learning procedure](references/agent-prompts/project-learning.md)
+for assigned failure-prevention assessments, evidenced recurring mistakes, or repeated attempts that stop at a blocker.
+Leads also invoke it when the repair budget is exhausted. Specialists return assessments in their existing task reports.
+The lead validates the evidence, combines duplicate recommendations, and selects at most one justified
+preventive change. The assessment does not authorize another repair or a broader scope.
+Persistent changes still require applicable approval.
+If no preventive change is justified, report the missing prerequisite or next bounded investigation.
+
 You can request a stopping point such as "design only" or "implement only phase 1 after approval."
 Read-only questions do not start implementation. A plan or reviewer verdict is not implementation approval.
 Commits, pushes, pull requests, merges, deployments, and other shipping actions require authorization for that action.

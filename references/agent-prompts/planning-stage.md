@@ -14,6 +14,14 @@ The planner reads `@agent-prompts/phased-plan.md` for an explicitly requested or
 Review outcome, non-goals, data ownership, failure behavior, invariants, and acceptance slices.
 Acceptance slices do not imply separate releases. Reuse existing test seams; do not invent a framework for the workflow.
 
+Review the planner's context and verification gaps with the design. Resolve consequential unknowns before approval.
+Include necessary documentation, coverage, or tooling changes in the proposed scope.
+Route them through existing procedures.
+Use `project-standards` only for deliberate tooling adoption.
+Keep optional improvements separate from blocking prerequisites.
+Missing documentation alone does not require a new file or block implementation when verified source supplies
+the context.
+
 ## Independent design review
 
 Send every implementation design to `code-reviewer`. For architecture, system, or high-level designs, also dispatch

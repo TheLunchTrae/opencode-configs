@@ -47,6 +47,20 @@ Only the active lead marks its in-scope work complete. A specialist's task statu
 Set a finite budget before work starts. Default to two repair attempts per failed acceptance target, carried across
 resumed sessions and agent switches. Stop sooner on repeated failure without new evidence, unclear requirements,
 permission denial, or access limits. Report the blocker and next action; checkpoint only when authorized.
+Read `@agent-prompts/project-learning.md` when repeated failures or an exhausted budget stop work.
+This assessment does not reset the budget, authorize another repair, or override a stopping condition.
+
+## Project learning
+
+Use `@agent-prompts/project-learning.md` for evidenced recurring mistakes and explicit failure-prevention assessments.
+Validate specialist assessments against current evidence and consolidate duplicate recommendations.
+Select at most one justified preventive change for the task as a whole. Reuse earlier assessments that remain current.
+Present the diagnosis, evidence, proposed prevention, and verification in conversation before expanding
+the approved scope.
+
+Obtain authorization before changing persistent instructions or tooling outside the approved scope.
+Use `project-standards` for deliberate tooling adoption.
+Coordinate approved follow-up within the active lead's role. Focused leads report work outside their stage to the user.
 
 ## Shipping and risky actions
 
