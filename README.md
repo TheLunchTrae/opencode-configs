@@ -1,7 +1,7 @@
 # OpenCode Global Configuration
 
 Personal global configuration for OpenCode, with focused lead agents, specialists, commands, reusable skills,
-shared prompts, agent group and model controls, secret-path checks, and quota display preferences.
+shared prompts, agent group and model controls, workflow panels, session bookmarks, and secret-path checks.
 The default agent is `workflow-lead`. It coordinates complete development tasks.
 Select a focused lead when you want only planning, approved implementation, or assessment of existing work.
 
@@ -17,6 +17,7 @@ Select a focused lead when you want only planning, approved implementation, or a
 | [`references/agent-prompts/`](references/agent-prompts/) | Shared prompt guidance. |
 | [`plugins/`](plugins/) | Local plugins, including secret-path checks. |
 | [`extensions/agent-groups/`](extensions/agent-groups/) | TUI settings and server-side group defaults. |
+| [`extensions/session-tools/`](extensions/session-tools/) | Workflow, config, context, bookmarks, and handoff panels. |
 | [`package.json`](package.json) | Pinned plugin dependencies and maintenance commands. |
 | [`opencode.jsonc`](opencode.jsonc) | Global models, permissions, MCP servers, shell, and plugin settings. |
 | [`tui.jsonc`](tui.jsonc) | TUI theme selection and plugin settings. |
@@ -65,6 +66,10 @@ The supplied GitHub entry has OAuth disabled; configure a supported authenticati
 Keep tokens out of version control.
 
 The quota plugin is configured for OpenAI. To opt out, remove its entries from both `opencode.jsonc` and `tui.jsonc`.
+
+The session tools add a live workflow sidebar, read-only configuration and context inspectors, and session bookmarks
+with editable handoff drafts. Open them through the command palette or `/workflow-panel`, `/inspect-config`,
+`/inspect-context`, and `/bookmarks`. See [session tools](USAGE.md#session-tools) for use and individual opt-outs.
 
 The selected `pink` theme uses pink accents, pastel syntax and status colors, and neutral dark backgrounds.
 It keeps the same dark appearance in both terminal modes. Install `themes/` with `tui.jsonc` so OpenCode can find it.

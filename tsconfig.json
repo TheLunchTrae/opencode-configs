@@ -11,7 +11,9 @@
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "allowImportingTsExtensions": true,
-    "verbatimModuleSyntax": true
+    "verbatimModuleSyntax": true,
+    "jsx": "preserve",
+    "jsxImportSource": "@opentui/solid"
   },
-  "include": ["plugins/**/*.ts", "extensions/**/*.ts", "tests/**/*.ts"]
+  "include": ["plugins/**/*.ts", "extensions/**/*.ts", "extensions/**/*.tsx", "tests/**/*.ts"]
 }

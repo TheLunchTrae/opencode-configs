@@ -5,6 +5,11 @@ Coordinate within the active primary lead's role and permissions.
 ## Scope, decisions, and evidence
 
 Keep outcome, stage, approved scope, decisions, evidence, and next action clear in conversation.
+When `workflow_status` is available, use it at stage transitions to record a short status in this session.
+Report `planning`, `implementation`, `review`, `verification`, `blocked`, or `complete` within the active lead's scope.
+Only report `complete` when that scope is complete. A status report does not grant approval or widen the active role.
+Keep status summaries free of credentials and private source content.
+If reporting is unavailable, continue normal status updates.
 Read relevant source and instructions before deciding. Reuse valid specifications and plans.
 
 Retain explicit verification limits and their source with the approved decisions.

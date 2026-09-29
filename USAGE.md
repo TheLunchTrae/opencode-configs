@@ -7,6 +7,7 @@ The default `workflow-lead` coordinates a complete development task. Focused lea
 
 - [Choose a lead](#choose-a-lead): select the scope and stopping point.
 - [Agent groups and models](#agent-groups-and-models): change models, defaults, and group membership in the TUI.
+- [Session tools](#session-tools): inspect workflow, configuration, and context; bookmark decisions and draft handoffs.
 - [Run a complete workflow](#run-a-complete-workflow): start once, resolve questions, and approve the plan.
 - [Move between focused stages](#move-between-focused-stages): reuse reviewed plans, approvals, and evidence.
 - [Command reference](#command-reference): utility shortcuts and the focused audit command.
@@ -130,6 +131,99 @@ V2 needs a separate port. Install the complete `extensions/agent-groups/` direct
 Keep these entrypoints outside the automatically discovered `plugins/` directory to avoid loading them twice.
 Live reload records an internal `reloadToken` in the server plugin options so OpenCode invalidates its global cache.
 You do not need to edit that value.
+
+## Session tools
+
+These four plugins use native TUI dialogs and the selected theme. Open the command palette or use these commands.
+Open a session first for workflow, context, and bookmark actions. Inspectors do not send model requests.
+
+| Command | Action |
+| --- | --- |
+| `/workflow-panel` | Expand the workflow stage and primary/child session list. |
+| `/inspect-config` | Inspect an agent's resolved configuration and recorded model. |
+| `/inspect-context` | Inspect recorded usage, file reads, skill loads, and compactions. |
+| `/bookmarks` | Manage session bookmarks and select notes for a handoff. |
+| `/bookmark` | Bookmark a recent message or create a manual note. |
+| `/session-handoff` | Build an editable draft from selected bookmarks. |
+
+### Live workflow
+
+The sidebar shows the latest stage reported by the primary lead through `workflow_status`.
+Stages are `planning`, `implementation`, `review`, `verification`, `blocked`, and `complete`.
+They describe the lead's scope. A report is not an approval or an independent verification result.
+Sessions without a recorded stage show **Stage not reported**. Idle status never means workflow completion.
+
+Select an agent to inspect its recorded model, variant, task, and available timing, or open its conversation.
+The list distinguishes active work, retry, questions, permissions, and completed or failed delegations.
+Session events trigger refreshes; a ten-second refresh also runs while the panel is mounted.
+The sidebar shows up to five sessions. The expanded view loads at most 24 sessions, two child levels,
+the primary session's latest 200 messages, and each child's latest 20 messages.
+Missing or older history can leave tasks and model details unavailable. A failed refresh marks displayed data stale.
+
+### Effective configuration
+
+Choose an agent to compare its server-resolved model and variant, merged workspace default, global file default,
+and last recorded model for that agent in the current session. Group membership and configured group defaults appear
+when available. A matching model does not establish whether an agent inherited a group default or has an explicit pin.
+Use [agent groups and models](#agent-groups-and-models) to change those settings.
+
+V1 exposes merged settings without exact file provenance. The inspector identifies that limit instead of naming
+an unverified source file. Recorded models describe past turns; they do not predict the next request's model.
+Permission rules retain runtime order. Saved session approvals can also affect access.
+MCP entries show names and status. The inspector does not display provider credentials, environment values,
+raw configuration, or tool output.
+
+### Context evidence
+
+The context inspector shows the latest completed, non-error request in loaded history. It keeps input, output,
+reasoning, cache reads, and cache writes separate because provider accounting differs.
+It also lists attachments, successful Read and Skill calls, compaction requests, and recorded summaries.
+Available skills are not treated as loaded. Failed reads are not treated as context evidence.
+
+The view covers at most 200 recent messages. It does not expose the exact assembled prompt or token counts per file.
+Old reads and attachments can remain in history after their content leaves the model context.
+Use **Refresh** after new activity; this inspector is a snapshot.
+
+### Bookmarks and handoffs
+
+Use `/bookmark` to select a recent message or write a manual note. Choose **Note**, **Plan**, **Decision**, or
+**Question**, then enter a label and an editable excerpt. Labels allow 120 characters; notes allow 2,000.
+The plugin stores up to 100 bookmarks per session in OpenCode's local TUI storage, keyed by project, workspace,
+directory, and session. The data survives TUI restarts on that installation. It does not sync between machines.
+Do not put credentials in bookmark notes.
+
+Use `/bookmarks` to edit, remove, or include notes in a handoff. **Open source session** checks linked messages
+before opening the conversation. It does not scroll to the exact message.
+A missing source does not erase the saved note.
+The plugin rejects malformed bookmark records instead of overwriting them with an empty list.
+
+Select at most 20 bookmarks, then choose **Build editable handoff draft** or run `/session-handoff`.
+Edit the draft and use **Ctrl+Y** or the copy action to copy a `/checkpoint` request.
+Paste it into the session composer, review it, then submit it under the active lead's permissions.
+The editor does not submit prompts or write a project file. Terminal clipboard support is required for the copy action.
+If the terminal blocks clipboard transfer, select and copy the draft manually and include it in a `/checkpoint` request.
+
+The draft retains source message IDs and the checkpoint's evidence fields. Branch, source hashes, test results,
+authorization, and the next action must be checked before saving or resuming. Bookmarks supply context, not authority.
+For an existing project handoff, **Prepare resume request** copies `/resume-work <handoff-path>`.
+Review the request before submission.
+See [continue a long task](#continue-a-long-task) for the lead's checkpoint and resume behavior.
+
+### Enable or disable panels
+
+Install the complete `extensions/session-tools/` directory. The four TUI entries are independent:
+
+| Entry in `tui.jsonc` | Plugin |
+| --- | --- |
+| `./extensions/session-tools/workflow.tsx` | Workflow sidebar and expanded view. |
+| `./extensions/session-tools/config.ts` | Effective configuration inspector. |
+| `./extensions/session-tools/context.ts` | Context inspector. |
+| `./extensions/session-tools/bookmarks.tsx` | Bookmarks and handoff drafts. |
+
+Remove an entry to disable that panel, then restart OpenCode. Keep other plugin entries and the shared helper files.
+`./extensions/session-tools/server.ts` in `opencode.jsonc` supplies `workflow_status` for primary leads.
+Removing it stops new stage reports; the other views remain usable. These plugins target OpenCode V1 1.18.29.
+V2 requires a separate port.
 
 ## Run a complete workflow
 

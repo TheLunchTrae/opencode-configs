@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "test": "node --experimental-strip-types --test tests/*.test.mjs tests/*.test.ts",
-    "test:native": "node --experimental-strip-types --test tests/agent-groups.native.ts",
+    "test:native": "node --experimental-strip-types --test tests/*.native.ts",
     "typecheck": "tsc --project tsconfig.json"
   },
   "dependencies": {
