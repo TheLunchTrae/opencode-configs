@@ -5,8 +5,9 @@ import { randomUUID } from "node:crypto"
 import { applyEdits, modify, parse, parseTree, type ParseError, type Node as JsonNode } from "jsonc-parser"
 import { parseDocument, type Document } from "yaml"
 import {
-  SettingsError, groupName, modelChoice, readGroups, record, resolveChoice,
-  type AgentSettings, type Groups, type ModelChoice,
+  SettingsError, agentGroup, groupName, groupChoice, modelChoice, presetName, readOptions, record,
+  resolveChoice, resolveGroup,
+  type AgentSettings, type Groups, type GroupChoice, type ModelChoice, type ModelPresets, type NativeModels,
 } from "./settings.ts"
 
 export type SourceFile = { path: string; text: string; mode: number }
@@ -18,17 +19,20 @@ export type Snapshot = {
   config: Record<string, unknown>
   pluginIndex: number
   groups: Groups
+  modelPresets: ModelPresets
   agents: StoredAgent[]
   files: SourceFile[]
 }
 export type Change =
-  | { kind: "group"; name: string; choice: ModelChoice }
+  | { kind: "group"; name: string; choice: GroupChoice }
+  | { kind: "preset"; name: string; choice: ModelChoice }
+  | { kind: "deletePreset"; name: string }
   | { kind: "global"; field: "model" | "small_model"; model: string }
   | { kind: "all"; choice: ModelChoice }
   | { kind: "membership"; agent: string; group?: string }
   | { kind: "override"; agent: string; choice: ModelChoice }
 export type FileEdit = { file: SourceFile; text: string }
-export type EditPlan = { snapshot: Snapshot; edits: FileEdit[]; description: string }
+export type EditPlan = { snapshot: Snapshot; change: Change; edits: FileEdit[]; description: string }
 
 function checkObjectKeys(node: JsonNode | undefined): void {
   if (!node) return
@@ -94,7 +98,7 @@ export async function loadSnapshot(directory: string): Promise<Snapshot> {
   const pluginIndex = matches[0]
   const plugin = config.plugin[pluginIndex]
   if (!Array.isArray(plugin)) throw new SettingsError("Configure agent-groups with a plugin options object.")
-  const groups = readGroups(plugin[1])
+  const { groups, modelPresets } = readOptions(plugin[1])
   const jsonAgents = record(config.agent) ? config.agent : {}
   const agents = new Map<string, StoredAgent>(Object.entries(jsonAgents).map(([name, value]) => {
     if (!record(value)) throw new SettingsError("An agent configuration must be an object.")
@@ -127,15 +131,23 @@ export async function loadSnapshot(directory: string): Promise<Snapshot> {
   }
   for (const dir of ["agents", "agent"]) if (entries.includes(dir)) await scan(join(root, dir), join(root, dir))
   const enabled = [...agents.values()].filter((agent) => !agent.settings.disable).sort((a, b) => a.name.localeCompare(b.name))
-  enabled.forEach((agent) => resolveChoice(agent.settings, groups))
-  return { root, configFile, config, pluginIndex, groups, agents: enabled, files }
+  enabled.forEach((agent) => agentGroup(agent.settings))
+  return { root, configFile, config, pluginIndex, groups, modelPresets, agents: enabled, files }
 }
 
 export function groupNames(snapshot: Snapshot): string[] {
   return [...new Set([...Object.keys(snapshot.groups), ...snapshot.agents.flatMap((agent) => {
-    const group = resolveChoice(agent.settings, snapshot.groups).group
+    const group = agentGroup(agent.settings)
     return group ? [group] : []
   })])].sort()
+}
+
+export function affectedGroups(snapshot: Snapshot, change: Change): string[] {
+  if (change.kind === "all") return groupNames(snapshot)
+  if (change.kind === "group") return [change.name]
+  const modelRef = change.kind === "global" ? `opencode:${change.field}`
+    : change.kind === "preset" || change.kind === "deletePreset" ? `preset:${change.name}` : undefined
+  return modelRef ? Object.keys(snapshot.groups).filter((name) => snapshot.groups[name].modelRef === modelRef) : []
 }
 
 function editJson(text: string, path: (string | number)[], value: unknown): string {
@@ -149,8 +161,20 @@ export function planChange(snapshot: Snapshot, change: Change): EditPlan {
   const edits: FileEdit[] = []
   const patch = (path: (string | number)[], value: unknown) => { configText = editJson(configText, path, value) }
   const groupPath = ["plugin", snapshot.pluginIndex, 1, "groups"]
+  const presetPath = ["plugin", snapshot.pluginIndex, 1, "modelPresets"]
   if (change.kind === "group") {
-    patch([...groupPath, groupName(change.name)], modelChoice(change.choice))
+    patch([...groupPath, groupName(change.name)], groupChoice(change.choice))
+  } else if (change.kind === "preset") {
+    const choice = modelChoice(change.choice)
+    if (!choice.model) throw new SettingsError("A model preset requires a concrete model.")
+    patch([...presetPath, presetName(change.name)], choice)
+  } else if (change.kind === "deletePreset") {
+    const name = presetName(change.name)
+    if (!Object.hasOwn(snapshot.modelPresets, name)) throw new SettingsError("That model preset no longer exists.")
+    if (affectedGroups(snapshot, change).length) {
+      throw new SettingsError("This preset is referenced by groups. Reassign those groups before deleting it.")
+    }
+    patch([...presetPath, name], undefined)
   } else if (change.kind === "global") {
     modelChoice({ model: change.model })
     patch([change.field], change.model)
@@ -159,7 +183,12 @@ export function planChange(snapshot: Snapshot, change: Change): EditPlan {
     if (!choice.model) throw new SettingsError("Select a model for all defaults.")
     patch(["model"], choice.model)
     patch(["small_model"], choice.model)
-    for (const name of groupNames(snapshot)) patch([...groupPath, name], choice)
+    for (const name of Object.keys(snapshot.modelPresets)) patch([...presetPath, name], choice)
+    for (const name of groupNames(snapshot)) {
+      const modelRef = snapshot.groups[name]?.modelRef
+      patch([...groupPath, name], modelRef
+        ? { modelRef, ...(choice.variant ? { variant: choice.variant } : {}) } : choice)
+    }
   } else {
     const agent = snapshot.agents.find((item) => item.name === change.agent)
     if (!agent) throw new SettingsError("That agent is no longer available. Reopen the editor.")
@@ -187,14 +216,47 @@ export function planChange(snapshot: Snapshot, change: Change): EditPlan {
       if (text !== file.text) edits.push({ file, text })
     }
   }
-  parseConfig(configText)
+  const config = parseConfig(configText)
+  readOptions((config.plugin as unknown[][])[snapshot.pluginIndex][1])
   if (configText !== snapshot.configFile.text) edits.push({ file: snapshot.configFile, text: configText })
   const description = change.kind === "group" ? `Update defaults for ${change.name}`
-    : change.kind === "global" ? `Update ${change.field}`
-      : change.kind === "all" ? "Update global defaults and every group default; retain explicit agent overrides"
-        : change.kind === "membership" ? `Move ${change.agent} to ${change.group ?? "Ungrouped"}; retain model overrides`
-          : `${change.choice.model ? "Set an override for" : "Use inherited defaults for"} ${change.agent}`
-  return { snapshot, edits, description }
+    : change.kind === "preset" ? `Update model preset ${change.name} and its linked groups`
+      : change.kind === "deletePreset" ? `Delete unused model preset ${change.name}`
+        : change.kind === "global" ? `Update ${change.field} and its linked groups`
+          : change.kind === "all" ? "Update global defaults, presets, and groups; retain references and agent overrides"
+            : change.kind === "membership" ? `Move ${change.agent} to ${change.group ?? "Ungrouped"}; retain model overrides`
+              : `${change.choice.model ? "Set an override for" : "Use inherited defaults for"} ${change.agent}`
+  return { snapshot, change, edits, description }
+}
+
+export function plannedChoices(plan: EditPlan, native: NativeModels = plan.snapshot.config): ModelChoice[] {
+  const { snapshot, change } = plan
+  const text = plan.edits.find((edit) => edit.file.path === snapshot.configFile.path)?.text ?? snapshot.configFile.text
+  const config = parseConfig(text)
+  const { groups, modelPresets } = readOptions((config.plugin as unknown[][])[snapshot.pluginIndex][1])
+  // Validate a changed global value for all consumers, even when this workspace has an override.
+  const defaults = change.kind === "global" ? { ...native, [change.field]: change.model }
+    : change.kind === "all" ? { model: change.choice.model, small_model: change.choice.model } : native
+  const context = { native: defaults, modelPresets }
+  if (change.kind === "deletePreset") return []
+  if (change.kind === "membership" || change.kind === "override") {
+    const agent = snapshot.agents.find((item) => item.name === change.agent)!
+    if (change.kind === "membership" && agent.settings.model) return []
+    const settings = change.kind === "override"
+      ? { ...agent.settings, model: change.choice.model, variant: change.choice.variant }
+      : { ...agent.settings, agent_group: change.group, options: { ...agent.settings.options, agent_group: undefined } }
+    return [resolveChoice(settings, groups, context)]
+  }
+  const affected = affectedGroups(snapshot, change)
+  const choices: ModelChoice[] = affected.map((name) => resolveGroup(groups[name] ?? {}, context))
+  for (const agent of snapshot.agents) {
+    if (!agent.settings.model && affected.includes(agentGroup(agent.settings) ?? "")) {
+      choices.push(resolveChoice(agent.settings, groups, context))
+    }
+  }
+  if (change.kind === "global") choices.push({ model: change.model })
+  if (change.kind === "preset" || change.kind === "all") choices.push(change.choice)
+  return choices
 }
 
 async function atomicWrite(path: string, text: string, mode: number): Promise<void> {

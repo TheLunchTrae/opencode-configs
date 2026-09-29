@@ -4,15 +4,19 @@
     "@slkiser/opencode-quota@4.9.0",
     "./extensions/session-tools/server.ts",
     ["./extensions/agent-groups/server.ts", {
+      "modelPresets": {
+        "balanced": { "model": "openai/gpt-5.6-sol", "variant": "medium" },
+        "lightweight": { "model": "openai/gpt-5.6-terra", "variant": "medium" }
+      },
       "groups": {
-        "workflow": { "model": "openai/gpt-6-astra", "variant": "high" },
-        "planning": { "model": "openai/gpt-6-astra", "variant": "high" },
-        "developers": { "model": "openai/gpt-5.6-sol", "variant": "medium" },
-        "reviewers": { "model": "openai/gpt-6-astra", "variant": "high" },
-        "refactoring": { "model": "openai/gpt-5.6-sol", "variant": "medium" },
-        "documentation": { "model": "openai/gpt-5.6-terra", "variant": "medium" },
-        "research": { "model": "openai/gpt-5.6-terra", "variant": "medium" },
-        "system": { "model": "openai/gpt-5.6-terra", "variant": "medium" }
+        "workflow": { "modelRef": "opencode:model", "variant": "high" },
+        "planning": { "modelRef": "opencode:model", "variant": "high" },
+        "developers": { "modelRef": "preset:balanced" },
+        "reviewers": { "modelRef": "opencode:model", "variant": "high" },
+        "refactoring": { "modelRef": "preset:balanced" },
+        "documentation": { "modelRef": "preset:lightweight" },
+        "research": { "modelRef": "preset:lightweight" },
+        "system": { "modelRef": "preset:lightweight" }
       }
     }]
   ],

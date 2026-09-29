@@ -51,13 +51,14 @@ Specialists receive task inputs and constraints without needing the lead's ident
 Open the command palette and look under **Config**, or run `/agent-models` and `/agent-groups`.
 These are local settings controls. They do not send a prompt to an agent.
 The model picker reads the running server's provider catalog, including custom provider models and supported variants.
-Connect providers with `/connect` first. Models are checked again before saving.
+Connect providers with `/connect` first. Models and affected variants are checked again before saving.
 
 | Scope in `/agent-models` | Effect |
 | --- | --- |
-| Global defaults | Change the main or small model. Group defaults and agent pins still take precedence. |
-| All defaults | Set the main model, small model, and every group's model. Preserve explicit agent overrides. |
-| A group name | Set that group's model and optional variant. Agents without explicit models inherit it. |
+| Global defaults | Change the main or small model, including groups that reference that setting. |
+| Model presets | Create or edit a shared model and variant. Delete a preset only after reassigning its groups. |
+| All defaults | Set main, small, all presets, and group defaults. Preserve references and explicit agent models. |
+| A group name | Choose a concrete model, native reference, preset, or native fallback. |
 | Individual agent overrides | Select an agent to set a model exception, clear its override, or change its group. |
 
 Use `/agent-groups` to create groups, select their defaults, and move agents between them.
@@ -74,25 +75,90 @@ Wait for all of their agents to finish first. The editor checks running agents i
 it cannot check activity in every other workspace. An existing session model selection can still take precedence.
 Use OpenCode's `/models` command when you also want to change the current session's selected model.
 
-### Configure group defaults
+### Choose a model source
 
-Add group defaults to the server plugin's options in `opencode.jsonc`. For example:
+A group's model source is separate from its membership. Several groups can share one preset without merging their agents.
+
+| Choice | Stored group setting | Behavior |
+| --- | --- | --- |
+| OpenCode fallback | `{}` | Leave selection to OpenCode's normal global or parent-model fallback. |
+| Main default | `"modelRef": "opencode:model"` | Follow the effective workspace `model` setting. |
+| Small default | `"modelRef": "opencode:small_model"` | Follow the effective workspace `small_model` setting. |
+| Named preset | `"modelRef": "preset:balanced"` | Follow the concrete model and optional variant in that preset. |
+| Specific model | `"model": "provider/model-id"` | Set a concrete model for this group. |
+
+The native main and small settings are distinct slots, not an ordered capability hierarchy.
+OpenCode fallback does not specifically select either slot. An explicit reference requires that slot to contain a model.
+An unset referenced slot is an error, not a request to select an arbitrary fallback model.
+
+Native references use the merged workspace configuration, including project overrides.
+They do not always use the literal model in the global file. See [OpenCode configuration](https://opencode.ai/docs/config/).
+Changing a global slot does not affect a group with a concrete model or a preset reference.
+Explicit agent models remain independent of their group's source.
+
+The editor shows the reference and its resolved model, such as `preset:balanced → provider/model-id (medium)`.
+For native references, it labels differences between the running workspace and the saved global file.
+A difference can reflect an override or a saved change awaiting reload; it does not establish exact file provenance.
+References are resolved again when configuration is reloaded or OpenCode restarts, not continuously during a request.
+
+### Shipped model sources
+
+The bundled [configuration](opencode.jsonc) uses main-model references and two shared presets, `balanced` and `lightweight`.
+Its `groups` object is the source of truth for assignments. Explicit agent exceptions remain in the agent configuration.
+Main-model groups retain their `high` variant. Preset-linked groups inherit the variant stored in their preset.
+
+In `/agent-models`, use **Global defaults → Main model** to change the main slot.
+Use **Model presets → balanced** or **Model presets → lightweight** to change those shared choices.
+Review the affected groups and retained pins before saving. Apply the change through an explicit reload or restart.
+
+The `system` group uses `lightweight`, not the native small-model slot.
+The `title` agent retains its explicit model and `low` variant, independently of both its group and `small_model`.
+Changing the small-model slot alone does not change these defaults.
+
+**Upgrade warning:** Adopting the bundled references makes main-model groups follow effective workspace overrides.
+Their group-level variants still apply and must be supported by the selected model.
+Back up and merge local settings before adopting the shipped configuration. Preserve deliberate agent exceptions.
+
+### Configure group defaults and presets
+
+Add these fields inside the server plugin's options in `opencode.jsonc`. The model IDs below are placeholders:
 
 ```jsonc
 "plugin": [
   ["./extensions/agent-groups/server.ts", {
+    "modelPresets": {
+      "balanced": { "model": "provider/model-id", "variant": "medium" }
+    },
     "groups": {
-      "developers": { "model": "provider/model-id", "variant": "medium" },
-      "reviewers": { "model": "provider/another-model-id" },
-      "research": {}
+      "developers": { "modelRef": "preset:balanced" },
+      "refactoring": { "modelRef": "preset:balanced" },
+      "reviewers": { "modelRef": "opencode:model", "variant": "high" },
+      "utility": { "modelRef": "opencode:small_model" },
+      "research": { "model": "provider/another-model-id" },
+      "fallback": {}
     }
   }]
 ]
 ```
 
 Keep your other plugin entries. Register `./extensions/agent-groups/tui.ts` in the `plugin` array of `tui.jsonc`.
-Group names use lowercase letters, digits, and hyphens, start with a letter, and contain at most 64 characters.
-Use a model and variant supported by your provider. An empty group object uses OpenCode's normal fallback.
+Group and preset names use lowercase kebab-case, start with a letter, and contain at most 64 characters.
+Use a model and variant supported by your provider. Set the referenced native slots before assigning their references.
+Presets are optional. Updating the plugin alone does not convert existing concrete models into references.
+The bundled configuration already uses references; merge those settings explicitly when upgrading an installation.
+
+A group accepts either `model` or `modelRef`, never both. A preset accepts only a concrete `model` and optional `variant`.
+Presets cannot reference other presets or native defaults. Groups cannot reference other groups.
+Missing presets and invalid references are rejected rather than silently ignored.
+
+Use **Model presets** in `/agent-models` to create a preset or change its model and variant.
+Then select that preset as the model source for each intended group.
+The editor stores each reference, not a copy of the selected model. Editing the preset updates its linked defaults
+at the next reload or restart. Delete a preset only after reassigning every group that references it, including empty groups.
+
+**All defaults** changes the main model, small model, every preset including unused presets, and every group default.
+It retains existing references rather than converting them to concrete models. It replaces group variants with the selected
+variant and preserves explicit agent overrides. Review this broader scope before confirming a bulk change.
 
 Assign a custom agent in its Markdown frontmatter:
 
@@ -107,15 +173,25 @@ Review the assigned changes.
 
 For a built-in agent, add `"agent_group": "reviewers"` to its entry under `agent` in `opencode.jsonc`.
 Membership is real configuration metadata. The server plugin consumes it and removes `agent_group` from
-request options before provider dispatch.
+request options before provider dispatch. Model references and preset definitions remain plugin configuration.
 
 An explicit agent `model` takes precedence over the group model and prevents inheritance of the group's variant.
-With no explicit model, the agent inherits the group model and uses its own `variant` if present, then the group's.
-With neither an agent model nor a group model, OpenCode applies its normal global or parent-model fallback.
+Without an explicit agent model, variant precedence is the agent's variant, the group's variant, then the preset's variant.
+Omit a group's variant to inherit the preset variant. Native references have no preset variant to inherit.
+With neither an agent model nor a group model source, OpenCode applies its normal global or parent-model fallback.
 Project configuration and session selections retain OpenCode's normal precedence.
 Groups therefore let new agents inherit defaults without adding a model to every file.
 
+Before saving, the editor checks the changed model choices and affected group and unpinned-agent variants against the catalog.
+An incompatible inherited variant blocks the save. Change or clear that override before changing its underlying model.
+A changed effective native default invalidates an open reference preview; reopen the editor to review the new resolution.
+Server dispatch also rejects unsupported variants for referenced defaults when their resolved model is selected.
+Models that the native provider cannot resolve remain errors. These checks do not prove that credentials or model calls work.
+
 ### Editing and compatibility
+
+Install the updated `extensions/agent-groups/` directory with `opencode.jsonc` before using the shipped model sources.
+Older plugin versions reject the `modelRef` and `modelPresets` fields. Do not update the configuration alone.
 
 The editor manages this installation's global `opencode.jsonc` or `opencode.json` and its `agents/` or `agent/` files.
 Run it where the TUI and server share the same global configuration filesystem. Remote configuration editing and
@@ -126,7 +202,7 @@ An installation in a separate `OPENCODE_CONFIG_DIR` can save edits, but needs a 
 JSONC comments, YAML comments, prompt bodies, and unrelated settings are preserved; edited fields can be reformatted.
 An interrupted write can leave `.agent-groups.lock`. Remove that lock only after confirming no editor is saving.
 
-The server and TUI entrypoints require OpenCode V1; they were checked against 1.18.29.
+The server and TUI entrypoints target OpenCode V1 1.18.29.
 V2 needs a separate port. Install the complete `extensions/agent-groups/` directory and the package manifest.
 Keep these entrypoints outside the automatically discovered `plugins/` directory to avoid loading them twice.
 Live reload records an internal `reloadToken` in the server plugin options so OpenCode invalidates its global cache.
@@ -164,7 +240,10 @@ Missing or older history can leave tasks and model details unavailable. A failed
 
 Choose an agent to compare its server-resolved model and variant, merged workspace default, global file default,
 and last recorded model for that agent in the current session. Group membership and configured group defaults appear
-when available. A matching model does not establish whether an agent inherited a group default or has an explicit pin.
+when available. The inspector resolves group references and shows their source and variant separately from the agent's model.
+For native references, it also compares the referenced workspace and global slots.
+Invalid references display a resolution error rather than a native fallback label.
+A matching model does not establish whether an agent inherited a group default or has an explicit pin.
 Use [agent groups and models](#agent-groups-and-models) to change those settings.
 
 V1 exposes merged settings without exact file provenance. The inspector identifies that limit instead of naming
@@ -211,7 +290,9 @@ See [continue a long task](#continue-a-long-task) for the lead's checkpoint and 
 
 ### Enable or disable panels
 
-Install the complete `extensions/session-tools/` directory. The four TUI entries are independent:
+Install the complete `extensions/session-tools/` directory.
+Keep `extensions/agent-groups/settings.ts` installed as its shared model-resolution helper, even with the group editor disabled.
+The four TUI entries are independent:
 
 | Entry in `tui.jsonc` | Plugin |
 | --- | --- |
