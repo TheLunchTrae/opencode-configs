@@ -111,6 +111,29 @@ Check the installed version against the [V1 documentation](https://opencode.ai/d
   V2 discards enabled-only V1 MCP entries without a `type`; `{ "enabled": false }` is not a portable disable rule.
 - Never inspect or inline secret files while checking configuration.
 
+## Plugin tooling
+
+Run `npm ci` from the repository root before editing plugins or extensions. Use the workspace TypeScript version
+in the editor. Reopen the project or restart its TypeScript service if dependencies remain unresolved.
+Preserve the TypeScript compiler settings and OpenTUI JSX import source.
+The DOM type library supports Solid's declarations. ESLint runtime globals remain limited to Node.js.
+
+| Command | Purpose |
+| --- | --- |
+| `npm run lint` | Run strict type-aware ESLint checks with zero warnings. |
+| `npm run lint:fix` | Apply available ESLint fixes. Review the changes. |
+| `npm run format` | Format plugin and extension code, tests, and tooling configuration. |
+| `npm run format:check` | Check formatting without changing files. |
+| `npm run check` | Run type checking, lint, formatting checks, and `npm test`. |
+
+Formatting uses single quotes, semicolons, two-space indentation, LF endings, and a 120-character print width.
+Markdown prompts are excluded. Git normalizes text files and checks them out with LF on every platform.
+Binary files retain automatic detection.
+
+Keep loader-required default exports and Promise-returning host hooks. Use narrow, justified lint exceptions
+when these contracts or terminal UI APIs require them. Each suppression must name the rule and explain its reason.
+Do not replace npm, adopt Effect, or change the runtime APIs solely to match the upstream standards.
+
 ## Plugin maintenance
 
 Read [block-secrets.ts](../plugins/block-secrets.ts) and its tests before changing the plugin.
@@ -149,8 +172,7 @@ Run applicable existing checks from the repository root:
 
 ```sh
 npm ci
-npm test
-npm run typecheck
+npm run check
 npm run test:native
 ```
 
