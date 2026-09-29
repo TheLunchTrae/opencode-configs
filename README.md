@@ -124,9 +124,13 @@ This plugin is a path check, not a sandbox or complete secret protection:
 - Approved commands, scripts, and hooks can access secrets.
 - Project settings, per-agent permissions, and saved approvals can change effective access.
 
-Normal tool permissions still apply. Shell approval defaults to `ask`, with exact allowances for selected Git inspection
-commands and explicit denials for selected destructive commands. The complete allowlist is in `opencode.jsonc`.
-Unlisted forms of these inspection commands require approval, including commands with output redirection.
+Normal tool permissions still apply. Shell approval defaults to `ask`, with explicit denials
+for selected destructive commands.
+The `git status *`, `git diff *`, and `git log *` rules allow routine inspection with flexible arguments.
+V1 also matches each bare command with its trailing ` *` rule. Later rules require approval for `--output` options
+and commands containing `>`, which can redirect output into a file.
+These command patterns permit normal Git helper behavior, including configured diff and text-conversion filters.
+The complete policy is in `opencode.jsonc`.
 Check an approval prompt's scope before saving an approval.
 
 ## Upgrade an existing installation

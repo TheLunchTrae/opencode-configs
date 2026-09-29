@@ -9,9 +9,13 @@ const config = JSON.parse(read("opencode.jsonc"))
 // Check this configuration's literal and * patterns, with V1 slash normalization and last-match order.
 // These policy examples do not launch OpenCode or model its full permission system.
 const matchesPolicyPattern = (pattern, input) => {
-  const parts = pattern.replaceAll("\\", "/").split("*")
+  const normalized = pattern.replaceAll("\\", "/")
+  const optionalArguments = normalized.endsWith(" *")
+  const body = optionalArguments ? normalized.slice(0, -2) : normalized
+  const parts = body.split("*")
     .map((part) => part.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
-  return new RegExp(`^${parts.join(".*")}$`, "s").test(input.replaceAll("\\", "/"))
+  const suffix = optionalArguments ? "(?: .*)?" : ""
+  return new RegExp(`^${parts.join(".*")}${suffix}$`, "s").test(input.replaceAll("\\", "/"))
 }
 const configuredAction = (permission, input, policy = config.permission) => {
   let action
@@ -197,17 +201,22 @@ test("configured MCP tools require approval while their connections stay disable
   for (const server of Object.values(config.mcp)) assert.equal(server.enabled, false)
 })
 
-test("Git inspection grants do not admit additional flags or shell output redirection", () => {
+test("Git inspection accepts flexible arguments while output-writing forms require approval", () => {
   for (const command of [
-    "git status", "git status --short", "git diff --stat", "git diff --no-ext-diff --no-textconv",
-    "git diff --cached --no-ext-diff --no-textconv", "git log --oneline -n 10",
+    "git status", "git diff", "git log", "git status --short", "git status --porcelain=v2 --branch",
+    "git status --ignored -- src", "git diff --stat", "git diff --cached --name-only",
+    "git diff HEAD~2..HEAD -- src/index.ts", "git diff --no-ext-diff --no-textconv",
+    "git diff --cached --no-ext-diff --no-textconv", "git diff --ext-diff", "git diff --textconv",
+    "git log --oneline -n 10", "git log --graph --decorate --all -n 50", "git log -p -- src/index.ts",
   ]) {
     assert.equal(configuredAction("bash", command), "allow", command)
   }
   for (const command of [
-    "git status > tracked-file.txt", "git status --short > tracked-file.txt",
-    "git diff --stat --output=tracked-file.txt", "git diff --ext-diff", "git diff --textconv",
-    "git log --oneline -n 10 --output=tracked-file.txt", "git -c alias.inspect=status inspect",
+    "git status > tracked-file.txt", "git status --short>tracked-file.txt", "git diff HEAD >> tracked-file.txt",
+    "git diff --stat --output=tracked-file.txt", "git diff --output tracked-file.txt HEAD",
+    "git log --oneline -n 10 --output=tracked-file.txt", "git log --output tracked-file.txt",
+    "git log -n 5 2>tracked-file.txt", ">tracked-file.txt git status", "git -c alias.inspect=status inspect",
+    "git difftool --extcmd=command", "git diff-tree HEAD", "git status-extra", "git log-extra",
     "git commit -m example", "git push origin main", "npm test", "python script.py",
   ]) {
     assert.equal(configuredAction("bash", command), "ask", command)
