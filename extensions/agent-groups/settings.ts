@@ -1,12 +1,17 @@
 export type ModelChoice = { model?: string; variant?: string }
-export type Groups = Record<string, ModelChoice>
+export type GroupChoice = ModelChoice & { modelRef?: string }
+export type Groups = Record<string, GroupChoice>
+export type ModelPresets = Record<string, ModelChoice>
+export type NativeModels = { model?: string; small_model?: string }
+export type ResolutionContext = { modelPresets?: ModelPresets; native?: NativeModels }
+export type GroupOptions = { groups: Groups; modelPresets: ModelPresets }
 export type AgentSettings = ModelChoice & {
   agent_group?: string
   disable?: boolean
   options?: Record<string, unknown>
   [key: string]: unknown
 }
-export type EffectiveChoice = ModelChoice & {
+export type EffectiveChoice = GroupChoice & {
   group?: string
   source: "agent" | "group" | "native"
 }
@@ -17,55 +22,127 @@ export function record(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value)
 }
 
-export function groupName(value: unknown): string {
+function settingName(value: unknown, kind: string): string {
   if (typeof value !== "string" || !/^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/.test(value) || value.length > 64
     || ["constructor", "prototype"].includes(value)) {
-    throw new SettingsError("Use a group name of up to 64 lowercase letters, digits, and hyphens.")
+    throw new SettingsError(`Use a ${kind} name of up to 64 lowercase letters, digits, and hyphens.`)
+  }
+  return value
+}
+
+export function groupName(value: unknown): string {
+  return settingName(value, "group")
+}
+
+export function presetName(value: unknown): string {
+  return settingName(value, "preset")
+}
+
+function variantName(value: unknown): string | undefined {
+  if (value === undefined) return undefined
+  if (typeof value !== "string" || !/^[\w.-]{1,64}$/.test(value)) {
+    throw new SettingsError("Select a valid reasoning variant.")
   }
   return value
 }
 
 export function modelChoice(value: unknown): ModelChoice {
   if (!record(value) || Object.keys(value).some((key) => !["model", "variant"].includes(key))) {
-    throw new SettingsError("Group defaults support only model and variant.")
+    throw new SettingsError("Model choices support only model and variant.")
   }
   if (value.model !== undefined && (typeof value.model !== "string" || !/^[^\s/]+\/\S+$/.test(value.model))) {
     throw new SettingsError("Select a model in provider/model format.")
   }
-  if (value.variant !== undefined && (typeof value.variant !== "string" || !/^[\w.-]{1,64}$/.test(value.variant))) {
-    throw new SettingsError("Select a valid reasoning variant.")
+  const variant = variantName(value.variant)
+  if (variant && !value.model) throw new SettingsError("A variant requires a model or a group model reference.")
+  return { ...(value.model ? { model: value.model as string } : {}), ...(variant ? { variant } : {}) }
+}
+
+export function modelReference(value: unknown): string {
+  if (value === "opencode:model" || value === "opencode:small_model") return value
+  if (typeof value === "string" && value.startsWith("preset:")) return `preset:${presetName(value.slice(7))}`
+  throw new SettingsError("Select opencode:model, opencode:small_model, or preset:<name> as the model reference.")
+}
+
+export function groupChoice(value: unknown): GroupChoice {
+  if (!record(value) || Object.keys(value).some((key) => !["model", "modelRef", "variant"].includes(key))) {
+    throw new SettingsError("Group defaults support only model, modelRef, and variant.")
   }
-  if (value.variant && !value.model) throw new SettingsError("A group variant requires a group model.")
-  return { ...(value.model ? { model: value.model as string } : {}),
-    ...(value.variant ? { variant: value.variant as string } : {}) }
+  if (value.modelRef === undefined) return modelChoice({ model: value.model, variant: value.variant })
+  if (value.model !== undefined) throw new SettingsError("Choose either a model or a model reference, not both.")
+  const modelRef = modelReference(value.modelRef)
+  const variant = variantName(value.variant)
+  return { modelRef, ...(variant ? { variant } : {}) }
+}
+
+export function readOptions(options: unknown): GroupOptions {
+  if (options === undefined) return { groups: {}, modelPresets: {} }
+  if (!record(options) || Object.keys(options).some((key) => !["groups", "modelPresets", "reloadToken"].includes(key))
+    || (options.reloadToken !== undefined && typeof options.reloadToken !== "string")
+    || (options.groups !== undefined && !record(options.groups))
+    || (options.modelPresets !== undefined && !record(options.modelPresets))) {
+    throw new SettingsError("Agent group plugin options must contain valid groups and modelPresets objects.")
+  }
+  const modelPresets = Object.fromEntries(Object.entries(options.modelPresets ?? {}).map(([name, value]) => {
+    const choice = modelChoice(value)
+    if (!choice.model) throw new SettingsError("Each model preset requires a concrete model.")
+    return [presetName(name), choice]
+  }))
+  const groups = Object.fromEntries(Object.entries(options.groups ?? {}).map(([name, choice]) =>
+    [groupName(name), groupChoice(choice)]))
+  for (const choice of Object.values(groups)) {
+    if (choice.modelRef?.startsWith("preset:") && !Object.hasOwn(modelPresets, choice.modelRef.slice(7))) {
+      throw new SettingsError(`Model preset ${choice.modelRef.slice(7)} does not exist. Create it or change the reference.`)
+    }
+  }
+  return { groups, modelPresets }
 }
 
 export function readGroups(options: unknown): Groups {
-  if (options === undefined) return {}
-  if (!record(options) || Object.keys(options).some((key) => !["groups", "reloadToken"].includes(key))
-    || (options.reloadToken !== undefined && typeof options.reloadToken !== "string")
-    || (options.groups !== undefined && !record(options.groups))) {
-    throw new SettingsError("Agent group plugin options must contain a groups object.")
-  }
-  return Object.fromEntries(Object.entries(options.groups ?? {}).map(([name, choice]) =>
-    [groupName(name), modelChoice(choice)]))
+  return readOptions(options).groups
 }
 
-export function resolveChoice(agent: AgentSettings, groups: Groups): EffectiveChoice {
+export function agentGroup(agent: AgentSettings): string | undefined {
   const rawGroup = agent.agent_group ?? agent.options?.agent_group
-  const group = rawGroup === undefined ? undefined : groupName(rawGroup)
+  return rawGroup === undefined ? undefined : groupName(rawGroup)
+}
+
+export function resolveGroup(choice: GroupChoice, context: ResolutionContext = {}): GroupChoice {
+  const selected = groupChoice(choice)
+  if (!selected.modelRef) return selected
+  let defaults: ModelChoice
+  if (selected.modelRef.startsWith("preset:")) {
+    const name = selected.modelRef.slice(7)
+    if (!context.modelPresets || !Object.hasOwn(context.modelPresets, name)) {
+      throw new SettingsError(`Model preset ${name} does not exist. Create it or change the reference.`)
+    }
+    defaults = modelChoice(context.modelPresets[name])
+  } else {
+    const field = selected.modelRef === "opencode:model" ? "model" : "small_model"
+    defaults = modelChoice({ model: context.native?.[field] })
+  }
+  if (!defaults.model) {
+    throw new SettingsError(`${selected.modelRef} has no configured model. Set its model or choose OpenCode fallback.`)
+  }
+  return { modelRef: selected.modelRef, model: defaults.model, variant: selected.variant ?? defaults.variant }
+}
+
+export function resolveChoice(agent: AgentSettings, groups: Groups, context: ResolutionContext = {}): EffectiveChoice {
+  const group = agentGroup(agent)
   if (agent.model) return { group, model: agent.model, variant: agent.variant, source: "agent" }
-  const defaults = group ? groups[group] : undefined
+  const defaults = group && Object.hasOwn(groups, group) ? resolveGroup(groups[group], context) : undefined
   if (defaults?.model) return {
     group, model: defaults.model, variant: agent.variant ?? defaults.variant, source: "group",
+    ...(defaults.modelRef ? { modelRef: defaults.modelRef } : {}),
   }
   return { group, variant: agent.variant, source: "native" }
 }
 
-export function applyDefaults(agents: Record<string, AgentSettings>, groups: Groups): void {
-  // Validate every membership before changing the loaded configuration.
+export function applyDefaults(agents: Record<string, AgentSettings>, groups: Groups,
+  context: ResolutionContext = {}): void {
+  // Validate every membership and reference before changing the loaded configuration.
   const choices = Object.entries(agents).filter(([, agent]) => !agent.disable)
-    .map(([name, agent]) => ({ name, choice: resolveChoice(agent, groups) }))
+    .map(([name, agent]) => ({ name, choice: resolveChoice(agent, groups, context) }))
   for (const { name, choice } of choices) {
     if (choice.source !== "group") continue
     agents[name].model = choice.model

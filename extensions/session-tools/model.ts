@@ -1,4 +1,5 @@
 import type { Agent, AssistantMessage, Config, Message, Part, Session, SessionStatus } from "@opencode-ai/sdk/v2"
+import { readOptions, resolveGroup, SettingsError } from "../agent-groups/settings.ts"
 
 export type Entry = { info: Message; parts: Part[] }
 export class PanelError extends Error {}
@@ -119,8 +120,23 @@ export function configFacts(agent: Agent, config: Config, global: Config | undef
         || !/[/\\]agent-groups[/\\]server\.(?:ts|js)$/.test(plugin[0])) continue
       const options: unknown = plugin[1]
       if (!record(options) || !record(options.groups) || !record(options.groups[group])) continue
-      const choice = options.groups[group]
-      facts.push({ label: "Configured group default", value: clean(choice.model) || "No group model" })
+      try {
+        const { groups, modelPresets } = readOptions(options)
+        const choice = groups[group]
+        const resolved = resolveGroup(choice, { modelPresets, native: config })
+        facts.push({ label: "Configured group default", value: resolved.model ?? "No group model" })
+        facts.push({ label: "Group model source", value: choice.modelRef ?? (choice.model ? "Specific model" : "OpenCode fallback") })
+        facts.push({ label: "Resolved group variant", value: resolved.variant ?? "Model default" })
+        if (choice.modelRef?.startsWith("opencode:")) {
+          const field = choice.modelRef === "opencode:model" ? "model" : "small_model"
+          facts.push({ label: "Referenced workspace default", value: clean(config[field]) || "Not configured" })
+          facts.push({ label: "Referenced global file default",
+            value: global ? clean(global[field]) || "Not configured" : "Unavailable" })
+        }
+      } catch (error) {
+        if (!(error instanceof SettingsError)) throw error
+        facts.push({ label: "Group model resolution", value: `Invalid: ${error.message}` })
+      }
       facts.push({ label: "Group inheritance", value: "Membership does not prove inheritance; an explicit agent override can match the group" })
     }
   }

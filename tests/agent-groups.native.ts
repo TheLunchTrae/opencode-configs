@@ -11,7 +11,7 @@ import { setTimeout } from "node:timers/promises"
 import { loadSnapshot, planChange, reloadConfiguration, savePlan } from "../extensions/agent-groups/storage.ts"
 
 // Real V1 configuration loading, provider dispatch, and cache invalidation; only the remote model is synthetic.
-test("OpenCode loads group defaults and dispatches the changed model after a live reload", { timeout: 90_000 }, async (t) => {
+test("OpenCode resolves presets and workspace defaults and dispatches changes after reload", { timeout: 120_000 }, async (t) => {
   const root = await mkdtemp(join(tmpdir(), "opencode-groups-native-"))
   let child: ChildProcess | undefined
   let exited: Promise<unknown> | undefined
@@ -63,23 +63,36 @@ test("OpenCode loads group defaults and dispatches the changed model after a liv
   const model = { name: "Synthetic model", limit: { context: 8192, output: 256 },
     variants: { low: { reasoningEffort: "low" }, high: { reasoningEffort: "high" } } }
   const config = {
-    plugin: [["./extensions/agent-groups/server.ts", { groups: { developers: { model: "fixture/alpha", variant: "low" } } }]],
+    plugin: [["./extensions/agent-groups/server.ts", {
+      modelPresets: { balanced: { model: "fixture/alpha", variant: "low" } },
+      groups: {
+        developers: { modelRef: "preset:balanced" },
+        primary: { modelRef: "opencode:model", variant: "low" },
+        small: { modelRef: "opencode:small_model", variant: "low" },
+      },
+    }]],
     model: "fixture/alpha", small_model: "fixture/alpha", default_agent: "worker",
     enabled_providers: ["fixture"],
     provider: { fixture: { name: "Fixture", npm: "@ai-sdk/openai-compatible",
       options: { baseURL: `http://127.0.0.1:${address.port}/v1`, apiKey: "synthetic-test-key" },
       models: { alpha: model, beta: model } } },
-    agent: { pinned: { mode: "subagent", agent_group: "developers", model: "fixture/alpha", variant: "high" } },
+    agent: {
+      pinned: { mode: "subagent", agent_group: "developers", model: "fixture/alpha", variant: "high" },
+      "main-follower": { mode: "primary", agent_group: "primary", prompt: "Reply briefly." },
+      "small-follower": { mode: "primary", agent_group: "small", prompt: "Reply briefly." },
+    },
   }
   await writeFile(join(configRoot, "opencode.jsonc"), `// Native integration fixture\n${JSON.stringify(config, null, 2)}\n`)
   await writeFile(join(configRoot, "agents/worker.md"), "---\nmode: primary\nagent_group: developers\n---\nReply briefly.\n")
   await writeFile(join(configRoot, "tui.jsonc"), JSON.stringify({ plugin: ["./extensions/agent-groups/tui.ts"] }))
+  await writeFile(join(project, "opencode.json"), JSON.stringify({ model: "fixture/beta", small_model: "fixture/beta" }))
   const env: NodeJS.ProcessEnv = { ...process.env, XDG_CONFIG_HOME: join(root, "config"), XDG_DATA_HOME: join(root, "data"),
     XDG_STATE_HOME: join(root, "state"), XDG_CACHE_HOME: join(root, "cache"),
-    OPENCODE_DISABLE_PROJECT_CONFIG: "1", OPENCODE_DISABLE_AUTOUPDATE: "1", OPENCODE_DISABLE_MODELS_FETCH: "1",
+    OPENCODE_DISABLE_AUTOUPDATE: "1", OPENCODE_DISABLE_MODELS_FETCH: "1",
     OPENCODE_EXPERIMENTAL_DISABLE_FILEWATCHER: "true", OPENCODE_TEST_HOME: root,
     OPENCODE_CONFIG: "", OPENCODE_CONFIG_CONTENT: "", OPENCODE_SERVER_PASSWORD: "", OPENCODE_DB: join(root, "db.sqlite") }
   delete env.OPENCODE_CONFIG_DIR
+  delete env.OPENCODE_DISABLE_PROJECT_CONFIG
   child = spawn(process.env.OPENCODE_BIN ?? "opencode", ["serve", "--hostname", "127.0.0.1", "--port", "0", "--print-logs"],
     { cwd: project, env, stdio: ["ignore", "pipe", "pipe"] })
   exited = once(child, "exit").catch(() => undefined)
@@ -108,26 +121,32 @@ test("OpenCode loads group defaults and dispatches the changed model after a liv
   type Agent = { name: string; model: { providerID: string; modelID: string }; variant?: string; options: Record<string, unknown> }
   type Message = { info: { modelID: string; error?: unknown }; parts: { type: string; text?: string }[] }
   const agents = await api<Agent[]>("/agent")
-  const worker = agents.find((agent: { name: string }) => agent.name === "worker")
+  const worker = agents.find((agent) => agent.name === "worker")
   assert.ok(worker)
   assert.deepEqual(worker.model, { providerID: "fixture", modelID: "alpha" })
   assert.equal(worker.variant, "low")
   assert.equal(worker.options.agent_group, "developers")
+  for (const name of ["main-follower", "small-follower"]) {
+    assert.equal(agents.find((agent) => agent.name === name)?.model.modelID, "beta", "use project defaults, not global file values")
+  }
   const providers = await api<{ providers: { id: string; models: Record<string, unknown> }[] }>("/config/providers")
   assert.ok(providers.providers.find((item) => item.id === "fixture")?.models.beta)
-  const request = async () => {
+  const request = async (agent = "worker") => {
     const session = await api<{ id: string }>("/session", { title: "Synthetic integration check" })
     const result = await api<Message>(`/session/${session.id}/message`, {
-      agent: "worker", parts: [{ type: "text", text: "Reply with verified." }],
+      agent, parts: [{ type: "text", text: "Reply with verified." }],
     })
     assert.equal(result.info.error, undefined, JSON.stringify(result.info.error))
-    assert.ok(result.parts.some((part: { type: string; text?: string }) => part.type === "text" && part.text === "verified"))
+    assert.ok(result.parts.some((part) => part.type === "text" && part.text === "verified"))
     return result
   }
   assert.equal((await request()).info.modelID, "alpha")
+  assert.equal((await request("main-follower")).info.modelID, "beta")
+  assert.equal((await request("small-follower")).info.modelID, "beta")
   await savePlan(planChange(await loadSnapshot(configRoot), {
-    kind: "group", name: "developers", choice: { model: "fixture/beta", variant: "high" },
+    kind: "preset", name: "balanced", choice: { model: "fixture/beta", variant: "high" },
   }))
+  assert.deepEqual((await loadSnapshot(configRoot)).groups.developers, { modelRef: "preset:balanced" })
   await reloadConfiguration(await loadSnapshot(configRoot), async (plugin) => { await api("/global/config", { plugin }, "PATCH") })
   let refreshed = agents
   for (let attempt = 0; attempt < 100; attempt++) {
@@ -136,10 +155,19 @@ test("OpenCode loads group defaults and dispatches the changed model after a liv
     await setTimeout(100)
   }
   assert.equal(refreshed.find((agent) => agent.name === "worker")?.model.modelID, "beta")
+  assert.equal(refreshed.find((agent) => agent.name === "worker")?.variant, "high")
   assert.equal(refreshed.find((agent) => agent.name === "pinned")?.model.modelID, "alpha")
   assert.equal((await request()).info.modelID, "beta")
+  await writeFile(join(project, "opencode.json"), JSON.stringify({ model: "fixture/alpha", small_model: "fixture/alpha" }))
+  await reloadConfiguration(await loadSnapshot(configRoot), async (plugin) => { await api("/global/config", { plugin }, "PATCH") })
+  refreshed = await api<Agent[]>("/agent")
+  for (const name of ["main-follower", "small-follower"]) {
+    assert.equal(refreshed.find((agent) => agent.name === name)?.model.modelID, "alpha")
+    assert.equal((await request(name)).info.modelID, "alpha")
+  }
+  assert.equal(refreshed.find((agent) => agent.name === "worker")?.model.modelID, "beta")
   assert.ok(requests.some((body) => body.model === "alpha"))
   assert.ok(requests.some((body) => body.model === "beta"))
-  assert.ok(requests.every((body) => !JSON.stringify(body).includes("agent_group")))
+  assert.ok(requests.every((body) => !/agent_group|modelRef|modelPresets/.test(JSON.stringify(body))))
   assert.match(await readFile(join(configRoot, "opencode.jsonc"), "utf8"), /^\/\/ Native integration fixture/)
 })
