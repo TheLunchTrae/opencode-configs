@@ -10,6 +10,7 @@ Apply only the assigned portion. This skill does not expand the agent's role, pe
 Read `@agent-prompts/verification-scope.md` before discovery. Apply its limits separately to coverage design,
 test generation, execution, and infrastructure changes throughout this procedure.
 Before writing tests, read `@agent-prompts/implementation-standards.md` and applicable project and language guidance.
+Read `@agent-prompts/testing-standards.md` for coverage design and authoring decisions.
 
 Build executable coverage for established behavior. Use `test-first` when implementing a new behavior or fixing a bug.
 A verification suite can combine unit, integration, contract, CLI, API, or end-to-end tests as the scope requires.
@@ -46,7 +47,8 @@ Create a compact coverage map. For each behavior, include:
 - Dependencies, risks, and behavior that will remain unverified.
 
 Choose the smallest test level that exercises the relevant contract. Use integration or end-to-end coverage when
-unit tests cannot establish the required behavior. Follow the framework agent's provider and runtime guidance.
+unit tests cannot establish the required behavior. Use `end-to-end-tests` for complete application journeys and
+include its boundaries and fixtures in this coverage map. Follow the framework agent's provider and runtime guidance.
 If an in-scope harness is missing, propose the smallest suitable setup using the project's language and available tools.
 Do not propose a harness for excluded infrastructure work. Report the accepted limit and reuse permitted coverage.
 List new dependencies, testability refactors, CI changes, and external environment needs explicitly in the design.

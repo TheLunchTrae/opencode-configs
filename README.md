@@ -1,6 +1,6 @@
 # OpenCode Global Configuration
 
-Personal global configuration for OpenCode, with focused lead agents, specialists, utility commands, reusable skills,
+Personal global configuration for OpenCode, with focused lead agents, specialists, commands, reusable skills,
 shared prompts, secret-path checks, and quota display preferences.
 The default agent is `workflow-lead`. It coordinates complete development tasks.
 Select a focused lead when you want only planning, approved implementation, or assessment of existing work.
@@ -12,7 +12,7 @@ Select a focused lead when you want only planning, approved implementation, or a
 | [`USAGE.md`](USAGE.md) | Workflow guide, command and skill reference, and practical task examples. |
 | [`AGENTS.md`](AGENTS.md) | Shared instructions for all sessions. |
 | [`agents/`](agents/) | Agent prompts, roles, and model choices. |
-| [`commands/`](commands/) | Optional utility shortcuts that retain the selected agent. |
+| [`commands/`](commands/) | Utility shortcuts and the focused test-audit entrypoint. |
 | [`skills/`](skills/) | Reusable task procedures. |
 | [`references/agent-prompts/`](references/agent-prompts/) | Shared prompt guidance. |
 | [`plugins/`](plugins/) | Local plugins, including secret-path checks. |
@@ -171,6 +171,11 @@ Restart OpenCode and confirm agent, command, and skill availability in a work pr
 For other settings, see the [configuration documentation](https://opencode.ai/docs/config/).
 
 ## References
+
+[OpenClaw's test-audit skill](https://github.com/openclaw/openclaw/blob/main/.agents/skills/test-audit/SKILL.md)
+informed the test-value assessment and evidence required for suite cleanup.
+[Playwright's testing guidance](https://playwright.dev/docs/best-practices)
+informed the browser-test isolation, locator, and waiting guidance. Use the work project's existing test tools.
 
 [Lauren Tan's pstack](https://github.com/cursor/plugins/tree/5bf2b1544db739998121a306340631963c2ff3de/pstack)
 informed the workflow's evidence-based task routing and performance measurement practices.

@@ -101,7 +101,7 @@ test("retired workflow entrypoints are absent and documented for upgrades", () =
     assert.ok(upgrade.includes(`\`${name}/\``), `${name}: missing skill removal instruction`)
   }
   const commands = readdirSync(new URL("commands/", root)).filter((name) => name.endsWith(".md"))
-  assert.deepEqual(commands.sort(), utilityCommands.map((name) => `${name}.md`).sort())
+  assert.deepEqual(commands.sort(), [...utilityCommands, "test-audit"].map((name) => `${name}.md`).sort())
 })
 
 // Read only the scalar permission fields and exact Task maps used by these agent files.
@@ -270,6 +270,19 @@ test("planning and review cannot reach writing agents, including through another
   }
   inspect("planning-lead")
   inspect("review-lead")
+})
+
+test("/test-audit runs as the read-only primary review lead and forwards context", () => {
+  const path = "commands/test-audit.md"
+  const fields = metadata(path)
+  assert.ok(fields.description?.trim(), `${path}: missing description`)
+  assert.equal(fields.agent, "review-lead")
+  assert.equal(agents[fields.agent].mode, "primary")
+  assert.equal(agents[fields.agent].edit, "deny")
+  assert.equal(fields.subtask, "false", "Do not invoke a primary lead as a child")
+  assert.equal(fields.model, undefined, "Use the review lead's configured model")
+  assert.equal(read(path).split("$ARGUMENTS").length - 1, 1, "Forward audit context once")
+  assert.ok(!read(path).includes("!`"), "No automatic shell interpolation")
 })
 
 test("leaf agents retain denied delegation", () => {

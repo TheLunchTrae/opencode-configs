@@ -7,6 +7,8 @@ rationale, acceptance examples, owned files, dependencies, and existing checks.
 Include verification limits and stopping conditions.
 Use `test-first` for testable behavior changes and characterization checks for refactors within that verification scope.
 For verification suites, pass the approved coverage map and `verification-tests`. Reuse sufficient existing coverage.
+For end-to-end journeys, pass `end-to-end-tests` with the approved boundaries, fixtures, and expected outcomes.
+For test cleanup, pass `test-audit` findings and the approved retention, replacement, and removal decisions.
 For performance work, use `measured-performance` and compare matching workloads and conditions.
 A candidate result is not accepted work until integration and review finish.
 

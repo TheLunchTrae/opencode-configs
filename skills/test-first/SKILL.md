@@ -10,6 +10,9 @@ Follow the assigned scope, authorization, task budget, and role boundaries.
 Read `@agent-prompts/verification-scope.md` before applying the steps below. Honor separate limits on test generation
 and execution. Report excluded red/green checks as `SKIP`; continue the approved implementation without claiming
 an observed red/green cycle. An execution-only exclusion still permits assigned test generation.
+Read `@agent-prompts/testing-standards.md` before selecting or writing a test.
+Use `end-to-end-tests` for approved journeys that need the real application path. Reuse the same coverage design
+and failure evidence rather than adding a second test merely to satisfy both procedures.
 
 1. Inspect the relevant code and configured test command. Record existing failures before changing behavior.
 2. Define the acceptance examples independently of the proposed implementation.

@@ -54,12 +54,16 @@ solely because the selected agent changed.
 
 - Unclear feature: use the interview in `@agent-prompts/spec-interview.md`, then coordinate planning.
 - Defined feature or bug: inspect existing behavior and any reproduction, then coordinate the smallest coherent plan.
-  Select `test-first` for testable behavior changes.
+  Select `test-first` for testable behavior changes. Include `end-to-end-tests` when user journeys or integration risks
+  need coverage through the real application path. Have the planner include that coverage in the feature design.
 - Refactor: establish preserved behavior and characterization evidence before implementation.
 - Cleanup: define removal boundaries and route approved work to `refactor-cleaner`. Preserve uncertain candidates.
 - Performance: route approved work to `performance-optimizer` with `measured-performance`; require comparable evidence.
 - Verification baseline: select `verification-tests`, have `planner` design coverage, and obtain approval
   before writing tests.
+- Test-suite audit: select `test-audit` and assign read-only assessment to `code-reviewer` for the requested suite,
+  including unchanged tests. Return findings for audit-only requests. Plan and approve any requested cleanup before
+  routing edits to `refactor-cleaner` or the matching developer. Preserve needed coverage and uncertain candidates.
 - Tooling or conventions: select `project-standards` for deliberate changes. Routine tests and fixes do not require it.
 
 Keep trivial corrections lightweight. They need no full plan, interview, or task board; applicable reviews still apply.

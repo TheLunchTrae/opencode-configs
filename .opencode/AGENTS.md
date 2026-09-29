@@ -64,8 +64,10 @@ Check the installed version against the [V1 documentation](https://opencode.ai/d
   Delegating agents read the catalog and expected profile, then validate returned scope, source state, and evidence.
   Specialists need task context and constraints, not the invoking agent's identity or workflow.
   Keep task completion, review verdicts, and check results distinct. Preserve required empty sections with `None`.
-- Lead selection supplies workflow entrypoints. Keep stage procedures in agent references instead of discoverable
-  wrapper skills or role commands. Preserve supporting files and notices when moving procedures.
+- Lead selection supplies general workflow entrypoints. Keep stage procedures in agent references instead of
+  discoverable wrapper skills or generic role commands. Preserve supporting files and notices when moving procedures.
+  The focused `/test-audit` command explicitly selects `review-lead` and reuses the `test-audit` skill.
+  Keep `subtask: false` so this primary lead is not invoked as a child. Keep audit procedure in the skill.
 - Utility commands retain the selected agent and its permissions. Do not silently switch a focused lead to a writer.
   Preserve argument handling and the built-in `/resume` session selector; `/resume-work` consumes a project handoff.
 - Skills do not grant permissions. Preserve their supporting files and applicable license notices when moving content.
