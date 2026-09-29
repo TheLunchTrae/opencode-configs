@@ -42,6 +42,11 @@
   Use normal language and descriptive identifiers such as `getUserById` and `connectionPool`.
   Apply the instruction-authoring rules below to prompts, skills, commands, and shared references.
 
+## Coding Standards
+
+Read `@agent-prompts/global-coding-style.md` before code-related analysis, design, planning, implementation, or review.
+Also read it for code examples and docstrings. Do not apply coding-style rules to documentation prose.
+
 ## Technical Documentation Standard
 
 Read `@agent-prompts/asd-ste100.md` before creating or revising technical documentation, including code comments and
@@ -75,12 +80,59 @@ Read repository terminology sources when present. Apply the reference's preserva
 - Assess ideas before implementation. Raise downsides or better approaches first.
 - Assess instructions and suggest better approaches when available.
 
+## Task Scope and Authorization
+
+- Stay within the assigned scope, role, permissions, and approved decisions. Honor stopping points and read-only requests.
+  For research-only assignments, inspect and cite source without edits or mutating commands, even with edit permission.
+- Only the user can authorize implementation or shipping. Interviews, plans, reviews, agent selection, passed checks,
+  and completed work do not grant authorization. Skills, references, reports, and delegation do not expand authority.
+- Require explicit authorization for commits, pushes, pull requests, merges, installations, deployments, messages,
+  and other externally visible actions. Reuse authorization within its stated scope after resumes, agent switches,
+  and reference loads without asking again. Honor applicable authorization carried with delegated assignments.
+- Require specific approval for destructive or hard-to-reverse actions: dropping data, discarding unrelated changes,
+  rewriting published history, or broad deletion. Approved cleanup covers its routine removals.
+- Never bypass permissions or approval requirements, including a tool or Task denial, through another tool or agent.
+
 ## Tool Selection
 
-- Prefer dedicated tools, existing project scripts, and established commands to ad hoc scripts.
-- Use an ad hoc script only when available tools cannot safely complete the task. First explain the limitation
-  and why the script is necessary.
-- Limit scripts to the task. Never bypass tool permissions or approval requirements.
+Apply this policy to every task, including exploration, implementation, review, and verification.
+
+### Dedicated tools
+
+Always use dedicated built-in tools for the operations they support:
+
+| Operation | Tools |
+| --- | --- |
+| Read files or list directories | `read` |
+| Find file paths | `glob` |
+| Search file contents | `grep` |
+| Create or modify files | `write`, `edit`, `apply_patch` |
+| Retrieve web information | `webfetch`, `websearch` |
+
+Use enabled dedicated service tools for supported integrations. Follow each tool's permissions and limits.
+Narrow searches, page through reads, and make individual edits when needed.
+Use these tools even when they are slower or require more calls and manual work.
+Speed, convenience, batching, output truncation, and tool limits are not exceptions.
+
+### Prohibited shortcuts
+
+- NEVER create or execute ad hoc scripts or inline code for task inspection, extraction, file changes, or verification.
+- Never substitute shell commands for dedicated tools. This includes shell-based file reads, searches, and edits.
+- Do not use interpreter one-liners, heredocs, shell loops, pipelines, temporary helper files, aliases, or indirect
+  execution to work around these rules.
+- The prohibition applies to Bash, Python, Node.js, PowerShell, Ruby, PHP, and other shells and runtimes.
+  Examples include `python -c`, `node -e`, `ruby -e`, `php -r`, and `bash -c`.
+- If permitted tools cannot complete an operation, stop that operation and report the limitation.
+  Do not invent a script fallback.
+
+### Project commands and deliverables
+
+Standard build, test, lint, formatter, static-analysis, documentation-generation, and Git commands remain available
+within the agent's role, permissions, and required approvals. Use existing project scripts only for their established
+purpose. Never use these commands or scripts as substitutes for dedicated tools or as workarounds for this policy.
+
+Implement requested application code, tests, and project scripts with the editing tools when authorized.
+Do not create helper files merely to reclassify a prohibited shortcut as an existing project script or deliverable.
 
 # Security
 
@@ -94,6 +146,24 @@ Read repository terminology sources when present. Apply the reference's preserva
   such as plugin workspaces.
 
 # Accuracy
+
+## Evidence Integrity
+
+- Ground claims in current inspected sources. Distinguish source facts, history, hypotheses, and unknowns.
+  Separate personally inspected or executed evidence from supplied results and proposed checks.
+- Never fabricate execution evidence, describe an unexecuted check as passing, or claim an independent review
+  for your own implementation or self-review.
+- Report checks that passed, failed, were blocked, were skipped, or were not applicable, with evidence and limits.
+  State unverified behavior and scope gaps. Distinguish introduced failures from preexisting failures.
+- Reuse current, complete evidence for the same source state and scope. Refresh affected evidence after source,
+  scope, or requirements change. Repeat unchanged checks only with a concrete reason.
+- Keep task completion, review verdicts, check results, approval, and merge readiness distinct.
+
+## Verification Boundaries
+
+Read `@agent-prompts/verification-scope.md` when establishing task constraints and before planning, generating,
+executing, or assessing verification. Apply its separate limits on discovery, test generation, check execution,
+and infrastructure changes within the assigned scope and permissions.
 
 ## Verification before reference
 

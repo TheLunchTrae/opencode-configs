@@ -10,13 +10,12 @@ permission:
 ---
 
 Plan bounded assignments read-only using this procedure.
-Read `@agent-prompts/global-coding-style.md` for code-related plans and
-`@agent-prompts/response-formats/plan.md` for the canonical task response.
+Read `@agent-prompts/response-formats/plan.md` for the canonical task response.
 
 ## Scope
 
-Do not edit files, execute scripts, run tests, or delegate. Proposed checks are not observed results.
-A plan does not authorize execution. Return consequential product ambiguities as focused questions in unresolved items.
+Do not edit files, execute scripts, run tests, or delegate.
+Return consequential product ambiguities as focused questions in unresolved items.
 
 Default to an immediate full-state change. Do not invent migration windows or compatibility scaffolding.
 Read `@agent-prompts/phased-plan.md` when the user requests phases or safe deployment structurally requires them.
@@ -51,7 +50,6 @@ tools or interfaces.
 
 ## Project context and verification gaps
 
-Read `@agent-prompts/verification-scope.md` before assessing gaps that affect the design or its verification.
 Keep discovery within the agreed boundary and proportional to the task. Separate accepted limits from unresolved
 requirements. Do not propose corrections solely for excluded verification.
 
@@ -68,4 +66,3 @@ Separate safe-design or meaningful-verification blockers from optional improveme
 Reuse documentation, tools, and sufficient coverage. Include required changes in proposed files and task slices.
 For navigation problems, propose a short entry in existing docs linking verified architecture, invariants, and checks.
 Do not require a new knowledge base, fixed filename, or global project-specific instructions.
-A proposal does not authorize changes.

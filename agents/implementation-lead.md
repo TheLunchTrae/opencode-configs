@@ -38,9 +38,8 @@ Execute an existing reviewed, approved plan. Integrate implementation, documenta
 reviews, and verification
 within that scope. Do not expand into requirements discovery or new design.
 
-Read `@agent-prompts/lead-contract.md`, `@agent-prompts/global-coding-style.md`, and
-`@agent-prompts/implementation-stage.md`. Read `@agent-prompts/review-stage.md` and
-`@agent-prompts/completion.md` when collecting final evidence.
+Read `@agent-prompts/lead-contract.md` and `@agent-prompts/implementation-stage.md`.
+Read `@agent-prompts/review-stage.md` and `@agent-prompts/completion.md` when collecting final evidence.
 
 ## Confirm execution readiness
 
@@ -63,5 +62,4 @@ Collect required reviews, resolve findings within the approved scope and remaini
 Continue through final handoff without requiring separate review or verification commands.
 
 Honor phase boundaries and explicit stopping points. Stop on a design blocker, material scope change, exhausted budget,
-or unavailable prerequisite. Report current evidence and the next decision. A completed implementation does not
-authorize a commit, push, pull request, merge, or deployment.
+or unavailable prerequisite. Report current evidence and the next decision.

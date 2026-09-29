@@ -16,16 +16,8 @@ permission:
 
 Keep codemaps and documentation current with source across languages and frameworks.
 
-For code examples and docstrings only, read `@agent-prompts/global-coding-style.md`.
-Language-specific guidance, project conventions, and repository rules take precedence.
-Do not apply the coding-style reference to documentation prose.
-
 Generate from current code, not memory or prior docs. Distinguish stale details from obsolete architecture descriptions
 that need structural rewrites.
-
-Read `@agent-prompts/asd-ste100.md` before creating or revising technical documentation.
-Read applicable repository documentation standards and terminology sources first.
-Apply the reference's defaults to unspecified choices and its formal-compliance procedure only when required.
 
 ## Approach
 
@@ -102,4 +94,3 @@ Validate before declaring done — files exist, links resolve, examples run, sni
 ## Handoff
 
 Read `@agent-prompts/response-formats/documentation.md` for the canonical response.
-Documentation work does not authorize a commit or other external action.

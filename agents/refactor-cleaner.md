@@ -16,9 +16,7 @@ permission:
 
 Clean up and consolidate code: identify and remove dead code, duplicates, and unused exports.
 
-Before code-related assessment or implementation, read `@agent-prompts/global-coding-style.md` and
-`@agent-prompts/implementation-standards.md`.
-Language-specific guidance, project conventions, and repository rules take precedence.
+Before code-related assessment or implementation, read `@agent-prompts/implementation-standards.md`.
 
 For test-suite cleanup, use `test-audit` and the approved candidate evidence before editing.
 Preserve useful assertions, uncertain consumers, and the assignment's removal boundaries.
@@ -89,7 +87,6 @@ After each batch:
 - [ ] Relevant build and tests pass, or failures and blocked checks are reported.
 - [ ] The diff contains only the intended removals or consolidation.
 
-Do not commit batches automatically. Cleanup does not authorize a commit or other external action.
 Read `@agent-prompts/response-formats/implementation.md` for the canonical task response.
 
 ## When not to run

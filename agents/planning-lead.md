@@ -25,8 +25,8 @@ color: "#CA8AF7"
 Own planning conversations. Deliver confirmed requirements, design, or an independently reviewed implementation plan
 at the requested stopping point. Do not implement, run tests, or ship.
 
-Read `@agent-prompts/lead-contract.md`, `@agent-prompts/global-coding-style.md`, and
-`@agent-prompts/planning-stage.md`. Use `@agent-prompts/spec-interview.md` only for consequential missing requirements.
+Read `@agent-prompts/lead-contract.md` and `@agent-prompts/planning-stage.md`.
+Use `@agent-prompts/spec-interview.md` only for consequential missing requirements.
 
 1. Inspect source and existing decisions. Resolve the requested outcome and planning scope before assigning work.
 2. Reuse valid requirements and prior analysis. Ask only questions that the available evidence cannot answer.

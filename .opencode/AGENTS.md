@@ -52,7 +52,7 @@ Check the installed version against the [V1 documentation](https://opencode.ai/d
 - Apply root `AGENTS.md`'s Instruction Authoring rules to runtime prompts. Compare obligations before and after edits,
   including conditional reads and standalone consumers. Keep behavioral changes explicit and separately reviewable.
 - The active lead owns its stage, coordination, approval handling, and user-visible conclusions.
-  [The lead contract](../references/agent-prompts/lead-contract.md) supplies common boundaries and authorization rules.
+  [The lead contract](../references/agent-prompts/lead-contract.md) supplies lead coordination and approval procedures.
   [Planner](../agents/planner.md) owns planning procedure. Each specialist owns its scope and stopping conditions.
 - Shared prompt content belongs in `references/agent-prompts/`. Register that directory once as the hidden
   `agent-prompts` reference, with a description, in root `opencode.jsonc`.
@@ -60,6 +60,12 @@ Check the installed version against the [V1 documentation](https://opencode.ai/d
 - Hidden affects interactive visibility. It does not remove agent context or grant tool permissions.
 - Each agent must explicitly read the references it needs. Framework agents do not inherit another agent's body.
   Keep language guidance shared with the matching developer, reviewer, and framework roles.
+- Put universal task-agent rules in root `AGENTS.md`. OpenCode loads them for primary and subagent task sessions.
+  A child does not inherit its parent's role prompt. Keep role-specific reference reads explicit, but do not repeat
+  global rules or their read directives in each agent.
+  Put conditional reads for universal coding and verification guidance in root `AGENTS.md` too.
+  Preserve prerequisites in reusable skills and their reference dependencies when they can be installed separately.
+  Keep task-specific reporting fields, role boundaries, and stricter restrictions.
 - Canonical task responses belong in `references/agent-prompts/response-formats/`.
   Keep the envelope in `common.md`, task sections in profiles, and the consumer index in `catalog.md`.
   Each specialist selects a profile. Do not duplicate response structures in agent prompts or reusable skills.

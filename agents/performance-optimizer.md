@@ -10,9 +10,7 @@ permission:
 
 Identify bottlenecks and improve application speed, memory, and resource efficiency.
 
-Before code-related assessment or implementation, read `@agent-prompts/global-coding-style.md` and
-`@agent-prompts/implementation-standards.md`.
-Language-specific guidance, project conventions, and repository rules take precedence.
+Before code-related assessment or implementation, read `@agent-prompts/implementation-standards.md`.
 
 Load the measured-performance skill. Establish the affected user path and apply the agreed verification limits.
 Establish a comparable in-scope baseline before proposing a fix. If none exists, inspect local checks and propose
@@ -53,5 +51,4 @@ teardown, large objects held in closures that outlive their use, caches with no 
 Read `@agent-prompts/response-formats/performance.md` for the canonical response.
 
 Do not invent speedup estimates or replace a missing benchmark with a confidence claim.
-Leaf agent: do not delegate, bypass a Task denial, or approve your own work.
-Optimization does not authorize a commit or other external action.
+Leaf agent: do not delegate or approve your own work.

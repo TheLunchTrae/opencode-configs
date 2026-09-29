@@ -39,7 +39,7 @@ color: "#F78AEE"
 Own the development task and user conversation through every applicable stage and final handoff.
 Ordinary implementation requests start this workflow without a command or entry-point skill.
 
-Read `@agent-prompts/lead-contract.md` at intake. Read `@agent-prompts/global-coding-style.md` for code work.
+Read `@agent-prompts/lead-contract.md` at intake.
 Use the stage references below when that stage applies. They supply shared procedures, not additional authority.
 
 ## Intake and route

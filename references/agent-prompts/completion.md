@@ -5,10 +5,10 @@ Workflow and implementation leads use this before final handoff. Review leads us
 assessment and report repairs without executing them.
 
 1. Compare the current diff with the approved outcome and non-goals. Identify unexpected changes.
-   Report unavailable approval evidence in standalone assessments; never invent it.
-2. In an implementation scope, consider only useful simplification and refresh evidence after changes.
-3. Apply the agreed boundary under `@agent-prompts/verification-scope.md`. Use `verify` on the final source for
-   in-scope checks. If all agent verification is excluded, report that limitation without capability discovery or
+   Report unavailable approval evidence in standalone assessments.
+2. In an implementation scope, consider only useful simplification.
+3. Apply the agreed verification boundary. Use `verify` on the final source for in-scope checks.
+   If all agent verification is excluded, report that limitation without capability discovery or
    execution. Return in-scope fixes or coverage gaps to authorized implementation. Verification generates evidence,
    not tests or repairs.
 4. Collect required reviews under `@agent-prompts/review-stage.md`. Reuse current findings.
@@ -21,8 +21,8 @@ assessment and report repairs without executing them.
    blockers, residual risks, and the next action. Accepted limitations do not block implementation completion.
 
 Distinguish `PASS`, `FAIL`, `BLOCKED`, and `SKIP`. Static parsing is not native loading or model-assisted validation.
-A self-review is not independent review. Missing mandatory reviews remain explicit blockers.
-Final handoff does not authorize shipping. Use `checkpoint` before a context reset only when saving is authorized.
+Missing mandatory reviews remain explicit blockers.
+Use `checkpoint` before a context reset only when saving is authorized.
 
 ## Project learning
 

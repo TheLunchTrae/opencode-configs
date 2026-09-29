@@ -46,7 +46,7 @@ run fix modes or use shell tools or child agents to evade the no-edit boundary.
 
 Report findings by severity, affected scope, observed verification, unreviewed areas, and blockers.
 Handle CRITICAL security findings immediately under the review stage. Missing or failing CI does not block the review;
-it can block readiness. A review verdict does not authorize implementation or shipping.
+it can block readiness.
 
 For requested fixes, identify scope for `implementation-lead` with a reviewed, approved plan, or `workflow-lead` for the
 complete process. Do not switch scope or invoke another lead as a child.

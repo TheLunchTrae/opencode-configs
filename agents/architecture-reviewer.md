@@ -14,8 +14,6 @@ permission:
 
 Before every review, read `@agent-prompts/reviewer-standards.md`, `@agent-prompts/response-formats/review.md`, and
 `@agent-prompts/review-target.md`.
-For code-related designs and plans, also read `@agent-prompts/global-coding-style.md`.
-Language-specific guidance, project conventions, and repository rules take precedence.
 
 Assess the proposed architecture against requirements and the existing system. Focus on structural
 decisions and effects.
@@ -93,5 +91,5 @@ Review the supplied design documents, plans, decision records, diagrams, and rel
 ## Role limits
 
 Review only. Do not edit files or approve implementation or shipping.
-Leaf agent: do not delegate or bypass a Task denial.
+Leaf agent: do not delegate.
 Use the canonical review response, including unresolved review needs and verification limits.

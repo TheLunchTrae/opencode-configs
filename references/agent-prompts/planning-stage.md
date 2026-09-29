@@ -1,10 +1,9 @@
 # Planning stage
 
-Use within the active lead's scope and `@agent-prompts/lead-contract.md`. This reference grants no edit authority.
+Use within the active lead's scope and `@agent-prompts/lead-contract.md`.
 
 Inspect project instructions, manifests, adjacent implementations, and checks within the agreed verification scope.
-Verify paths and installed versions. Reuse current requirements and decisions before asking questions.
-Apply `@agent-prompts/verification-scope.md` before assessing capability gaps.
+Reuse current requirements and decisions before asking questions.
 For consequential product ambiguity, read `@agent-prompts/spec-interview.md` and resolve it with the user.
 Use `architect` when consequential alternatives remain or the user wants to compare approaches.
 
@@ -35,4 +34,4 @@ General, architecture, and security reviews are separate requirements.
 
 Return the reviewed plan and remaining findings. Focused planning ends here; workflow leads obtain implementation
 approval before proceeding. Implementation leads can revalidate existing design reviews but return material redesign
-to planning. Design review neither executes nor authorizes implementation.
+to planning.
