@@ -4,6 +4,8 @@ Use this procedure for an explicit request to assess failure prevention, an evid
 repeated attempts that stop at a blocker. Primary agents and specialists can apply it within their current task.
 Use available evidence. Preserve role boundaries, stopping conditions, and the remaining task budget.
 Do not delay required immediate reporting to complete this assessment.
+Apply `@agent-prompts/verification-scope.md`. An accepted verification limitation alone is not a recurring mistake
+or a reason to propose verification infrastructure. Preserve separately evidenced failures and defects.
 
 ## Assess the cause and prevention
 

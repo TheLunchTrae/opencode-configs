@@ -40,7 +40,9 @@ Do not promise tools or interfaces that you have not verified.
 
 ## Project context and verification gaps
 
-Assess gaps that affect the requested design or its verification. Keep the assessment proportional to the task.
+Read `@agent-prompts/verification-scope.md` before assessing gaps that affect the design or its verification.
+Keep discovery within the agreed boundary and proportional to the task. Report accepted limitations separately
+from unresolved requirements. Do not propose corrections solely for excluded verification.
 
 - Locate authoritative architecture guidance and domain invariants. Distinguish missing documentation from unknown
   requirements, conflicting instructions, and stale guidance.

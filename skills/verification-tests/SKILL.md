@@ -7,6 +7,8 @@ description: Design and generate reusable verification tests for existing reposi
 
 Use this procedure within the assigned scope, authorization, review requirements, and task budget.
 Apply only the assigned portion. This skill does not expand the agent's role, permissions, or a read-only assignment.
+Read `@agent-prompts/verification-scope.md` before discovery. Apply its limits separately to coverage design,
+test generation, execution, and infrastructure changes throughout this procedure.
 Before writing tests, read `@agent-prompts/implementation-standards.md` and applicable project and language guidance.
 
 Build executable coverage for established behavior. Use `test-first` when implementing a new behavior or fixing a bug.
@@ -45,7 +47,8 @@ Create a compact coverage map. For each behavior, include:
 
 Choose the smallest test level that exercises the relevant contract. Use integration or end-to-end coverage when
 unit tests cannot establish the required behavior. Follow the framework agent's provider and runtime guidance.
-If a harness is missing, propose the smallest suitable setup using the project's language and available tools.
+If an in-scope harness is missing, propose the smallest suitable setup using the project's language and available tools.
+Do not propose a harness for excluded infrastructure work. Report the accepted limit and reuse permitted coverage.
 List new dependencies, testability refactors, CI changes, and external environment needs explicitly in the design.
 Use `project-standards` only for deliberate tooling or convention adoption; routine tests do not require it.
 

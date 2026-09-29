@@ -11,6 +11,7 @@ Make each assignment self-contained without copying whole transcripts or reposit
 - Relevant source paths, revision, context, and prior findings.
 - Owned files and shared or forbidden files; research-only assignments must say no edits.
 - Dependencies, ready conditions, permitted checks, and expected baseline.
+- Verification limits, their decision source, and any conditions for continuing without checks.
 - Remaining budget and stopping conditions.
 - Expected response profile and any task-specific evidence requirements.
 
