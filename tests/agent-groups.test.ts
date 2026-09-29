@@ -312,8 +312,10 @@ for (const change of [
   })
 }
 
-function uiHarness(root: string, globalDirectory = root) {
+function uiHarness(root: string, globalDirectory = root, serverDirectory = root) {
   let dialog: TuiDialogSelectProps<string> | TuiDialogConfirmProps | TuiDialogPromptProps | undefined
+  let onClose: (() => void) | undefined
+  const clear = () => { onClose?.(); onClose = undefined; dialog = undefined }
   let providerError = false
   let active = false
   let updates = 0
@@ -322,7 +324,8 @@ function uiHarness(root: string, globalDirectory = root) {
   const commands: { name: string; run: () => void }[] = []
   const toasts: { message: string }[] = []
   const api = {
-    state: { path: { config: root } },
+    state: { path: { config: serverDirectory } },
+    route: { current: { name: "home" } },
     lifecycle: { signal: new AbortController().signal, onDispose: (callback: () => void) => { dispose = callback } },
     keymap: { registerLayer: (layer: { commands: typeof commands }) => {
       commands.push(...layer.commands)
@@ -332,7 +335,11 @@ function uiHarness(root: string, globalDirectory = root) {
       DialogSelect: (props: TuiDialogSelectProps<string>) => { dialog = props },
       DialogConfirm: (props: TuiDialogConfirmProps) => { dialog = props },
       DialogPrompt: (props: TuiDialogPromptProps) => { dialog = props },
-      dialog: { replace: (render: () => void) => render(), clear: () => { dialog = undefined } },
+      dialog: {
+        get open() { return dialog !== undefined },
+        replace: (render: () => void, closed?: () => void) => { onClose?.(); onClose = closed; render() },
+        clear,
+      },
       toast: (toast: { message: string }) => { toasts.push(toast) },
     },
     client: {
@@ -361,8 +368,9 @@ function uiHarness(root: string, globalDirectory = root) {
       assert.ok(option, `${dialog.title}: missing ${value}`)
       await dialog.onSelect!(option)
     },
-    async confirm() { await (dialog as TuiDialogConfirmProps).onConfirm!() },
-    async cancel() { await (dialog as TuiDialogConfirmProps).onCancel!() },
+    async confirm() { const pending = (dialog as TuiDialogConfirmProps).onConfirm?.(); clear(); await pending },
+    async cancel() { const pending = (dialog as TuiDialogConfirmProps).onCancel?.(); clear(); await pending },
+    async escape() { clear(); await Promise.resolve() },
     async enter(value: string) { await (dialog as TuiDialogPromptProps).onConfirm!(value) },
     dispose() { dispose!(); assert.ok(unregistered) },
   }
@@ -385,6 +393,7 @@ test("TUI model selection previews, saves, and blocks reload while an agent runs
   assert.equal(ui.updates, 0)
   assert.match(ui.toasts.at(-1)!.message, /still running/)
   ui.setActive(false)
+  await ui.select("reload")
   await ui.confirm()
   assert.equal(ui.updates, 1)
   assert.match(await readFile(join(root, "opencode.jsonc"), "utf8"), /Keep this comment and trailing comma/)
@@ -423,6 +432,70 @@ test("a custom configuration installation cannot write to a different global con
   await ui.confirm()
   assert.equal(ui.updates, 0)
   assert.match(ui.toasts.at(-1)!.message, /custom configuration directory/)
+  assert.equal(await readFile(join(root, "opencode.jsonc"), "utf8"), config)
+})
+
+test("TUI opens and saves the selected custom directory when the server reports its default config path", async (t) => {
+  const root = await fixture(t)
+  const globalDirectory = join(root, "global")
+  await mkdir(globalDirectory)
+  const previous = process.env.OPENCODE_CONFIG_DIR
+  t.after(() => {
+    if (previous === undefined) delete process.env.OPENCODE_CONFIG_DIR
+    else process.env.OPENCODE_CONFIG_DIR = previous
+  })
+  process.env.OPENCODE_CONFIG_DIR = root
+  const ui = uiHarness(root, globalDirectory, globalDirectory)
+  await ui.command("agent-groups.membership")
+  assert.equal(ui.dialog?.title, "Agent groups")
+  await ui.select("+")
+  await ui.enter("custom-install-group")
+  await ui.confirm()
+  assert.ok(groupNames(await loadSnapshot(root)).includes("custom-install-group"))
+  assert.deepEqual(await readdir(globalDirectory), [])
+  await ui.select("reload")
+  await ui.confirm()
+  assert.equal(ui.updates, 0)
+  assert.match(ui.toasts.at(-1)!.message, /custom configuration directory/)
+})
+
+test("TUI rejects an installation that is neither the server config nor the selected custom directory", async (t) => {
+  const root = await fixture(t)
+  const globalDirectory = join(root, "global")
+  await mkdir(globalDirectory)
+  const ui = uiHarness(root, globalDirectory, globalDirectory)
+  await ui.command()
+  assert.equal(ui.dialog, undefined)
+  assert.match(ui.toasts.at(-1)!.message, /configuration directory/)
+  assert.equal(await readFile(join(root, "opencode.jsonc"), "utf8"), config)
+})
+
+test("TUI Back and Escape preserve parents and cancel changes without saving", async (t) => {
+  const root = await fixture(t)
+  const ui = uiHarness(root)
+  await ui.command("agent-groups.membership")
+  await ui.select("developers")
+  await ui.select("+model")
+  await ui.select("example/next")
+  await ui.select("low")
+  await ui.cancel()
+  assert.equal(ui.dialog?.title, "Next: variant")
+  await ui.select("\u0000back")
+  assert.equal(ui.dialog?.title, "Group: developers · model source")
+  await ui.escape()
+  assert.equal(ui.dialog?.title, "Group: developers")
+  await ui.escape()
+  assert.equal(ui.dialog?.title, "Agent groups")
+  assert.equal((ui.dialog as TuiDialogSelectProps<string>).current, "developers")
+  await ui.select("+")
+  await ui.enter("cancelled-group")
+  await ui.escape()
+  assert.equal(ui.dialog?.title, "New agent group")
+  assert.equal((ui.dialog as TuiDialogPromptProps).value, "cancelled-group")
+  await ui.escape()
+  assert.equal(ui.dialog?.title, "Agent groups")
+  await ui.escape()
+  assert.equal(ui.dialog, undefined)
   assert.equal(await readFile(join(root, "opencode.jsonc"), "utf8"), config)
 })
 

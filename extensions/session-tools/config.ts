@@ -42,7 +42,7 @@ export default {
             { title: "Refresh configuration", value: "refresh", run: open },
           ])
         },
-      })))
+      })), true)
     }
     view.command("effective-config.open", "Inspect effective config", "inspect-config", "Config", open)
   },

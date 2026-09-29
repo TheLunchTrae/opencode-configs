@@ -10,12 +10,13 @@ import { fileURLToPath } from "node:url"
 import { setTimeout } from "node:timers/promises"
 import { stageReport, type Entry } from "../extensions/session-tools/model.ts"
 
-test("V1 loads the workflow tool and preserves its report across server restarts", {
+for (const custom of [false, true]) test(
+  `V1 loads session tools from ${custom ? "OPENCODE_CONFIG_DIR" : "global config"} and preserves reports after restart`, {
   timeout: 90_000,
 }, async (t) => {
   const root = await mkdtemp(join(tmpdir(), "opencode-session-tools-"))
   const repo = fileURLToPath(new URL("../", import.meta.url))
-  const configRoot = join(root, "config", "opencode")
+  const configRoot = custom ? join(root, "installation") : join(root, "config", "opencode")
   const project = join(root, "project")
   await mkdir(configRoot, { recursive: true }); await mkdir(project)
   await cp(join(repo, "extensions"), join(configRoot, "extensions"), { recursive: true })
@@ -74,7 +75,8 @@ test("V1 loads the workflow tool and preserves its report across server restarts
     OPENCODE_CONFIG: "", OPENCODE_CONFIG_CONTENT: "", OPENCODE_TEST_HOME: root,
     OPENCODE_DISABLE_PROJECT_CONFIG: "1", OPENCODE_DISABLE_AUTOUPDATE: "1", OPENCODE_DISABLE_MODELS_FETCH: "1",
     OPENCODE_EXPERIMENTAL_DISABLE_FILEWATCHER: "true", OPENCODE_SERVER_PASSWORD: "", OPENCODE_DB: join(root, "db.sqlite") }
-  delete env.OPENCODE_CONFIG_DIR
+  if (custom) env.OPENCODE_CONFIG_DIR = configRoot
+  else delete env.OPENCODE_CONFIG_DIR
   let child: ChildProcess | undefined
   let stopped: Promise<unknown> | undefined
   let output = ""
@@ -88,8 +90,9 @@ test("V1 loads the workflow tool and preserves its report across server restarts
   }
   t.after(async () => {
     await stop(); provider.closeAllConnections(); provider.close()
-    if (process.env.SESSION_TOOLS_KEEP_FIXTURE === "1") t.diagnostic(`Native fixture: ${root}`)
-    else await rm(root, { recursive: true, force: true })
+    if (process.env.SESSION_TOOLS_KEEP_FIXTURE === "1") {
+      t.diagnostic(`Native fixture (${custom ? "custom" : "global"}): ${root}`)
+    } else await rm(root, { recursive: true, force: true })
   })
   const start = async () => {
     output = ""
@@ -118,6 +121,7 @@ test("V1 loads the workflow tool and preserves its report across server restarts
     assert.ok(response.ok, `${path}: ${await response.clone().text()}\n${output.slice(-3000)}`)
     return await response.json() as T
   }
+  assert.equal((await api<{ config: string }>("/path")).config, join(root, "config", "opencode"))
   const created = await api<{ id: string }>("/session", { title: "Session tools native fixture" })
   const response = await api<{ info: { error?: unknown } }>(`/session/${created.id}/message`, {
     agent: "lead", parts: [{ type: "text", text: "Record the review stage for the fixture." }],

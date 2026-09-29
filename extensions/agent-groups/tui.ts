@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url"
 import { homedir } from "node:os"
 import { isAbsolute, join } from "node:path"
 import type { TuiPlugin, TuiPluginApi, TuiPluginModule, TuiDialogSelectOption } from "@opencode-ai/plugin/tui"
+import { dialogNavigation } from "../tui/navigation.ts"
 import {
   agentGroup, catalogModels, groupName, presetName, resolveChoice, resolveGroup, validateChoice, SettingsError,
   type CatalogModel, type GroupChoice, type ModelChoice, type NativeModels, type ResolutionContext,
@@ -21,6 +22,7 @@ const label = (choice: ModelChoice) => choice.model
 export function registerSettings(api: TuiPluginApi, directory = installation,
   globalDirectory = join(process.env.XDG_CONFIG_HOME && isAbsolute(process.env.XDG_CONFIG_HOME)
     ? process.env.XDG_CONFIG_HOME : join(homedir(), ".config"), "opencode")): void {
+  const navigation = dialogNavigation(api)
   let busy = false
   const native = new WeakMap<Snapshot, NativeModels>()
   const context = (snapshot: Snapshot): ResolutionContext => ({
@@ -42,20 +44,28 @@ export function registerSettings(api: TuiPluginApi, directory = installation,
         duration: 8000 })
     }).finally(() => { busy = false })
   }
-  const menu = (title: string, options: Action[], current?: string) => {
+  const menu = (title: string, options: Action[], current?: string, root = false) => {
     if (api.lifecycle.signal.aborted) return
-    api.ui.dialog.replace(() => api.ui.DialogSelect({ title, placeholder: "Search…", current,
-      options, onSelect: (option) => run(() => options.find((item) => item.value === option.value)?.run()) }))
+    navigation.menu({ title, placeholder: "Search…", current,
+      options, onSelect: (option) => run(() => options.find((item) => item.value === option.value)?.run()) }, root)
   }
   const confirm = (title: string, message: string, action: () => Promise<void>) => {
-    api.ui.dialog.replace(() => api.ui.DialogConfirm({ title, message,
-      onConfirm: () => run(action), onCancel: () => api.ui.dialog.clear() }))
+    navigation.confirm({ title, message, onConfirm: () => run(action) })
   }
   const load = async () => {
-    if (await realpath(directory) !== await realpath(api.state.path.config)) {
-      throw new SettingsError("Install the editor in this server's global configuration directory. Remote files are not supported.")
+    const root = await realpath(directory)
+    const serverDirectory = await realpath(api.state.path.config).catch(() => undefined)
+    if (root !== serverDirectory) {
+      // V1 reports the global path even when it loads OPENCODE_CONFIG_DIR.
+      const custom = process.env.OPENCODE_CONFIG_DIR
+      const customDirectory = custom ? await realpath(custom).catch(() => undefined) : undefined
+      const localGlobal = await realpath(globalDirectory).catch(() => undefined)
+      if (!serverDirectory || serverDirectory !== localGlobal || root !== customDirectory) {
+        throw new SettingsError("Install the editor in this server's global configuration directory or its local "
+          + "OPENCODE_CONFIG_DIR. Remote files are not supported.")
+      }
     }
-    const snapshot = await loadSnapshot(directory)
+    const snapshot = await loadSnapshot(root)
     if (Object.values(snapshot.groups).some((choice) => choice.modelRef?.startsWith("opencode:"))) {
       await refreshNative(snapshot)
     }
@@ -126,17 +136,19 @@ export function registerSettings(api: TuiPluginApi, directory = installation,
       const result = await api.client.global.config.update({ config: { plugin } })
       if (result.error) throw new SettingsError("Settings were saved, but reload failed. Restart OpenCode to apply them.")
     })
-    api.ui.dialog.clear()
+    navigation.close()
     api.ui.toast({ variant: "success", title: "Settings reloaded",
       message: "New agent calls use the saved defaults. A session model selection can still override them.", duration: 8000 })
   }
-  const offerReload = () => menu("Settings saved", [
+  const offerReload = (root = false) => menu("Settings saved", [
     { title: "Reload now…", value: "reload", description: "Apply saved settings to this OpenCode server",
       run: () => confirm("Reload OpenCode settings?",
         "This reloads ALL workspaces on this server. Wait for agents in every workspace to finish first.\n\n"
         + "Existing session model selections remain; use /models to change the current session.", reload) },
-    { title: "Apply on next restart", value: "later", run: () => api.ui.dialog.clear() },
-  ])
+    { title: "Apply on next restart", value: "later", run: navigation.close },
+    { title: "Agent groups", value: "groups", run: groupsMenu },
+    { title: "Agent models", value: "models", run: modelsMenu },
+  ], undefined, root)
   const propose = (snapshot: Snapshot, change: Change) => {
     const plan = planChange(snapshot, change)
     const preview = plannedChoices(plan, context(snapshot).native)
@@ -163,7 +175,7 @@ export function registerSettings(api: TuiPluginApi, directory = installation,
       }
       if (api.lifecycle.signal.aborted) return
       await savePlan(plan)
-      offerReload()
+      offerReload(true)
     })
   }
   const selectReference = async (snapshot: Snapshot, name: string, modelRef: string) => {
@@ -197,13 +209,13 @@ export function registerSettings(api: TuiPluginApi, directory = installation,
         run: () => selectReference(snapshot, name, `preset:${preset}`) })),
     ])
   const newGroup = (snapshot: Snapshot, agent?: StoredAgent) => {
-    api.ui.dialog.replace(() => api.ui.DialogPrompt({ title: "New agent group", placeholder: "e.g. data-engineering",
-      onCancel: () => api.ui.dialog.clear(), onConfirm: (value) => run(() => {
+    navigation.prompt({ title: "New agent group", placeholder: "e.g. data-engineering",
+      onConfirm: (value) => run(() => {
         const name = groupName(value.trim())
         if (groupNames(snapshot).includes(name)) throw new SettingsError("That group already exists. Choose it from the group list.")
         propose(snapshot, agent ? { kind: "membership", agent: agent.name, group: name }
           : { kind: "group", name, choice: {} })
-      }) }))
+      }) })
   }
   const presetMenu = (snapshot: Snapshot, name: string) => menu(`Model preset: ${name}`, [
     { title: "Set model and variant", value: "model", description: label(snapshot.modelPresets[name]),
@@ -218,12 +230,12 @@ export function registerSettings(api: TuiPluginApi, directory = installation,
         + `${Object.values(snapshot.groups).filter((choice) => choice.modelRef === `preset:${name}`).length} linked groups`,
       run: () => presetMenu(snapshot, name) })),
     { title: "Create a model preset…", value: "+", run: () => {
-      api.ui.dialog.replace(() => api.ui.DialogPrompt({ title: "New model preset", placeholder: "e.g. balanced",
-        onCancel: () => api.ui.dialog.clear(), onConfirm: (value) => run(async () => {
+      navigation.prompt({ title: "New model preset", placeholder: "e.g. balanced",
+        onConfirm: (value) => run(async () => {
           const name = presetName(value.trim())
           if (Object.hasOwn(snapshot.modelPresets, name)) throw new SettingsError("That model preset already exists.")
           await selectModel(name, {}, (choice) => propose(snapshot, { kind: "preset", name, choice }))
-        }) }))
+        }) })
     } },
   ])
   const agentMenu = (snapshot: Snapshot, agent: StoredAgent) => {
@@ -270,7 +282,7 @@ export function registerSettings(api: TuiPluginApi, directory = installation,
       { title: "Ungrouped", value: "", run: () => menu("Ungrouped agents", agentOptions(snapshot, members(snapshot))) },
       { title: "Create a new group…", value: "+", run: () => newGroup(snapshot) },
       { title: "All agents", value: "+agents", run: () => menu("Agents", agentOptions(snapshot, snapshot.agents)) },
-    ])
+    ], undefined, true)
   }
   const modelsMenu = async () => {
     const snapshot = await load()
@@ -290,14 +302,14 @@ export function registerSettings(api: TuiPluginApi, directory = installation,
         description: describeGroup(snapshot, snapshot.groups[name] ?? {}), run: () => selectGroup(snapshot, name) })),
       { title: "Individual agent overrides", value: "+agents",
         run: () => menu("Agents", agentOptions(snapshot, snapshot.agents)) },
-      { title: "Reload saved settings…", value: "+reload", run: offerReload },
-    ])
+      { title: "Reload saved settings…", value: "+reload", run: () => offerReload() },
+    ], undefined, true)
   }
   const unregister = api.keymap.registerLayer({ commands: [
     { name: "agent-groups.models", title: "Agent models", category: "Config", namespace: "palette",
-      slashName: "agent-models", run: () => run(modelsMenu) },
+      slashName: "agent-models", run: () => { navigation.reset(); return run(modelsMenu) } },
     { name: "agent-groups.membership", title: "Agent groups", category: "Config", namespace: "palette",
-      slashName: "agent-groups", run: () => run(groupsMenu) },
+      slashName: "agent-groups", run: () => { navigation.reset(); return run(groupsMenu) } },
   ] })
   api.lifecycle.onDispose(unregister)
 }

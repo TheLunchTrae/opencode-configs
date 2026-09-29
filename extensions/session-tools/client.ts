@@ -1,6 +1,7 @@
 import type { TuiDialogSelectOption, TuiPluginApi } from "@opencode-ai/plugin/tui"
 import type { Session } from "@opencode-ai/sdk/v2"
 import { clean, historyLimit, PanelError, type Entry } from "./model.ts"
+import { dialogNavigation } from "../tui/navigation.ts"
 
 export type Action = TuiDialogSelectOption<string> & { run?: () => void | Promise<void> }
 export type Snapshot = { session: Session; entries: Entry[]; limited: boolean }
@@ -26,6 +27,7 @@ export async function snapshot(api: TuiPluginApi, sessionID: string, signal = ap
 }
 
 export function ui(api: TuiPluginApi) {
+  const navigation = dialogNavigation(api)
   const run = (action: () => void | Promise<void>) => {
     const client = api.client
     return Promise.resolve().then(() => {
@@ -38,28 +40,27 @@ export function ui(api: TuiPluginApi) {
           : "Could not complete the action. Check the session and server connection, then retry.", duration: 6000 })
     })
   }
-  const menu = (title: string, actions: readonly Action[] | (() => readonly Action[]), onClose?: () => void) => {
+  const menu = (title: string, actions: readonly Action[] | (() => readonly Action[]), root = false) => {
     if (api.lifecycle.signal.aborted) return
     const items = () => typeof actions === "function" ? actions() : actions
-    api.ui.dialog.replace(() => api.ui.DialogSelect({ title, placeholder: "Search…",
+    navigation.menu({ title, placeholder: "Search…",
       get options() { return [...items()] },
       onSelect: (option) => { void run(() => items().find((item) => item.value === option.value)?.run?.()) },
-    }), onClose)
+    }, root)
   }
   const alert = (title: string, message: string) => {
     if (api.lifecycle.signal.aborted) return
-    api.ui.dialog.replace(() => api.ui.DialogAlert({ title, message: clean(message, 30_000) }))
+    navigation.alert({ title, message: clean(message, 30_000) })
   }
   const prompt = (title: string, value: string, save: (text: string) => void | Promise<void>) => {
     if (api.lifecycle.signal.aborted) return
-    api.ui.dialog.replace(() => api.ui.DialogPrompt({ title, value,
-      onConfirm: (text) => { void run(() => save(text)) }, onCancel: () => api.ui.dialog.clear() }))
+    navigation.prompt({ title, value, onConfirm: (text) => { void run(() => save(text)) } })
   }
   const command = (name: string, title: string, slashName: string, category: string, action: () => void | Promise<void>) => {
     api.keymap.registerLayer({ commands: [{ name, title, category, namespace: "palette", slashName,
-      run: () => run(action) }] })
+      run: () => { navigation.reset(); return run(action) } }] })
   }
-  return { run, menu, alert, prompt, command }
+  return { run, menu, alert, prompt, command, navigation }
 }
 
 export function historyNote(value: Snapshot): string {

@@ -40,7 +40,7 @@ export default {
             + "The exact assembled prompt and tokens per file are not exposed. Available skills are not assumed loaded. "
             + "Old file reads and attachments may no longer be in context after compaction. Tool outputs are not copied here.") },
         { title: "Refresh", value: "refresh", run: open },
-      ])
+      ], true)
     }
     view.command("context-inspector.open", "Inspect session context", "inspect-context", "Session", open)
   },
