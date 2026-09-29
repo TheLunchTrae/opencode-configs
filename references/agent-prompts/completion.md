@@ -24,9 +24,6 @@ Final handoff does not authorize shipping. Use `checkpoint` before a context res
 
 ## Project learning
 
-When a recurring mistake has concrete evidence, propose one targeted project improvement.
-Prefer an existing test, lint rule, or interface contract over a long global prompt.
-Record the failure pattern, proposed prevention, and a check for it in conversation first.
-Obtain authorization before changing persistent instructions or tooling outside the approved scope.
-Use `project-standards` for deliberate tooling adoption. Keep project lessons out of global configuration.
-Learning notes and quizzes are not merge gates.
+When recurring mistakes have concrete evidence, apply the project learning procedure in
+`@agent-prompts/lead-contract.md`.
+Reuse any assessment made when work stopped. Update it only when new evidence changes the cause or proposed prevention.

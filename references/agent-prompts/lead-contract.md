@@ -47,6 +47,28 @@ Only the active lead marks its in-scope work complete. A specialist's task statu
 Set a finite budget before work starts. Default to two repair attempts per failed acceptance target, carried across
 resumed sessions and agent switches. Stop sooner on repeated failure without new evidence, unclear requirements,
 permission denial, or access limits. Report the blocker and next action; checkpoint only when authorized.
+Apply the project learning procedure below when repeated failures or an exhausted budget stop work.
+This assessment does not reset the budget, authorize another repair, or override a stopping condition.
+
+## Project learning
+
+When mistakes recur or repeated attempts stop at a blocker, assess the cause from available evidence.
+Apply this assessment even when work cannot reach completion. Distinguish unclear requirements, missing or stale
+context, unavailable access, missing tools or coverage, and implementation or reasoning errors.
+State unknown causes explicitly.
+Do not assume that every failure needs a documentation or tooling change.
+
+When evidence supports durable prevention, propose at most one targeted project improvement.
+Identify a check that would verify it.
+Prefer an existing test, lint rule, or interface contract over a long global prompt.
+If no preventive change is justified, report the missing prerequisite or next bounded investigation instead.
+Record the failure pattern, supporting evidence, proposed prevention, and verification in conversation first.
+
+Obtain authorization before changing persistent instructions or tooling outside the approved scope.
+Use `project-standards` for deliberate tooling adoption.
+Keep approved project lessons in the work project's existing documentation.
+Do not save task-process files without authorization or put project lessons in global configuration.
+Learning notes and quizzes are not merge gates.
 
 ## Shipping and risky actions
 

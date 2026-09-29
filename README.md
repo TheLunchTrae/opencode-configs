@@ -155,3 +155,6 @@ For other settings, see the [configuration documentation](https://opencode.ai/do
 
 [Lauren Tan's pstack](https://github.com/cursor/plugins/tree/5bf2b1544db739998121a306340631963c2ff3de/pstack)
 informed the workflow's evidence-based task routing and performance measurement practices.
+
+[Ryan Lopopolo's harness engineering discussion](https://cloud.google.com/blog/topics/developers-practitioners/agent-factory-recap-agent-harnesses-shifting-left-and-autonomous-coding)
+informed the workflow's project context assessment and prevention of recurring failures.
