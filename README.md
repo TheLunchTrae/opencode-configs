@@ -153,5 +153,10 @@ For other settings, see the [configuration documentation](https://opencode.ai/do
 
 ## References
 
+[OpenClaw's test-audit skill](https://github.com/openclaw/openclaw/blob/main/.agents/skills/test-audit/SKILL.md)
+informed the test-value assessment and evidence required for suite cleanup.
+[Playwright's testing guidance](https://playwright.dev/docs/best-practices)
+informed the browser-test isolation, locator, and waiting guidance. Use the work project's existing test tools.
+
 [Lauren Tan's pstack](https://github.com/cursor/plugins/tree/5bf2b1544db739998121a306340631963c2ff3de/pstack)
 informed the workflow's evidence-based task routing and performance measurement practices.

@@ -8,6 +8,7 @@ description: Design and generate reusable verification tests for existing reposi
 Use this procedure within the assigned scope, authorization, review requirements, and task budget.
 Apply only the assigned portion. This skill does not expand the agent's role, permissions, or a read-only assignment.
 Before writing tests, read `@agent-prompts/implementation-standards.md` and applicable project and language guidance.
+Read `@agent-prompts/testing-standards.md` for coverage design and authoring decisions.
 
 Build executable coverage for established behavior. Use `test-first` when implementing a new behavior or fixing a bug.
 A verification suite can combine unit, integration, contract, CLI, API, or end-to-end tests as the scope requires.
@@ -44,7 +45,8 @@ Create a compact coverage map. For each behavior, include:
 - Dependencies, risks, and behavior that will remain unverified.
 
 Choose the smallest test level that exercises the relevant contract. Use integration or end-to-end coverage when
-unit tests cannot establish the required behavior. Follow the framework agent's provider and runtime guidance.
+unit tests cannot establish the required behavior. Use `end-to-end-tests` for complete application journeys and
+include its boundaries and fixtures in this coverage map. Follow the framework agent's provider and runtime guidance.
 If a harness is missing, propose the smallest suitable setup using the project's language and available tools.
 List new dependencies, testability refactors, CI changes, and external environment needs explicitly in the design.
 Use `project-standards` only for deliberate tooling or convention adoption; routine tests do not require it.

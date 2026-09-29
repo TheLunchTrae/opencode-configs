@@ -9,6 +9,7 @@ If the target is ambiguous and no default is supplied, report the missing scope 
 | Staged | Inspect `git diff --cached`. |
 | Local | Inspect tracked changes with `git diff HEAD`, plus `git status --short`; read relevant untracked files separately. |
 | File path or glob | Resolve and read the named files. State whether the request covers complete files or only changes. |
+| Suite or capability audit | Include unchanged tests and their production boundaries. Use `test-audit`. |
 
 Do not silently substitute a different target or treat a missing commit/ref as an empty diff.
 Read surrounding code needed to assess changed behavior. State the source revision or working-tree scope.

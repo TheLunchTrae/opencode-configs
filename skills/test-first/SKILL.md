@@ -7,6 +7,9 @@ description: Observe a meaningful failing test, implement a bounded behavior cha
 
 Use this skill for a behavior fix or feature with an available test seam.
 Follow the assigned scope, authorization, task budget, and role boundaries.
+Read `@agent-prompts/testing-standards.md` before selecting or writing a test.
+Use `end-to-end-tests` for approved journeys that need the real application path. Reuse the same coverage design
+and failure evidence rather than adding a second test merely to satisfy both procedures.
 
 1. Inspect the relevant code and configured test command. Record existing failures before changing behavior.
 2. Define the acceptance examples independently of the proposed implementation.

@@ -20,6 +20,10 @@ Before code-related assessment or implementation, read `@agent-prompts/global-co
 `@agent-prompts/implementation-standards.md`.
 Language-specific guidance, project conventions, and repository rules take precedence.
 
+For test-suite cleanup, use `test-audit` and the approved candidate evidence before editing.
+Preserve useful assertions, uncertain consumers, and the assignment's removal boundaries.
+Do not remove a failing test solely to make the suite pass or equate overlapping execution with duplicate proof.
+
 The judgement calls in cleanup live in the categorisation step — sorting items into **SAFE** (unused exports / deps),
 **CAREFUL** (dynamic imports, reflection, framework auto-discovery), and **RISKY** (public API, plugin entry points).
 The procedure of finding and removing is mechanical; deciding which bucket a finding belongs to is not. When in doubt,

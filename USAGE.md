@@ -11,6 +11,8 @@ The default `workflow-lead` coordinates a complete development task. Focused lea
 - [Command reference](#command-reference): optional utilities.
 - [Supporting skills](#supporting-skills): reusable procedures selected by agents.
 - [Worked examples](#worked-examples): common development tasks.
+- [Test-suite audits](#audit-existing-test-suites): assess existing coverage and plan justified cleanup.
+- [End-to-end tests](#end-to-end-tests-during-feature-development): verify complete application journeys.
 - [Verification tests](#verification-tests-for-existing-code): build and reuse coverage for existing behavior.
 - [Continue a long task](#continue-a-long-task): retain decisions and evidence between sessions.
 
@@ -177,6 +179,8 @@ Naming a skill never expands the current agent's role, permissions, or approval 
 | Skill | Purpose |
 | --- | --- |
 | [test-first](skills/test-first/SKILL.md) | Observe a test fail, implement the approved change, and verify it. |
+| [test-audit](skills/test-audit/SKILL.md) | Assess existing suites and support approved, evidence-based cleanup. |
+| [end-to-end-tests](skills/end-to-end-tests/SKILL.md) | Verify journeys through real application boundaries. |
 | [verification-tests](skills/verification-tests/SKILL.md) | Design and generate coverage for established behavior. |
 | [measured-performance](skills/measured-performance/SKILL.md) | Compare performance under matching conditions. |
 | [verify](skills/verify/SKILL.md) | Run configured checks and report evidence without fixes. |
@@ -261,6 +265,55 @@ Compare elapsed time and peak memory under matching conditions afterward.
 
 Expect the workload, command, environment, baseline, candidate result, and measurement limits.
 If measurement is blocked, the result must identify the missing prerequisite instead of inventing a speedup.
+
+## Audit existing test suites
+
+Select `review-lead` and name the suite or capability to assess. The lead uses `test-audit` with a read-only reviewer.
+An explicit suite audit includes unchanged tests. Ordinary diff reviews retain their narrower scope.
+
+```text
+Audit the existing tests for configuration loading, including tests outside the current diff.
+Identify useful coverage, duplicated assertions, misleading mocks, and missing important failure cases.
+Recommend what to retain, consolidate, rewrite, or remove, with evidence and remaining coverage for each change.
+Do not edit files.
+```
+
+Expect test locations, protected behavior, actual failure modes, relevant history, remaining coverage, risk, and
+proposed checks. Uncertain candidates remain visible. Static tests and exact-value assertions can protect real
+contracts. A failing test can identify a product defect. Neither category is an automatic removal target.
+
+Use `workflow-lead` when you also want cleanup. It reviews and obtains approval for the proposed changes before
+assigning edits. An approved implementation plan can instead go to `implementation-lead`.
+Replacing tests requires preserving their useful assertions. Removing production support requires evidence about
+its real consumers and any applicable approval. The audit does not authorize a commit or pull request.
+
+## End-to-end tests during feature development
+
+Describe the feature and its observable outcome to `workflow-lead`. Planning selects end-to-end coverage when the
+journey's integration risks justify it. You can request `end-to-end-tests` explicitly without changing the lead's role.
+The skill supports browser, CLI, API, and worker journeys. It reuses the project's test runner and normal approval flow.
+
+```text
+Add background CSV exports. Users must be able to request an export, wait for completion, and download their file.
+Include end-to-end tests through the real API, worker, and persistence path using isolated synthetic data.
+Check the downloaded contents and prevent another user from downloading the export.
+Reuse the current test tooling. Include the coverage design in the feature plan before implementation.
+```
+
+The design maps each selected journey to requirements, existing coverage, real components, substituted external
+dependencies, fixtures, setup, cleanup, and execution commands. Tests verify outcomes and important failure paths.
+They do not seed the final result or mock the application's own behavior and then claim complete-path evidence.
+Browser tests use stable user-facing locators and bounded waiting. All journeys isolate mutable state and clean up
+owned resources. Detailed rule permutations stay at lower levels unless they expose another integration risk.
+
+For new behavior and bug fixes, `test-first` supplies meaningful failure and passing evidence when execution is
+available. An established-behavior baseline can pass immediately. Missing services or unrelated failures are not proof
+that the intended regression was detected.
+
+Authors and reviewers share the [testing standards](references/agent-prompts/testing-standards.md).
+Checks that cannot run and verification exclusions approved for the task remain explicit. They do not count as passes.
+New tools, CI changes, or infrastructure work must be in the approved scope.
+Use `planning-lead` for design alone and `review-lead` to assess or execute existing tests without repairs.
 
 ## Verification tests for existing code
 

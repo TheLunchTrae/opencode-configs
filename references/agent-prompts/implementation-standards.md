@@ -14,6 +14,8 @@ Use this reference for implementation technique within the assigned scope, permi
 
 ## Implement and verify
 
+- For behavior or test changes, read `@agent-prompts/testing-standards.md` before selecting or writing coverage.
+  Use the assigned testing skills within the approved scope. Report missing coverage without expanding the task.
 - Preserve the intended behavior, interfaces, and security boundaries.
   Handle relevant failure paths as part of the change.
 - Add or update tests when they can detect a meaningful regression.

@@ -22,6 +22,16 @@ Default to an immediate full-state change. Do not invent migration windows or co
 Read `@agent-prompts/phased-plan.md` when the user requests phases or safe deployment structurally requires them.
 Acceptance slices organize work; they do not imply separate releases.
 
+## Coverage design
+
+For behavior or test changes, read `@agent-prompts/testing-standards.md`.
+Map acceptance examples to existing assertions and meaningful gaps. Select test levels by the failures they can detect.
+For user journeys with integration risks, use the design portion of `end-to-end-tests`.
+Include real and substituted boundaries, expected outcomes, fixtures, cleanup, execution prerequisites, and commands
+in the feature plan. Explain sufficient existing coverage or approved exclusions when no new end-to-end test is needed.
+For test cleanup, use the supplied `test-audit` evidence and preserve required assertions before recommending removals.
+Identify missing evidence and uncertain candidates. These design procedures do not authorize edits or test execution.
+
 ## Planning process
 
 1. Read relevant project instructions, manifests, adjacent implementations, and existing interfaces.
