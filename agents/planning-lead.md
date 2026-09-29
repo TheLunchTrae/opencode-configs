@@ -6,6 +6,7 @@ variant: high
 permission:
   edit: deny
   bash: deny
+  question: allow
   task:
     '*': deny
     planner: allow

@@ -5,6 +5,29 @@ import { test } from "node:test"
 const root = new URL("../", import.meta.url)
 const read = (path) => readFileSync(new URL(path, root), "utf8")
 const config = JSON.parse(read("opencode.jsonc"))
+
+// Check this configuration's literal and * patterns, with V1 slash normalization and last-match order.
+// These policy examples do not launch OpenCode or model its full permission system.
+const matchesPolicyPattern = (pattern, input) => {
+  const parts = pattern.replaceAll("\\", "/").split("*")
+    .map((part) => part.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+  return new RegExp(`^${parts.join(".*")}$`, "s").test(input.replaceAll("\\", "/"))
+}
+const configuredAction = (permission, input, policy = config.permission) => {
+  let action
+  for (const [name, rules] of Object.entries(policy)) {
+    if (!matchesPolicyPattern(name, permission)) continue
+    if (typeof rules === "string") {
+      action = rules
+      continue
+    }
+    for (const [pattern, value] of Object.entries(rules)) {
+      if (matchesPolicyPattern(pattern, input)) action = value
+    }
+  }
+  return action
+}
+
 const skills = readdirSync(new URL("skills/", root)).filter((name) =>
   existsSync(new URL(`skills/${name}/SKILL.md`, root)))
 const utilityCommands = ["checkpoint", "resume-work", "explain", "quiz", "init-docs", "commit", "push", "summarize-branch"]
@@ -98,6 +121,7 @@ const agents = Object.fromEntries(readdirSync(new URL("agents/", root)).filter((
       mode: header.match(/^mode: (.+)$/m)?.[1],
       edit: header.match(/^  edit: (.+)$/m)?.[1] ?? config.permission.edit["*"],
       bash: header.match(/^  bash: (.+)$/m)?.[1],
+      question: header.match(/^  question: (.+)$/m)?.[1],
       rules,
     }]
   }))
@@ -106,7 +130,7 @@ const builtinAgents = Object.fromEntries(["general", "explore"].map((name) => {
   const task = permission.task
   return [name, {
     mode: config.agent[name].mode ?? "subagent",
-    edit: permission.edit ?? (name === "explore" ? "deny" : config.permission.edit["*"]),
+    edit: permission.edit ?? config.permission.edit["*"],
     rules: typeof task === "string" ? { "*": task } : { ...config.permission.task, ...task },
   }]
 }))
@@ -122,6 +146,92 @@ test("the default and focused leads are selectable primary agents", () => {
   assert.equal(agents[config.default_agent].edit, "allow")
   assert.equal(agents["implementation-lead"].edit, "allow")
   assert.equal(agents["planning-lead"].bash, "deny")
+})
+
+test("Explore explicitly denies edits after global permissions are applied", () => {
+  assert.equal(config.agent.explore.permission?.edit, "deny")
+  assert.equal(builtinAgents.explore.edit, "deny")
+})
+
+test("only primary leads receive an explicit Question tool grant", () => {
+  assert.equal(config.permission.question, undefined, "do not enable questions for every subagent")
+  for (const [name, agent] of Object.entries(agents)) {
+    if (leads.includes(name)) assert.equal(agent.question, "allow", name)
+    else assert.notEqual(agent.question, "allow", name)
+  }
+  for (const [name, agent] of Object.entries(config.agent)) {
+    assert.notEqual(agent.permission?.question, "allow", name)
+  }
+})
+
+test("native Read rules cover complete secrets segments with either path separator", () => {
+  const blocked = [
+    "secrets", "secrets/fixture.txt", "app/secrets", "app/secrets/nested/fixture.txt",
+    "../../.config/opencode/secrets", "../../.config/opencode/secrets/fixture.txt",
+    "../secrets/.env.example", "C:/Users/fixture/.config/opencode/secrets/fixture.txt",
+  ]
+  for (const path of blocked) {
+    for (const input of [path, path.replaceAll("/", "\\")]) {
+      assert.equal(configuredAction("read", input), "deny", input)
+    }
+  }
+  for (const path of ["src/index.ts", "app/not-secrets/fixture.txt", "secrets-notes.md", "docs/secrets.md"]) {
+    assert.equal(configuredAction("read", path), undefined, path)
+  }
+})
+
+test("external-directory rules retain the native trusted-directory exceptions", () => {
+  assert.equal(config.permission.external_directory, undefined)
+  for (const [name, agent] of Object.entries(config.agent)) {
+    assert.equal(agent.permission?.external_directory, undefined, name)
+  }
+})
+
+test("configured MCP tools require approval while their connections stay disabled", () => {
+  for (const name of [
+    "github_get_me", "github_create_pull_request", "github_future_tool",
+    "playwright_browser_navigate", "playwright_browser_click", "playwright_future_tool",
+  ]) {
+    assert.equal(configuredAction(name, "*"), "ask", name)
+  }
+  for (const server of Object.values(config.mcp)) assert.equal(server.enabled, false)
+})
+
+test("Git inspection grants do not admit additional flags or shell output redirection", () => {
+  for (const command of [
+    "git status", "git status --short", "git diff --stat", "git diff --no-ext-diff --no-textconv",
+    "git diff --cached --no-ext-diff --no-textconv", "git log --oneline -n 10",
+  ]) {
+    assert.equal(configuredAction("bash", command), "allow", command)
+  }
+  for (const command of [
+    "git status > tracked-file.txt", "git status --short > tracked-file.txt",
+    "git diff --stat --output=tracked-file.txt", "git diff --ext-diff", "git diff --textconv",
+    "git log --oneline -n 10 --output=tracked-file.txt", "git -c alias.inspect=status inspect",
+    "git commit -m example", "git push origin main", "npm test", "python script.py",
+  ]) {
+    assert.equal(configuredAction("bash", command), "ask", command)
+  }
+  for (const command of [
+    "git branch -D example", "git clean -fd", "git push --force origin main",
+    "git push -f origin main", "git reset --hard HEAD", "rm -rf fixture",
+  ]) {
+    assert.equal(configuredAction("bash", command), "deny", command)
+  }
+  assert.equal(configuredAction("edit", "src/index.ts"), "ask")
+  for (const name of ["planning-lead", "planner", "architect", "architecture-reviewer"]) {
+    assert.equal(agents[name].bash, "deny", name)
+  }
+})
+
+test("specific Bash approvals survive a broader project wildcard", () => {
+  const projectPolicy = { ...config.permission, bash: { ...config.permission.bash, "*": "allow" } }
+  for (const command of [
+    "git checkout feature", "git commit -m example", "git push origin main", "sudo command", "python script.py",
+  ]) {
+    assert.equal(configuredAction("bash", command, projectPolicy), "ask", command)
+  }
+  assert.equal(configuredAction("bash", "git push --force origin main", projectPolicy), "deny")
 })
 
 test("delegation uses exact targets, excludes lead children, and fits the depth limit", () => {
