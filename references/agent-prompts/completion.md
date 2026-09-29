@@ -24,6 +24,6 @@ Final handoff does not authorize shipping. Use `checkpoint` before a context res
 
 ## Project learning
 
-When recurring mistakes have concrete evidence, apply the project learning procedure in
-`@agent-prompts/lead-contract.md`.
+When recurring mistakes have concrete evidence, read `@agent-prompts/project-learning.md`.
+Apply the lead contract's coordination and approval rules when consolidating recommendations.
 Reuse any assessment made when work stopped. Update it only when new evidence changes the cause or proposed prevention.
