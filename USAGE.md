@@ -220,7 +220,7 @@ Prompts and handoff drafts return without saving when canceled. Completed bookma
 
 | Command | Action |
 | --- | --- |
-| `/workflow-panel` | Expand the workflow stage and primary/child session list. |
+| `/workflow-panel` | Open the phase timeline and inspect agent assignments. |
 | `/inspect-config` | Inspect an agent's resolved configuration and recorded model. |
 | `/inspect-context` | Inspect recorded usage, file reads, skill loads, and compactions. |
 | `/bookmarks` | Manage session bookmarks and select notes for a handoff. |
@@ -234,12 +234,31 @@ Stages are `planning`, `implementation`, `review`, `verification`, `blocked`, an
 They describe the lead's scope. A report is not an approval or an independent verification result.
 Sessions without a recorded stage show **Stage not reported**. Idle status never means workflow completion.
 
-Select an agent to inspect its recorded model, variant, task, and available timing, or open its conversation.
+Select the workflow heading or an agent in the sidebar, or run `/workflow-panel`.
+The panel groups assignments under numbered phases, such as **Planning 1**, **Dev 1**, **Review 1**, and **Dev 2**.
+Repeated reports within one phase update its summary. Returning to a stage creates another numbered occurrence.
+Phase summaries come from the lead's recorded reports. The panel does not send model requests.
+Select a phase to expand or collapse its assignments. The current phase starts expanded.
+
+Each assignment stays in the phase where it started. A reused agent session can have assignments in several phases.
+Nested assignments inherit their parent assignment's phase when recorded timing establishes that relationship.
+Work without a recorded phase or linked delegation appears under **Unassigned**.
+Completed assignments keep their completion status when the same session is reused.
+Background rows distinguish completed dispatch from ongoing activity in the latest child assignment.
 The list distinguishes active work, retry, questions, permissions, and completed or failed delegations.
+
+Select an assignment to inspect its prompt, recorded model, task, timing, or conversation.
+**View assignment prompt** opens the recorded prompt for that particular delegation in a large, read-only view.
+An unlinked session offers **View initial prompt** instead. **Initial request** opens the first recorded user request.
+Prompt views preserve full text and line breaks, excluding terminal control sequences and generated reference expansions.
+Use arrow keys, Page Up, Page Down, Home, End, or the mouse wheel to scroll.
+Click **×** to close the entire workflow popup. Escape returns one view and closes the popup at its first view.
+
 Session events trigger refreshes; a ten-second refresh also runs while the panel is mounted.
-The sidebar shows up to five sessions. The expanded view loads at most 24 sessions, two child levels,
-the primary session's latest 200 messages, and each child's latest 20 messages.
-Missing or older history can leave tasks and model details unavailable. A failed refresh marks displayed data stale.
+The sidebar shows up to five sessions and reads the primary session's latest 200 messages and each child's latest 20.
+The phase timeline reads complete recorded histories for at most 24 sessions and two child levels.
+Its phase numbers and assignment prompts survive reopening the panel and restarting OpenCode while that history remains available.
+Missing history can leave phase membership, prompts, or model details unavailable. A failed refresh marks displayed data stale.
 
 ### Effective configuration
 

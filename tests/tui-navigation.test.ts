@@ -7,11 +7,11 @@ import type {
   TuiDialogSelectProps,
   TuiPluginApi,
 } from '@opencode-ai/plugin/tui';
-import { dialogNavigation } from '../extensions/tui/navigation.ts';
+import { type DialogDecoration, dialogNavigation } from '../extensions/tui/navigation.ts';
 
 type Dialog = TuiDialogSelectProps<string> | TuiDialogAlertProps | TuiDialogConfirmProps | TuiDialogPromptProps;
 
-function harness() {
+function harness(decoration?: DialogDecoration) {
   let current: Dialog | undefined;
   let closed: (() => void) | undefined;
   const controller = new AbortController();
@@ -47,7 +47,7 @@ function harness() {
   } as unknown as TuiPluginApi;
   return {
     api,
-    navigation: dialogNavigation(api),
+    navigation: dialogNavigation(api, decoration),
     controller,
     get current() {
       return current;
@@ -58,6 +58,26 @@ function harness() {
     },
   };
 }
+
+test('the close control clears every frame without restoring a parent', async () => {
+  let close: () => void = () => assert.fail('The close control was not rendered');
+  const view = harness((element, dismiss) => {
+    close = dismiss;
+    return element;
+  });
+  const nav = view.navigation;
+  nav.menu({ title: 'Workflow', options: [] }, true);
+  nav.menu({ title: 'Assignment', options: [] });
+  nav.alert({ title: 'Prompt', message: 'Original assignment' });
+  assert.equal(nav.canGoBack, true);
+  close();
+  await Promise.resolve();
+  assert.equal(view.current, undefined);
+  assert.equal(nav.canGoBack, false);
+  nav.menu({ title: 'Workflow reopened', options: [] }, true);
+  await view.escape();
+  assert.equal(view.current, undefined);
+});
 
 test("nested menus offer Back and restore the parent's selection and live options", async () => {
   const view = harness();

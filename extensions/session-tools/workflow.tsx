@@ -1,11 +1,13 @@
 /** @jsxImportSource @opentui/solid */
 import type { TuiPluginApi, TuiPluginModule } from '@opencode-ai/plugin/tui';
-import { For, Show, createSignal, onCleanup } from 'solid-js';
+import { type Accessor, For, type Setter, Show, createEffect, createSignal, onCleanup } from 'solid-js';
 import { activity, clean, stageReport } from './model.ts';
-import { type Action, currentSession, historyNote, ui } from './client.ts';
+import { type Action, currentSession } from './client.ts';
 import { type WorkflowData, type WorkflowRow, loadWorkflow } from './workflow-data.ts';
+import { type WorkflowAssignment, type WorkflowPhase, initialPrompt, phaseLabel } from './workflow-timeline.ts';
+import { PromptReader, readInitialPrompt, workflowUi } from './workflow-view.tsx';
 
-function feed(api: TuiPluginApi, sessionID: string) {
+function feed(api: TuiPluginApi, sessionID: string, fullHistory = true) {
   const [data, setData] = createSignal<WorkflowData>();
   const [failed, setFailed] = createSignal(false);
   const controller = new AbortController();
@@ -28,14 +30,16 @@ function feed(api: TuiPluginApi, sessionID: string) {
     busy = true;
     const client = api.client;
     try {
-      const result = await loadWorkflow(api, sessionID, controller.signal);
+      const result = await loadWorkflow(api, sessionID, controller.signal, fullHistory);
       // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Disposal can abort the signal while the request is pending.
       if (!controller.signal.aborted && client === api.client) {
         setData(result);
         setFailed(false);
       }
     } catch {
-      markFailed();
+      if (client === api.client) {
+        markFailed();
+      }
     } finally {
       busy = false;
       if (pending) {
@@ -94,42 +98,127 @@ function rowStatus(api: TuiPluginApi, data: WorkflowData, row: WorkflowRow): str
   return row.unavailable === true ? 'History unavailable' : activity(status, 0, 0);
 }
 
-function details(api: TuiPluginApi, view: ReturnType<typeof ui>, row: WorkflowRow) {
-  view.menu(clean(row.agent), [
+function assignmentStatus(api: TuiPluginApi, data: WorkflowData, assignment: WorkflowAssignment): string {
+  if (assignment.task?.background === true) {
+    if (assignment.latest === true && assignment.row !== undefined) {
+      const row = assignment.row;
+      const questions = api.state.session.question(row.session.id).length;
+      const permissions = api.state.session.permission(row.session.id).length;
+      const status = data.statuses[row.session.id];
+      if (questions > 0 || permissions > 0 || status?.type === 'busy' || status?.type === 'retry') {
+        return activity(status, questions, permissions);
+      }
+    }
+    if (assignment.task.state === 'error') {
+      return 'Delegation failed';
+    }
+    return assignment.task.state === 'completed' ? 'Background dispatch completed' : 'Delegation running';
+  }
+  if (assignment.task?.state === 'completed') {
+    return 'Delegation completed';
+  }
+  if (assignment.task?.state === 'error') {
+    return 'Delegation failed';
+  }
+  return assignment.row !== undefined ? rowStatus(api, data, assignment.row) : 'Session unavailable';
+}
+
+function details(api: TuiPluginApi, view: ReturnType<typeof workflowUi>, assignment: WorkflowAssignment) {
+  const row = assignment.row;
+  const task = assignment.task;
+  const agent = task?.agent ?? row?.agent ?? 'Subagent';
+  view.menu(clean(agent), [
+    {
+      title: task !== undefined ? 'View assignment prompt' : 'View initial prompt',
+      value: 'prompt',
+      description: 'Read the prompt in a large view',
+      run: () =>
+        view.navigation.show(() => (
+          <PromptReader
+            api={api}
+            view={view}
+            title={task !== undefined ? 'Assignment prompt' : 'Initial prompt'}
+            load={(signal) =>
+              task !== undefined ? Promise.resolve(task.prompt) : readInitialPrompt(api, assignment.sessionID, signal)
+            }
+          />
+        )),
+    },
     {
       title: 'Open conversation',
       value: 'open',
-      description: clean(row.session.title),
+      description: clean(row?.session.title),
       run: () => {
         view.navigation.close();
-        api.route.navigate('session', { sessionID: row.session.id });
+        api.route.navigate('session', { sessionID: assignment.sessionID });
       },
     },
     {
       title: 'Last recorded model',
       value: 'model',
-      description: `${row.model} · ${row.variant}`,
-      run: () => view.alert('Recorded model', `${row.model}\nVariant: ${row.variant}\nThis describes a recorded turn.`),
+      description: row !== undefined ? `${row.model} · ${row.variant}` : 'Session unavailable',
+      run: () =>
+        view.alert(
+          'Recorded model',
+          row !== undefined
+            ? `${row.model}\nVariant: ${row.variant}\nThis describes the latest recorded turn in the session.`
+            : 'No recorded model is available.',
+        ),
     },
     {
       title: 'Delegated task',
       value: 'task',
-      description: row.task?.description ?? 'Primary session',
-      run: () => view.alert('Delegated task', row.task?.description ?? clean(row.session.title)),
+      description: task?.description ?? 'No linked assignment',
+      run: () => view.alert('Delegated task', task?.description ?? clean(row?.session.title)),
     },
     {
       title: 'Timing',
       value: 'time',
       description:
-        row.task?.duration !== undefined
-          ? `${Math.round(row.task.duration / 1000)} seconds for the recorded delegation`
-          : `Session created ${new Date(row.session.time.created).toLocaleString()}`,
+        task?.duration !== undefined
+          ? `${Math.round(task.duration / 1000)} seconds ${task.background ? 'to dispatch this background assignment' : 'for this assignment'}`
+          : task !== undefined
+            ? `Assignment started ${new Date(task.started).toLocaleString()}`
+            : row !== undefined
+              ? `Session created ${new Date(row.session.time.created).toLocaleString()}`
+              : 'Timing unavailable',
     },
   ]);
 }
 
-function Dialog(props: { api: TuiPluginApi; sessionID: string; view: ReturnType<typeof ui> }) {
+interface WorkflowViewState {
+  expanded: Accessor<ReadonlyMap<string, boolean>>;
+  setExpanded: Setter<ReadonlyMap<string, boolean>>;
+  current?: string;
+  initialSessionID?: string;
+}
+
+function Dialog(props: {
+  api: TuiPluginApi;
+  sessionID: string;
+  view: ReturnType<typeof workflowUi>;
+  state: WorkflowViewState;
+}) {
   const source = feed(props.api, props.sessionID);
+  const isExpanded = (phase: WorkflowPhase, data: WorkflowData) =>
+    props.state.expanded().get(phase.id) ?? phase.id === data.phases.at(-1)?.id;
+  createEffect(() => {
+    const data = source.data();
+    const target = props.state.initialSessionID;
+    if (data === undefined || target === undefined) {
+      return;
+    }
+    props.state.initialSessionID = undefined;
+    const assignment = data.phases
+      .flatMap((phase) => phase.assignments)
+      .find((item) => item.sessionID === target && item.latest === true);
+    const row = data.rows.find((item) => item.session.id === target);
+    if (assignment !== undefined) {
+      details(props.api, props.view, assignment);
+    } else if (row !== undefined) {
+      details(props.api, props.view, { id: row.session.id, sessionID: target, depth: row.depth, row });
+    }
+  });
   const actions = (): Action[] => {
     const data = source.data();
     if (data === undefined) {
@@ -141,34 +230,55 @@ function Dialog(props: { api: TuiPluginApi; sessionID: string; view: ReturnType<
         },
       ];
     }
-    const report = stageReport(data.root.entries);
     return [
       {
-        title: report !== undefined ? `Reported stage: ${report.stage}` : 'No stage report in loaded history',
-        value: 'stage',
-        description: report?.summary ?? 'The lead reports stages through workflow_status.',
+        title: 'Initial request',
+        value: 'request',
+        description: clean(data.root.session.title),
         run: () =>
-          props.view.alert(
-            'Workflow stage',
-            report !== undefined
-              ? `${report.agent}: ${report.stage}\n${report.summary}\n${new Date(report.time).toLocaleString()}`
-              : 'No stage report is available. Idle status does not mean the workflow is complete.',
-          ),
+          props.view.navigation.show(() => (
+            <PromptReader
+              api={props.api}
+              view={props.view}
+              title="Initial request"
+              load={() => Promise.resolve(initialPrompt(data.root.entries))}
+            />
+          )),
       },
-      ...data.rows.map((row) => ({
-        title: `${'  '.repeat(row.depth)}${row.agent}`,
-        value: row.session.id,
-        description: row.task?.description ?? clean(row.session.title),
-        footer: rowStatus(props.api, data, row),
-        category: 'Sessions',
-        run: () => details(props.api, props.view, row),
-      })),
+      ...data.phases.flatMap((phase): Action[] => [
+        {
+          title: `${isExpanded(phase, data) ? '▾' : '▸'} ${phaseLabel(phase)}`,
+          value: `phase:${phase.id}`,
+          description: phase.summary,
+          footer: `${phase.assignments.length} assignments${phase.id === data.phases.at(-1)?.id ? ' · current' : ''}`,
+          run: () => {
+            props.state.setExpanded((current) => new Map(current).set(phase.id, !isExpanded(phase, data)));
+          },
+        },
+        ...(isExpanded(phase, data)
+          ? phase.assignments.map((assignment): Action => ({
+              title: `${'  '.repeat(assignment.depth)}${assignment.task?.agent ?? assignment.row?.agent ?? 'Subagent'}`,
+              value: `assignment:${assignment.id}`,
+              description: assignment.task?.description ?? clean(assignment.row?.session.title),
+              footer: assignmentStatus(props.api, data, assignment),
+              run: () => details(props.api, props.view, assignment),
+            }))
+          : []),
+      ]),
+      ...data.rows
+        .filter((row) => row.depth === 0)
+        .map((row): Action => ({
+          title: `Lead: ${row.agent}`,
+          value: `lead:${row.session.id}`,
+          footer: rowStatus(props.api, data, row),
+          run: () => details(props.api, props.view, { id: row.session.id, sessionID: row.session.id, depth: 0, row }),
+        })),
       {
         title: 'Refresh',
         value: 'refresh',
         description: source.failed()
           ? 'Refresh failed; displayed data may be stale.'
-          : `${historyNote(data.root)}${data.partial ? ' Some child sessions or statuses are unavailable.' : ''}`,
+          : `Recorded phase history.${data.partial ? ' Some child sessions or statuses are unavailable.' : ''}`,
         run: source.refresh,
       },
     ];
@@ -176,10 +286,12 @@ function Dialog(props: { api: TuiPluginApi; sessionID: string; view: ReturnType<
   return props.view.navigation.select({
     title: 'Live workflow',
     placeholder: 'Find an agent or task…',
+    current: props.state.current,
     get options() {
       return actions();
     },
     onSelect: (option) => {
+      props.state.current = option.value;
       // eslint-disable-next-line @typescript-eslint/no-floating-promises -- ui.run catches action failures and reports them in a toast.
       void props.view.run(() =>
         actions()
@@ -187,11 +299,14 @@ function Dialog(props: { api: TuiPluginApi; sessionID: string; view: ReturnType<
           ?.run?.(),
       );
     },
+    onMove: (option) => {
+      props.state.current = option.value;
+    },
   })();
 }
 
 function Sidebar(props: { api: TuiPluginApi; sessionID: string; open: (row?: WorkflowRow) => void }) {
-  const source = feed(props.api, props.sessionID);
+  const source = feed(props.api, props.sessionID, false);
   const report = () => {
     const data = source.data();
     return data !== undefined ? stageReport(data.root.entries) : undefined;
@@ -203,6 +318,7 @@ function Sidebar(props: { api: TuiPluginApi; sessionID: string; open: (row?: Wor
         Workflow
       </text>
       <text fg={theme().text}>{report()?.stage ?? 'Stage not reported'}</text>
+      <Show when={report()?.summary}>{(summary) => <text fg={theme().textMuted}>{summary()}</text>}</Show>
       <Show when={source.failed()}>
         <text fg={theme().warning}>Refresh failed; data may be stale.</text>
       </Show>
@@ -219,9 +335,6 @@ function Sidebar(props: { api: TuiPluginApi; sessionID: string; open: (row?: Wor
           );
         }}
       </For>
-      <text fg={theme().textMuted} onMouseUp={() => props.open()}>
-        /workflow-panel · expand
-      </text>
     </box>
   );
 }
@@ -230,12 +343,11 @@ export default {
   id: 'workflow-panel',
   // eslint-disable-next-line @typescript-eslint/require-await -- OpenCode requires Promise-returning TUI initialization hooks.
   tui: async (api) => {
-    const view = ui(api);
+    const view = workflowUi(api);
     const open = (sessionID = currentSession(api), row?: WorkflowRow) => {
-      view.navigation.show(() => <Dialog api={api} view={view} sessionID={sessionID} />, true);
-      if (row !== undefined) {
-        details(api, view, row);
-      }
+      const [expanded, setExpanded] = createSignal<ReadonlyMap<string, boolean>>(new Map());
+      const state: WorkflowViewState = { expanded, setExpanded, initialSessionID: row?.session.id };
+      view.navigation.show(() => <Dialog api={api} view={view} sessionID={sessionID} state={state} />, true);
     };
     view.command('workflow-panel.open', 'Live workflow', 'workflow-panel', 'Session', () => open());
     api.slots.register({
