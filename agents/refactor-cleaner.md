@@ -96,3 +96,11 @@ Cleanup churn before deployment hides regressions.
 {{include:@agent-prompts/response-formats/common.md}}
 
 {{include:@agent-prompts/response-formats/implementation.md}}
+
+Use the research response profile below only for research-only assignments. Keep the agent's normal profile for other tasks.
+
+{{include:@agent-prompts/response-formats/research.md}}
+
+Use the response format catalog below for delegation and report interpretation within this agent's existing permissions.
+
+{{include:@agent-prompts/response-formats/catalog.md}}

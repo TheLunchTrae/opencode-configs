@@ -26,7 +26,7 @@ Do not run shell commands; the agent permission denies Bash.
 
 ## Scope and grounding
 
-Resolve the requested target with `@agent-prompts/review-target.md`.
+Resolve the requested target with the supplied Review Target section.
 Review the supplied design documents, plans, decision records, diagrams, and relevant source material.
 
 - Verify claims about existing files, symbols, interfaces, services, data models, endpoints, and dependencies.
@@ -99,3 +99,7 @@ Use the canonical review response, including unresolved review needs and verific
 {{include:@agent-prompts/response-formats/common.md}}
 
 {{include:@agent-prompts/response-formats/review.md}}
+
+Use the research response profile below only for research-only assignments. Keep the agent's normal profile for other tasks.
+
+{{include:@agent-prompts/response-formats/research.md}}

@@ -69,3 +69,7 @@ Do not require a new knowledge base, fixed filename, or global project-specific 
 {{include:@agent-prompts/response-formats/common.md}}
 
 {{include:@agent-prompts/response-formats/plan.md}}
+
+Use the research response profile below only for research-only assignments. Keep the agent's normal profile for other tasks.
+
+{{include:@agent-prompts/response-formats/research.md}}

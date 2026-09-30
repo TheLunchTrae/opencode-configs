@@ -1,6 +1,6 @@
 # Implementation stage
 
-Use only under the active lead's approved implementation scope and `@agent-prompts/lead-contract.md`.
+Use only under the active lead's approved implementation scope and the supplied Lead contract.
 
 Dispatch the matching specialist under `@agent-references/delegation-contract.md` with the reviewed, approved plan,
 rationale, acceptance examples, file ownership, dependencies, existing checks, verification limits,

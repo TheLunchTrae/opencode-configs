@@ -45,3 +45,5 @@ A plan or review verdict is not implementation approval. Retain user approval an
 for `implementation-lead` or `workflow-lead`. Ask the user to select that primary agent for execution.
 Do not invoke it as a child or implement yourself.
 For an authorized handoff, use `checkpoint` and return it in chat when file writing is blocked.
+
+{{include:@agent-prompts/response-formats/delegated.md}}

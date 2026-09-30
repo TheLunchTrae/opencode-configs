@@ -137,6 +137,10 @@ function operation(text: string): string {
   return SOURCE_REFERENCE.test(text) ? `{{include:${text}}}` : text;
 }
 
+export async function expandIncludes(text: string, sources: Record<string, string>): Promise<string> {
+  return expand(text, { sources, includes: 0 }, []);
+}
+
 export async function composePrompts(
   agents: Record<string, AgentSettings>,
   settings: GroupOptions,

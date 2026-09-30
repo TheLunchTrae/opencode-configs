@@ -7,8 +7,9 @@ description: Establish comparable performance measurements and test one bottlene
 
 Work within the performance assignment, specialty, and permissions. Retain planning, approval, security review,
 and correctness requirements. This skill grants no delegation.
-Read `@agent-prompts/response-formats/common.md` and `@agent-prompts/response-formats/performance.md`
-for the canonical performance response.
+Use the supplied Common task response envelope and Performance response for performance work.
+For research-only assignments or explicitly assigned check execution without edits, select the supplied Research
+response instead. Apply only the selected profile's Result sections.
 Apply `@agent-references/verification-scope.md` before measurement discovery or execution. Honor excluded measurements
 without requiring a new measurement plan. Keep any approved unmeasured change distinct from a demonstrated improvement.
 
@@ -29,3 +30,9 @@ Do not invent an improvement percentage, significance claim, or fixed speedup qu
 Report unsafe or unavailable required measurement as blocked, with a proposed in-scope measurement plan.
 Use common task-status rules; a measurement-plan assignment can be complete without execution.
 Preserve original benchmark evidence. Do not delete user work or alter the acceptance target to hide a regression.
+
+{{include:@agent-prompts/response-formats/common.md}}
+
+{{include:@agent-prompts/response-formats/performance.md}}
+
+{{include:@agent-prompts/response-formats/research.md}}

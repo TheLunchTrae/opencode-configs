@@ -9,7 +9,12 @@ Apply only the assigned portion within scope, authorization, review requirements
 This skill does not expand roles, permissions, or read-only assignments.
 Read `@agent-references/verification-scope.md` before discovery. Apply its limits separately to coverage design,
 test generation, execution, and infrastructure changes throughout this procedure.
-Before writing tests, read `@agent-prompts/implementation-standards.md` and applicable project and language guidance.
+Before writing tests, read applicable project and language guidance and apply the implementation guidance below.
+The following implementation guidance applies only when writing tests within approved scope:
+
+{{include:@agent-prompts/implementation-standards.md}}
+
+The preceding implementation guidance does not authorize edits during design-only or inspection assignments.
 Read `@agent-references/testing-standards.md` for coverage design and authoring decisions.
 
 Build executable coverage for established behavior. Use `test-first` when implementing a new behavior or fixing a bug.
@@ -96,10 +101,8 @@ Resolve assigned findings within approved scope and budget.
 
 ## Hand off and reuse
 
-Read `@agent-prompts/response-formats/common.md` for the task response envelope.
-For design-only task responses, read and use `@agent-prompts/response-formats/plan.md`.
-After test implementation, read and use `@agent-prompts/response-formats/implementation.md`.
-For inspection or check execution without edits, read and use `@agent-prompts/response-formats/research.md`.
+Use the common task-response envelope below. Select the Plan response for design-only tasks, the Implementation
+response after test implementation, or the Research response for inspection or check execution without edits.
 Include the coverage map under the profile's acceptance or coverage section.
 
 Update existing test documentation with prerequisites, setup, commands, cleanup, covered contracts, and known limits.
@@ -112,3 +115,21 @@ Update expectations only for a reviewed requirement change, never simply because
 Rerun affected checks on current source and environment. Passing baselines verify only behavior
 exercised by their assertions.
 Report uncovered changes and stale evidence; do not claim full verification.
+
+## Task response envelope
+
+{{include:@agent-prompts/response-formats/common.md}}
+
+## Task response profiles
+
+For design-only tasks, use this profile under `Result`:
+
+{{include:@agent-prompts/response-formats/plan.md}}
+
+After test implementation, use this profile under `Result`:
+
+{{include:@agent-prompts/response-formats/implementation.md}}
+
+For inspection or check execution without edits, use this profile under `Result`:
+
+{{include:@agent-prompts/response-formats/research.md}}

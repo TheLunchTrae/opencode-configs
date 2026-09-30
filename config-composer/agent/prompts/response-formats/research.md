@@ -1,5 +1,7 @@
 # Research response
 
+Use this profile only for research-only assignments or explicitly assigned check execution without edits.
+Its research restrictions apply to those assignments. Other tasks use the agent's normal response profile and permissions.
 Use the common envelope with these sections under `Result`:
 
 ### Answer

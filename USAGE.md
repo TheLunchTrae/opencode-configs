@@ -167,7 +167,7 @@ Config Composer settings belong in the dedicated file.
 Native settings and built-in agent overrides stay in `opencode.jsonc`.
 The top-level `agent` object owns agent groups, model presets, and prompt settings.
 Shared source directories remain at the top level. The `command` and `skill` objects are reserved. Leave them empty.
-This version composes agent prompts and agent model defaults.
+This version composes agent prompts and agent model defaults, and resolves inline includes during native skill loading.
 The `$schema` field points to the schema installed in `extensions/config-composer/`.
 Group and preset names use lowercase kebab-case, start with a letter, and contain at most 64 characters.
 Use a model and variant supported by your provider. Set the referenced native slots before assigning their references.
@@ -261,9 +261,9 @@ Map shared source directories in `config-composer.jsonc`:
 
 Source directories resolve from the Config Composer settings file,
 independently of the extension's installation directory.
-Source aliases are independent mappings. A Config Composer source does not automatically register an OpenCode reference.
+Source aliases belong to Composer. They identify include inputs without registering an OpenCode reference.
 Composition fragments live in `config-composer/agent/prompts/`.
-The native hidden `agent-prompts` reference points there for task-specific reads and separately installed skills.
+Use `agent-prompts` only in include directives or configured prompt fragments.
 Conditional guidance lives in `references/agent/`, registered as the hidden `agent-references` reference.
 
 Declare shared guidance directly in an agent's Markdown body to make its fragments and insertion points visible:
@@ -317,7 +317,7 @@ individual exceptions. Configure these additional layers in the dedicated file:
 Merge these fields with your existing `agent` settings. Each `prepend` and `append` field is an ordered string array.
 A whole string such as `@agent-prompts/reviewer-standards.md` includes that file. Other strings supply literal text with
 explicit include directives. Source files must be regular UTF-8 `.md` or `.txt` files within their mapped directories.
-Missing files, invalid sources, escaping paths, and include cycles fail configuration loading
+Missing files, invalid sources, escaping paths, and include cycles fail agent configuration or native skill loading
 instead of omitting guidance.
 
 The composed prompt has this order:
@@ -340,12 +340,18 @@ preserving OpenCode's native prompt selection.
 The shipped agent bodies include specialist conduct, language guidance, and response profiles explicitly.
 The dedicated configuration contains no default or group prompt fragments. Its prompt overrides retain the four
 primary leads' inheritance opt-outs. These leads include their shared lead contract explicitly.
-Focused leads include unconditional stage guidance. The workflow lead retains conditional stage reads.
+Leads include their stage guidance in their bodies and apply it when its stated stage or task conditions are met.
 Universal and conditional coding, documentation, and verification reads stay in `AGENTS.md`.
 
-Shared Markdown files remain readable on their own.
-Standalone skill consumers must explicitly read their required shared guidance.
-Include those dependencies when installing a skill.
+Skill bodies can use the same explicit include directives. Config Composer expands them during native skill loading,
+before OpenCode returns the loaded content to the agent. This expansion does not depend on that agent's prompt or group.
+Truncated native skill content fails loading. Reduce its size before retrying.
+Normal skill permissions and the selected agent's role still apply.
+The top-level `skill` and `command` objects remain empty. Skill body includes do not add group settings for those types.
+
+Install skill templates with Config Composer, its settings, and their configured source files.
+Load them through OpenCode's native skill loader. A direct Read or a raw file copy does not resolve include directives.
+
 Composed agents receive their configured guidance before the first request. Invalid includes fail configuration loading.
 Task-specific conditional reads still apply when their stated conditions are met.
 Restart or explicitly reload after prompt changes. The [context inspector](#context-evidence) does not show exact assembled
@@ -661,6 +667,8 @@ Initialization writes only to the work repository and does not publish the gener
 
 Agents select reusable procedures as needed. You do not need to invoke a skill to start a workflow stage.
 Naming a skill never expands the current agent's role, permissions, or approval scope.
+Skills with include directives use Config Composer during native skill loading. Include the plugin, settings, and
+configured source files when installing them separately.
 
 | Skill | Purpose |
 | --- | --- |

@@ -44,7 +44,7 @@ Ordinary implementation requests start this workflow without a command or entry-
 
 {{include:@agent-prompts/review-criteria.md}}
 
-Use the stage references below when that stage applies. They supply shared procedures, not additional authority.
+Apply the supplied stage guidance only when that stage applies. It grants no additional authority.
 
 ## Intake and route
 
@@ -76,10 +76,10 @@ Use `code-learning` for explanations when useful. Discussion or agent selection 
 
 ## Progress through the task
 
-1. Use `@agent-prompts/planning-stage.md` to coordinate design, planning, and independent design reviews.
+1. Use the supplied Planning stage to coordinate design, planning, and independent design reviews.
 2. Present the reviewed plan and obtain the user's implementation approval under the lead contract.
-3. Use `@agent-prompts/implementation-stage.md` for approved implementation, integration, and affected documentation.
-4. Use `@agent-prompts/review-stage.md` for implementation reviews and `@agent-references/completion.md` for verification
+3. Use the supplied Implementation stage for approved implementation, integration, and affected documentation.
+4. Use the supplied Review stage for implementation reviews and `@agent-references/completion.md` for verification
    and final handoff. Return required repairs to implementation within the approved scope and remaining budget.
 5. Refresh affected reviews and checks after changes. Complete only when required evidence is current; report blockers.
 
@@ -91,3 +91,17 @@ Honor narrower stopping points such as "design only" or "implement only phase 1 
 
 Delegate directly to permitted specialists. Do not invoke other leads; they are alternative primary entrypoints
 using these procedures. Own integration, escalation, and user-visible conclusions.
+
+## Applicable stage guidance
+
+Apply each following stage only within the task's current scope and stopping point.
+Planning does not authorize implementation. Non-trivial implementation requires the reviewed plan and user approval.
+Review does not authorize repairs outside an approved implementation scope.
+
+{{include:@agent-prompts/planning-stage.md}}
+
+{{include:@agent-prompts/implementation-stage.md}}
+
+{{include:@agent-prompts/review-stage.md}}
+
+{{include:@agent-prompts/response-formats/delegated.md}}

@@ -54,3 +54,13 @@ it can block readiness.
 
 For requested fixes, identify scope for `implementation-lead` with a reviewed, approved plan, or `workflow-lead` for the
 complete process. Do not switch scope or invoke another lead as a child.
+
+## Applicable design review guidance
+
+Apply the following requirements only when assessing a supplied design or its existing reviews.
+They do not authorize designing replacements, implementation, repairs, or shipping.
+Return findings within the requested review scope and stopping point.
+
+{{include:@agent-prompts/design-review.md}}
+
+{{include:@agent-prompts/response-formats/delegated.md}}
