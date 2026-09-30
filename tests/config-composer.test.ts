@@ -22,7 +22,7 @@ import {
   resolveChoice,
   validateChoice,
 } from '../extensions/config-composer/settings.ts';
-import { AgentGroupsPlugin } from '../extensions/config-composer/server.ts';
+import { ConfigComposerPlugin } from '../extensions/config-composer/server.ts';
 import {
   groupNames,
   loadSnapshot,
@@ -57,7 +57,7 @@ permission:
 ${prompt}`;
 
 export async function fixture(t: TestContext): Promise<string> {
-  const root = await mkdtemp(join(tmpdir(), 'agent-groups-'));
+  const root = await mkdtemp(join(tmpdir(), 'config-composer-'));
   t.after(() => rm(root, { recursive: true, force: true }));
   await mkdir(join(root, 'agents', 'nested'), { recursive: true });
   await writeFile(join(root, 'opencode.jsonc'), config);
@@ -266,7 +266,7 @@ test('provider catalog exposes configured models and supported variants', () => 
 });
 
 test('server hook strips group metadata and aligns built-in variant fallbacks', async () => {
-  const hooks = await AgentGroupsPlugin({} as PluginInput, { groups });
+  const hooks = await ConfigComposerPlugin({} as PluginInput, { groups });
   const config = {
     agent: {
       title: { options: { agent_group: 'developers', reasoningEffort: 'old' } },

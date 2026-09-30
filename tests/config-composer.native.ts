@@ -15,7 +15,7 @@ test(
   'OpenCode composes ordered groups and prompts from dedicated settings and dispatches changes after reload',
   { timeout: 120_000 },
   async (t) => {
-    const root = await mkdtemp(join(tmpdir(), 'opencode-groups-native-'));
+    const root = await mkdtemp(join(tmpdir(), 'opencode-config-composer-native-'));
     const runtime: { child?: ChildProcess; exited?: Promise<unknown> } = {};
     t.after(async () => {
       runtime.child?.kill();
