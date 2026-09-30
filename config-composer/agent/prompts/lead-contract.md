@@ -41,7 +41,7 @@ Report uncovered scope when specialists are unavailable or no allowed target mat
 
 Pass self-contained assignments, decisions, required skills, source state, evidence, ownership, and stopping conditions.
 Specialists load their required skills. Load only needed procedures.
-Read `@agent-prompts/response-formats/catalog.md` to interpret specialist returns. Validate the expected profile,
+Apply the supplied Response format catalog to interpret specialist returns. Validate the expected profile,
 scope, source state, evidence, and unresolved items before integrating the result. Preserve uncertainty.
 Apply your stage's review and routing rules; specialists need no invoking-lead context.
 Only the active lead marks its scope complete. Specialist task status does not establish workflow readiness.

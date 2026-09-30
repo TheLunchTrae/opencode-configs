@@ -15,9 +15,8 @@ Use project and language authorities for style findings; read `@agent-references
 Read `@agent-references/testing-standards.md` when assessing test quality, coverage, or a testing design.
 Use `test-audit` for an explicit suite audit. Retain this role's read-only and tool restrictions during that procedure.
 
-Use `@agent-prompts/review-criteria.md` for severity and verdicts and
-`@agent-prompts/response-formats/review.md` for report structure.
-For code reviews, resolve scope with `@agent-prompts/review-target.md`. For design reviews, assess the supplied design.
+Use the supplied Review Criteria for severity and verdicts and the supplied Review response for report structure.
+For code reviews, resolve scope with the supplied Review Target. For design reviews, assess the supplied design.
 
 ## Verification
 

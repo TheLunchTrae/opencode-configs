@@ -63,11 +63,42 @@ Report any unavailable validation without claiming that the cleanup is verified.
 
 ## Return the assessment
 
-Read `@agent-prompts/response-formats/common.md` for the task response envelope.
-For assessment, read `@agent-prompts/reviewer-standards.md`, `@agent-prompts/review-target.md`,
-and `@agent-prompts/review-criteria.md`. Read and use `@agent-prompts/response-formats/review.md`.
-For approved cleanup, read and use `@agent-prompts/response-formats/implementation.md`.
+Use the common task-response envelope below. For assessment, apply the assessment guidance and Review response.
+For approved cleanup, use the Implementation response. Use the Research response only for research-only assignments
+or explicitly assigned check execution without edits.
 Put candidate decisions, evidence, coverage gaps, and uncertainty in the existing profile.
 Separate inspected scope from unassessed suites. Report valuable apparent false positives, preserved contracts,
 test-support changes, executed checks, and necessary follow-up.
 Keep plans and execution logs in conversation or an authorized task location. An audit does not authorize shipping.
+
+## Task response envelope
+
+{{include:@agent-prompts/response-formats/common.md}}
+
+## Assessment guidance
+
+The following Reviewer Standards, Review Target, and Review Criteria apply only while assessing the requested suite.
+Their read-only conduct does not apply to approved cleanup. Cleanup still requires the assigned role's edit permissions
+and reviewed authorization.
+
+{{include:@agent-prompts/reviewer-standards.md}}
+
+{{include:@agent-prompts/review-target.md}}
+
+{{include:@agent-prompts/review-criteria.md}}
+
+The assessment-only guidance above does not grant edit authority or restrict separately approved cleanup.
+
+## Task response profiles
+
+For suite assessments, use this profile under `Result`:
+
+{{include:@agent-prompts/response-formats/review.md}}
+
+For approved cleanup, use this profile under `Result`:
+
+{{include:@agent-prompts/response-formats/implementation.md}}
+
+For research-only assignments or explicitly assigned check execution without edits, use this profile under `Result`:
+
+{{include:@agent-prompts/response-formats/research.md}}

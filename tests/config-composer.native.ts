@@ -32,6 +32,7 @@ test(
     const repo = fileURLToPath(new URL('../', import.meta.url));
     await mkdir(join(configRoot, 'agents'), { recursive: true });
     await mkdir(join(configRoot, 'shared-prompts'));
+    await mkdir(join(configRoot, 'skills/included-skill'), { recursive: true });
     await mkdir(project);
     await cp(join(repo, 'extensions'), join(configRoot, 'extensions'), { recursive: true });
     const dependencies = await realpath(join(repo, 'node_modules'));
@@ -51,6 +52,14 @@ test(
         assert.ok(parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed));
         const body = parsed as Record<string, unknown>;
         requests.push(body);
+        const skillRequested = JSON.stringify(body.messages).includes('Load included-skill now.');
+        const toolReturned =
+          Array.isArray(body.messages) &&
+          body.messages.some(
+            (message: unknown) =>
+              message !== null && typeof message === 'object' && 'role' in message && message.role === 'tool',
+          );
+        const callSkill = skillRequested && !toolReturned;
         const base = { id: 'synthetic-response', model: body.model, created: 1 };
         const streaming = Boolean(body.stream);
         if (streaming) {
@@ -59,14 +68,32 @@ test(
             `data: ${JSON.stringify({
               ...base,
               object: 'chat.completion.chunk',
-              choices: [{ index: 0, delta: { role: 'assistant', content: 'verified' }, finish_reason: null }],
+              choices: [
+                {
+                  index: 0,
+                  delta: callSkill
+                    ? {
+                        role: 'assistant',
+                        tool_calls: [
+                          {
+                            index: 0,
+                            id: 'fixture-skill',
+                            type: 'function',
+                            function: { name: 'skill', arguments: JSON.stringify({ name: 'included-skill' }) },
+                          },
+                        ],
+                      }
+                    : { role: 'assistant', content: 'verified' },
+                  finish_reason: null,
+                },
+              ],
             })}\n\n`,
           );
           response.end(
             `data: ${JSON.stringify({
               ...base,
               object: 'chat.completion.chunk',
-              choices: [{ index: 0, delta: {}, finish_reason: 'stop' }],
+              choices: [{ index: 0, delta: {}, finish_reason: callSkill ? 'tool_calls' : 'stop' }],
               usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
             })}\n\ndata: [DONE]\n\n`,
           );
@@ -122,7 +149,7 @@ test(
       },
     };
     const composer = {
-      sourceDirectories: { shared: './shared-prompts' },
+      sourceDirectories: { shared: './shared-prompts', 'agent-prompts': './shared-prompts' },
       agent: {
         modelPresets: { balanced: { model: 'fixture/alpha', variant: 'low' } },
         prompts: { defaults: { append: ['{{include:@shared/default.md}}'] } },
@@ -142,6 +169,14 @@ test(
     );
     await writeFile(join(configRoot, 'shared-prompts/default.md'), 'GLOBAL_GUIDANCE');
     await writeFile(join(configRoot, 'shared-prompts/worker.md'), 'INITIAL_WORKER_GUIDANCE');
+    await writeFile(join(configRoot, 'shared-prompts/skill.md'), 'SKILL_GUIDANCE {{include:@shared/skill-inner.md}}');
+    await writeFile(join(configRoot, 'shared-prompts/skill-inner.md'), 'NESTED_SKILL_GUIDANCE');
+    await writeFile(
+      join(configRoot, 'skills/included-skill/SKILL.md'),
+      '---\nname: included-skill\ndescription: Synthetic skill for native composition.\n---\n' +
+        'SKILL_BODY_BEFORE\n{{include:@agent-prompts/skill.md}}\nSKILL_BODY_AFTER\n',
+    );
+    await writeFile(join(configRoot, 'skills/included-skill/notes.txt'), 'Companion resource');
     await writeFile(
       join(configRoot, 'opencode.jsonc'),
       `// Native integration fixture\n${JSON.stringify(config, null, 2)}\n`,
@@ -227,7 +262,17 @@ test(
     }
     interface Message {
       info: { modelID: string; error?: unknown };
-      parts: { type: string; text?: string }[];
+      parts: {
+        type: string;
+        text?: string;
+        tool?: string;
+        state?: {
+          status: string;
+          title?: string;
+          output?: string;
+          metadata?: { name?: string; dir?: string; truncated?: boolean };
+        };
+      }[];
     }
     const agents = await api<Agent[]>('/agent');
     const worker = agents.find((agent) => agent.name === 'worker');
@@ -264,6 +309,42 @@ test(
     const beforeReload = requests.find((body) => JSON.stringify(body).includes('INITIAL_WORKER_GUIDANCE'));
     assert.ok(beforeReload !== undefined, 'send expanded prompt text to the provider');
     assert.ok(!JSON.stringify(beforeReload).includes('{{include:'), 'never send unresolved directives');
+    const nativeConfig = await api<{ references?: Record<string, unknown> }>('/config');
+    assert.equal(nativeConfig.references?.['agent-prompts'], undefined, 'sources are not native prompt references');
+    const skillSession = await api<{ id: string }>('/session', { title: 'Native skill composition check' });
+    const skillResult = await api<Message>(`/session/${skillSession.id}/message`, {
+      agent: 'worker',
+      parts: [{ type: 'text', text: 'Load included-skill now.' }],
+    });
+    assert.equal(skillResult.info.error, undefined, JSON.stringify(skillResult.info.error));
+    assert.ok(skillResult.parts.some((part) => part.type === 'text' && part.text === 'verified'));
+    const skillMessages = await api<Message[]>(`/session/${skillSession.id}/message`);
+    const skillPart = skillMessages.flatMap((message) => message.parts).find((part) => part.tool === 'skill');
+    assert.equal(skillPart?.state?.status, 'completed', 'run the native skill tool before returning to the model');
+    assert.equal(skillPart.state.title, 'Loaded skill: included-skill');
+    assert.deepEqual(skillPart.state.metadata, {
+      name: 'included-skill',
+      dir: join(configRoot, 'skills/included-skill'),
+      truncated: false,
+    });
+    const skillOutput = skillPart.state.output;
+    assert.ok(typeof skillOutput === 'string');
+    assert.ok(skillOutput.startsWith('<skill_content name="included-skill">\n# Skill: included-skill\n\n'));
+    assert.ok(skillOutput.includes('SKILL_BODY_BEFORE\nSKILL_GUIDANCE NESTED_SKILL_GUIDANCE\nSKILL_BODY_AFTER'));
+    assert.ok(skillOutput.includes('Base directory for this skill:'));
+    assert.ok(skillOutput.includes('<skill_files>'));
+    assert.ok(skillOutput.includes(join(configRoot, 'skills/included-skill/notes.txt')));
+    assert.ok(skillOutput.endsWith('</skill_content>'));
+    assert.ok(!skillOutput.includes('{{include:'), 'expand directives in the native skill result');
+    assert.ok(!skillOutput.includes('GLOBAL_GUIDANCE'), 'agent prompt defaults do not wrap skill output');
+    const skillRequest = requests.find((body) => JSON.stringify(body.messages).includes('<skill_content'));
+    assert.ok(skillRequest !== undefined && Array.isArray(skillRequest.messages));
+    const toolMessage = skillRequest.messages.find(
+      (message: unknown) =>
+        message !== null && typeof message === 'object' && 'role' in message && message.role === 'tool',
+    ) as { content?: unknown } | undefined;
+    assert.equal(toolMessage?.content, skillOutput, 'the next provider request receives the native expanded result');
+    assert.ok(!JSON.stringify(skillRequest).includes('{{include:'), 'never send raw skill directives to the provider');
     assert.equal((await request('main-follower')).info.modelID, 'beta');
     assert.equal((await request('small-follower')).info.modelID, 'beta');
     await savePlan(

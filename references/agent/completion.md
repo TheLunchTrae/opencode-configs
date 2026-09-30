@@ -1,6 +1,6 @@
 # Completion and final assessment
 
-Apply within the active primary lead's role and `@agent-prompts/lead-contract.md`.
+Apply within the active primary lead's role and the supplied Lead contract.
 Workflow and implementation leads use this before final handoff. Review leads use it for explicitly requested final
 assessment and report repairs without executing them.
 
@@ -11,7 +11,7 @@ assessment and report repairs without executing them.
    If all agent verification is excluded, report that limitation without capability discovery or
    execution. Return in-scope fixes or coverage gaps to authorized implementation. Verification generates evidence,
    not tests or repairs.
-4. Collect required reviews under `@agent-prompts/review-stage.md`. Reuse current findings.
+4. Collect required reviews under the supplied Review stage. Reuse current findings.
    Supply current source, acceptance criteria, context, and check evidence. State missing or failing CI explicitly.
 5. Within an approved implementation scope and remaining budget, resolve blocking findings and refresh affected checks
    and reviews. A material scope change needs design review and renewed approval. A review lead reports the blocker.

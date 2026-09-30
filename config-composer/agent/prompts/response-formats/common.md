@@ -33,9 +33,8 @@ Choose one task status:
 
 Separate task completion, review verdicts, and check results. Completed reviews can find blocking defects; completed
 checks can fail. Missing required checks are not passes. Task status never establishes approval or readiness.
-For a research-only assignment, read `@agent-prompts/response-formats/research.md` and use it for `Result`, even when
-the usual profile covers edits. Research remains bounded by the assigned specialty and permissions; it does not authorize
-edits.
+For a research-only assignment, use the supplied Research response for `Result`, even when the usual profile covers edits.
+Research remains bounded by the assigned specialty and permissions; it does not authorize edits.
 
 ## Evidence requirements
 

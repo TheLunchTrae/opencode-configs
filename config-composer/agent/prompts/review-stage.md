@@ -1,8 +1,8 @@
 # Review stage
 
-Use within the active lead's scope and `@agent-prompts/lead-contract.md`.
-When interpreting findings, apply `@agent-prompts/review-criteria.md`.
-When resolving scope, apply `@agent-prompts/review-target.md`.
+Use within the active lead's scope and the supplied Lead contract.
+When interpreting findings, apply the supplied Review Criteria.
+When resolving scope, apply the supplied Review Target.
 
 ## Required implementation reviews
 
@@ -11,14 +11,14 @@ Obtain matching language review for TypeScript/JavaScript, Go, C#, or PHP change
 For structural changes, dispatch `architecture-reviewer`.
 Use `security-reviewer` for authentication, authorization, user input, database queries, file operations, external APIs,
 cryptography, payments, or sensitive data. Arrange general, architecture, and security reviewers as sibling tasks.
-For design assessments, apply `@agent-prompts/planning-stage.md`'s review requirements.
+For design assessments, apply the supplied Independent design review requirements.
 
 Supply current source or diff, intended behavior, surrounding context, verification limits, and check evidence.
 Review can start while CI is missing, pending, or failing. State those limits; unavailable evidence is not a pass.
 Reuse current complete findings for the same scope, including language evidence collected by a review coordinator.
 Delegate only uncovered scope. Reuse identical reviews; refresh those affected by changes.
 Validate citations, source currency, scope, uncertainty, and findings before incorporating them.
-Use `@agent-prompts/response-formats/review.md` for the expected return. Require a complete assessment and `PASSED`
+Use the supplied Review response for the expected return. Require a complete assessment and `PASSED`
 verdict for each required review. `NOT ASSESSED`, unfinished scope, and missing reports do not satisfy that requirement.
 Resolve verification gaps within the agreed scope. Preserve accepted limitations without reopening them as blockers.
 Even a complete, passed review does not prove unrun checks.

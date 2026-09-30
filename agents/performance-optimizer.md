@@ -57,3 +57,7 @@ Leaf agent: do not delegate or approve your own work.
 {{include:@agent-prompts/response-formats/common.md}}
 
 {{include:@agent-prompts/response-formats/performance.md}}
+
+Use the research response profile below only for research-only assignments. Keep the agent's normal profile for other tasks.
+
+{{include:@agent-prompts/response-formats/research.md}}

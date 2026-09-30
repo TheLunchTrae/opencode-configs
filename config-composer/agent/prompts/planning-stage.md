@@ -1,6 +1,6 @@
 # Planning stage
 
-Use within the active lead's scope and `@agent-prompts/lead-contract.md`.
+Use within the active lead's scope and the supplied Lead contract.
 
 Inspect project instructions, manifests, adjacent implementations, and checks within the agreed verification scope.
 Reuse current requirements and decisions before asking questions.
@@ -22,15 +22,7 @@ Use `project-standards` only for deliberate tooling adoption.
 Keep optional improvements separate from blocking prerequisites.
 Missing docs alone require no new file and do not block implementation when verified source supplies context.
 
-## Independent design review
-
-Send every implementation design to `code-reviewer`. For architecture, system, or high-level designs, also dispatch
-`architecture-reviewer` as a sibling. Do not add architecture review without a structural decision.
-Use `security-reviewer` for security-sensitive designs: authentication, authorization, user input, database queries,
-file operations, external APIs, cryptography, payments, or sensitive data.
-Run independent reviews in parallel on stable inputs. Resolve CRITICAL and HIGH findings in the design and repeat
-affected reviews before presenting it for approval.
-General, architecture, and security reviews are separate requirements.
+{{include:@agent-prompts/design-review.md}}
 
 Return the reviewed plan and remaining findings. Focused planning ends here; workflow leads obtain implementation
 approval before proceeding. Implementation leads can revalidate existing design reviews but return material redesign

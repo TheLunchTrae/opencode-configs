@@ -29,8 +29,8 @@ Apply its boundary to the guidance below.
 
 ## Return evidence
 
-Use the agent's canonical response profile. `@agent-prompts/response-formats/implementation.md` covers implementation;
-`@agent-prompts/response-formats/research.md` covers research-only assignments. Use the specialized performance or
+Use the agent's canonical response profile. The supplied Implementation response covers implementation;
+the supplied Research response covers research-only assignments. Use the specialized performance or
 documentation profile when the task requires it.
 
 Implementation evidence does not authorize a commit, push, deployment, or other external action.

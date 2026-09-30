@@ -138,6 +138,82 @@ test('server stages every model and prompt before mutation and recomposes withou
   assert.equal(agents.good.model, 'fixture/fast');
 });
 
+test('skill output expands nested includes, preserves native context, and rereads sources without agent layers', async (t) => {
+  const root = await directory(t);
+  await writeFile(join(root, 'shared/inner.md'), 'Included guidance');
+  await writeFile(join(root, 'shared/outer.md'), 'Outer {{include:@shared/inner.md}}');
+  const file = join(root, 'config-composer.jsonc');
+  await writeFile(
+    file,
+    JSON.stringify({
+      sourceDirectories: { shared: './shared' },
+      agent: { prompts: { defaults: { append: ['Agent guidance only'] } } },
+    }),
+  );
+  const hooks = await ConfigComposerPlugin({} as PluginInput, { configFile: file });
+  const hook = hooks['tool.execute.after'];
+  assert.ok(hook !== undefined, 'Config Composer must expand native skill output');
+  type Params = Parameters<NonNullable<Hooks['tool.execute.after']>>;
+  const input: Params[0] = { tool: 'skill', sessionID: 'session', callID: 'call', args: { name: 'example' } };
+  const authored =
+    '<skill_content name="example">\n# Skill: example\n\n{{include:@shared/outer.md}}\n' +
+    'Task reference: @shared/inner.md; literal: \\{{include:@shared/inner.md}}\n\n' +
+    'Base directory for this skill: file:///example\n<skill_files>\n<file>/example/asset.txt</file>\n</skill_files>\n</skill_content>';
+  const metadata = { name: 'example', dir: '/example', marker: '{{include:@shared/inner.md}}' };
+  const output: Params[1] = { title: 'Loaded skill: example', output: authored, metadata };
+  await hook(input, output);
+  const expected = authored
+    .replace('{{include:@shared/outer.md}}', 'Outer Included guidance')
+    .replace('\\{{include:@shared/inner.md}}', '{{include:@shared/inner.md}}');
+  assert.equal(output.output, expected);
+  assert.equal(output.title, 'Loaded skill: example');
+  assert.equal(output.metadata, metadata, 'preserve native metadata without rewriting its values');
+  assert.deepEqual(metadata, { name: 'example', dir: '/example', marker: '{{include:@shared/inner.md}}' });
+  await writeFile(join(root, 'shared/inner.md'), 'Updated guidance');
+  output.output = authored;
+  await hook(input, output);
+  assert.equal(output.output, expected.replace('Included guidance', 'Updated guidance'));
+});
+
+test('skill output failures leave the result unchanged and other tool outputs remain literal', async (t) => {
+  const root = await directory(t);
+  await writeFile(join(root, 'shared/valid.md'), 'Valid guidance');
+  const file = join(root, 'config-composer.jsonc');
+  await writeFile(file, JSON.stringify({ sourceDirectories: { shared: './shared' } }));
+  const hooks = await ConfigComposerPlugin({} as PluginInput, { configFile: file });
+  const hook = hooks['tool.execute.after'];
+  assert.ok(hook !== undefined, 'Config Composer must expand native skill output');
+  type Params = Parameters<NonNullable<Hooks['tool.execute.after']>>;
+  const input: Params[0] = { tool: 'skill', sessionID: 'session', callID: 'call', args: { name: 'example' } };
+  const output: Params[1] = {
+    title: 'Loaded skill: example',
+    output: 'Before {{include:@shared/valid.md}} then {{include:@shared/missing.md}} after',
+    metadata: { name: 'example', dir: '/example' },
+  };
+  const before = structuredClone(output);
+  await assert.rejects(hook(input, output), /Could not read/);
+  assert.deepEqual(output, before, 'a later invalid include cannot expose a partial expansion');
+  await writeFile(join(root, 'outside.md'), 'Outside source guidance');
+  output.output = '{{include:@shared/../outside.md}}';
+  const unsafe = structuredClone(output);
+  await assert.rejects(hook(input, output), /safe relative/);
+  assert.deepEqual(output, unsafe, 'skill expansion retains the configured source boundary');
+  output.output = 'Skill body with a native truncation notice';
+  output.metadata = { name: 'example', dir: '/example', truncated: true };
+  const truncated = structuredClone(output);
+  await assert.rejects(hook(input, output), /truncated/i);
+  assert.deepEqual(output, truncated, 'reject truncated skill output even when no include marker survives');
+  output.output = '{{include:@unknown/file.md}}';
+  const literal = structuredClone(output);
+  await hook({ ...input, tool: 'read' }, output);
+  assert.deepEqual(output, literal, 'only native skill output is templated');
+  output.output = 'Ordinary skill body with a task reference to @unknown/file.md';
+  output.metadata = { name: 'example', dir: '/example', truncated: false };
+  const ordinary = structuredClone(output);
+  await hook(input, output);
+  assert.deepEqual(output, ordinary, 'ordinary skill bodies do not require composition sources');
+});
+
 test('recomposition reloads fragments, removes prior inherited fields, and retains changed explicit fields', async (t) => {
   const root = await directory(t);
   await writeFile(join(root, 'shared/worker.md'), 'First');

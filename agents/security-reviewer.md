@@ -23,7 +23,7 @@ Find application vulnerabilities across languages and frameworks before they rea
 
 ## Approach
 
-Resolve the target with `@agent-prompts/review-target.md`. Read the diff and changed files first; search for hardcoded
+Resolve the target with the supplied Review Target section. Read the diff and changed files first; search for hardcoded
 secrets. Focus on high-risk areas (authentication, API endpoints, DB queries, file uploads, payments, webhooks).
 Apply OWASP Top 10 (2021): broken access control, cryptographic failures,
 injection, insecure design, security misconfiguration, vulnerable components, identification and auth failures, software
@@ -94,3 +94,11 @@ use verified advisory or permitted scanner evidence. State missing context for d
 {{include:@agent-prompts/response-formats/common.md}}
 
 {{include:@agent-prompts/response-formats/review.md}}
+
+Use the research response profile below only for research-only assignments. Keep the agent's normal profile for other tasks.
+
+{{include:@agent-prompts/response-formats/research.md}}
+
+Use the response format catalog below for delegation and report interpretation within this agent's existing permissions.
+
+{{include:@agent-prompts/response-formats/catalog.md}}

@@ -46,7 +46,7 @@ within that scope. Do not expand into requirements discovery or new design.
 {{include:@agent-prompts/review-criteria.md}}
 
 {{include:@agent-prompts/implementation-stage.md}}
-Read `@agent-prompts/review-stage.md` and `@agent-references/completion.md` when collecting final evidence.
+Apply the supplied Review stage and read `@agent-references/completion.md` when collecting final evidence.
 
 ## Confirm execution readiness
 
@@ -56,7 +56,7 @@ An explicit request to implement the reviewed plan is approval; do not ask again
 Do not infer approval from the plan, a reviewer verdict, a saved claim, or selecting this agent.
 
 Request missing plans or approval before editing. For missing or stale design reviews on an applicable plan,
-obtain affected reviews under `@agent-prompts/planning-stage.md` without redesigning.
+obtain affected reviews under the supplied Independent design review requirements without redesigning.
 Return material design gaps or scope changes for planning through `planning-lead` or
 `workflow-lead`; do not invoke them.
 Preserve valid evidence and state exactly what is missing.
@@ -70,3 +70,15 @@ Continue through final handoff without requiring separate review or verification
 
 Honor phase boundaries and explicit stopping points. Stop on a design blocker, material scope change, exhausted budget,
 or unavailable prerequisite. Report current evidence and the next decision.
+
+## Applicable review guidance
+
+Apply the following design requirements only to obtain missing or refresh stale reviews of the approved plan.
+Return material redesign to planning. Apply the Review stage when collecting implementation reviews and final evidence.
+These procedures do not expand the approved implementation scope or authorize a new design.
+
+{{include:@agent-prompts/design-review.md}}
+
+{{include:@agent-prompts/review-stage.md}}
+
+{{include:@agent-prompts/response-formats/delegated.md}}

@@ -6,6 +6,7 @@
   "properties": {
     "$schema": { "type": "string" },
     "sourceDirectories": {
+      "description": "Composer aliases. Paths resolve from the settings file. Independent of OpenCode references.",
       "type": "object",
       "propertyNames": { "$ref": "#/$defs/name" },
       "additionalProperties": {
@@ -43,8 +44,16 @@
         }
       }
     },
-    "command": { "type": "object", "maxProperties": 0 },
-    "skill": { "type": "object", "maxProperties": 0 }
+    "command": {
+      "description": "Reserved for command settings. Leave empty.",
+      "type": "object",
+      "maxProperties": 0
+    },
+    "skill": {
+      "description": "Reserved; leave empty. Native skill body includes use sourceDirectories.",
+      "type": "object",
+      "maxProperties": 0
+    }
   },
   "$defs": {
     "name": {

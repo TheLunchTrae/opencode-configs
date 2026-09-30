@@ -1,7 +1,7 @@
 import type { Plugin, PluginModule } from '@opencode-ai/plugin';
 import { type AgentSettings, type EffectiveChoice, SettingsError, record, resolveChoice } from './settings.ts';
 import { loadConfiguration } from './configuration.ts';
-import { composePrompts } from './prompts.ts';
+import { composePrompts, expandIncludes } from './prompts.ts';
 
 function agentConfigurations(value: unknown): value is Record<string, AgentSettings> {
   return record(value) && Object.values(value).every(record);
@@ -24,6 +24,19 @@ export const ConfigComposerPlugin: Plugin = async (_input, options) => {
     }
   >();
   return {
+    'tool.execute.after': async (input, output) => {
+      if (input.tool !== 'skill') {
+        return;
+      }
+      if (record(output.metadata) && output.metadata.truncated === true) {
+        throw new SettingsError(
+          'The skill output was truncated before composition. Reduce its size and load it again.',
+        );
+      }
+      if (output.output.includes('{{include:')) {
+        output.output = await expandIncludes(output.output, settings.promptSources);
+      }
+    },
     config: async (config) => {
       const configured: unknown = config.agent ?? {};
       if (!agentConfigurations(configured)) {
