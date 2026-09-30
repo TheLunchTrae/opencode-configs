@@ -1,7 +1,7 @@
 ---
 description: "Default lead for a complete development task: clarify, plan, obtain approval, implement, review, and verify."
 mode: primary
-agent_group: workflow
+groups: [workflow]
 permission:
   edit: allow
   question: allow
@@ -38,7 +38,7 @@ color: "#F78AEE"
 Own the development task and user conversation through every applicable stage and final handoff.
 Ordinary implementation requests start this workflow without a command or entry-point skill.
 
-Read `@agent-prompts/lead-contract.md` at intake.
+{{include:@agent-prompts/lead-contract.md}}
 Use the stage references below when that stage applies. They supply shared procedures, not additional authority.
 
 ## Intake and route

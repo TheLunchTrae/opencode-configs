@@ -8,11 +8,11 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { setTimeout } from 'node:timers/promises';
-import { loadSnapshot, planChange, reloadConfiguration, savePlan } from '../extensions/agent-groups/storage.ts';
+import { loadSnapshot, planChange, reloadConfiguration, savePlan } from '../extensions/composer/storage.ts';
 
 // Real V1 configuration loading, provider dispatch, and cache invalidation; only the remote model is synthetic.
 test(
-  'OpenCode resolves presets and workspace defaults and dispatches changes after reload',
+  'OpenCode composes ordered groups and prompts from dedicated settings and dispatches changes after reload',
   { timeout: 120_000 },
   async (t) => {
     const root = await mkdtemp(join(tmpdir(), 'opencode-groups-native-'));
@@ -31,6 +31,7 @@ test(
     const project = join(root, 'project');
     const repo = fileURLToPath(new URL('../', import.meta.url));
     await mkdir(join(configRoot, 'agents'), { recursive: true });
+    await mkdir(join(configRoot, 'shared-prompts'));
     await mkdir(project);
     await cp(join(repo, 'extensions'), join(configRoot, 'extensions'), { recursive: true });
     const dependencies = await realpath(join(repo, 'node_modules'));
@@ -100,19 +101,7 @@ test(
       variants: { low: { reasoningEffort: 'low' }, high: { reasoningEffort: 'high' } },
     };
     const config = {
-      plugin: [
-        [
-          './extensions/agent-groups/server.ts',
-          {
-            modelPresets: { balanced: { model: 'fixture/alpha', variant: 'low' } },
-            groups: {
-              developers: { modelRef: 'preset:balanced' },
-              primary: { modelRef: 'opencode:model', variant: 'low' },
-              small: { modelRef: 'opencode:small_model', variant: 'low' },
-            },
-          },
-        ],
-      ],
+      plugin: [['./extensions/composer/server.ts', { configFile: './composer.jsonc' }]],
       model: 'fixture/alpha',
       small_model: 'fixture/alpha',
       default_agent: 'worker',
@@ -126,20 +115,42 @@ test(
         },
       },
       agent: {
-        pinned: { mode: 'subagent', agent_group: 'developers', model: 'fixture/alpha', variant: 'high' },
-        'main-follower': { mode: 'primary', agent_group: 'primary', prompt: 'Reply briefly.' },
-        'small-follower': { mode: 'primary', agent_group: 'small', prompt: 'Reply briefly.' },
+        pinned: { mode: 'subagent', groups: ['base', 'developers'], model: 'fixture/alpha', variant: 'high' },
+        'main-follower': { mode: 'primary', groups: ['primary'], prompt: 'Reply briefly.' },
+        'small-follower': { mode: 'primary', groups: ['small'], prompt: 'Reply briefly.' },
+        compaction: { groups: ['base'] },
       },
     };
+    const composer = {
+      modelPresets: { balanced: { model: 'fixture/alpha', variant: 'low' } },
+      promptSources: { shared: './shared-prompts' },
+      promptDefaults: { append: ['{{include:@shared/default.md}}'] },
+      groups: {
+        agents: {
+          base: { model: 'fixture/beta', variant: 'high' },
+          developers: { modelRef: 'preset:balanced', prompt: { append: ['GROUP_GUIDANCE'] } },
+          primary: { modelRef: 'opencode:model', variant: 'low' },
+          small: { modelRef: 'opencode:small_model', variant: 'low' },
+        },
+        commands: {},
+        skills: {},
+      },
+    };
+    await writeFile(
+      join(configRoot, 'composer.jsonc'),
+      `// Dedicated settings\n${JSON.stringify(composer, null, 2)}\n`,
+    );
+    await writeFile(join(configRoot, 'shared-prompts/default.md'), 'GLOBAL_GUIDANCE');
+    await writeFile(join(configRoot, 'shared-prompts/worker.md'), 'INITIAL_WORKER_GUIDANCE');
     await writeFile(
       join(configRoot, 'opencode.jsonc'),
       `// Native integration fixture\n${JSON.stringify(config, null, 2)}\n`,
     );
     await writeFile(
       join(configRoot, 'agents/worker.md'),
-      '---\nmode: primary\nagent_group: developers\n---\nReply briefly.\n',
+      '---\nmode: primary\ngroups: [base, developers]\n---\nReply briefly.\n{{include:@shared/worker.md}}\n',
     );
-    await writeFile(join(configRoot, 'tui.jsonc'), JSON.stringify({ plugin: ['./extensions/agent-groups/tui.ts'] }));
+    await writeFile(join(configRoot, 'tui.jsonc'), JSON.stringify({ plugin: ['./extensions/composer/tui.ts'] }));
     await writeFile(
       join(project, 'opencode.json'),
       JSON.stringify({ model: 'fixture/beta', small_model: 'fixture/beta' }),
@@ -212,6 +223,7 @@ test(
       model: { providerID: string; modelID: string };
       variant?: string;
       options: Record<string, unknown>;
+      prompt?: string;
     }
     interface Message {
       info: { modelID: string; error?: unknown };
@@ -222,7 +234,13 @@ test(
     assert.ok(worker !== undefined);
     assert.deepEqual(worker.model, { providerID: 'fixture', modelID: 'alpha' });
     assert.equal(worker.variant, 'low');
-    assert.equal(worker.options.agent_group, 'developers');
+    assert.deepEqual(worker.options.groups, ['base', 'developers']);
+    assert.match(worker.prompt ?? '', /INITIAL_WORKER_GUIDANCE/);
+    assert.match(worker.prompt ?? '', /GROUP_GUIDANCE/);
+    assert.match(worker.prompt ?? '', /GLOBAL_GUIDANCE/);
+    const compactionPrompt = agents.find((agent) => agent.name === 'compaction')?.prompt;
+    assert.ok(typeof compactionPrompt === 'string' && compactionPrompt.length > 0);
+    assert.ok(!compactionPrompt.includes('GLOBAL_GUIDANCE'), 'preserve the promptless built-in configuration');
     for (const name of ['main-follower', 'small-follower']) {
       assert.equal(
         agents.find((agent) => agent.name === name)?.model.modelID,
@@ -243,6 +261,9 @@ test(
       return result;
     };
     assert.equal((await request()).info.modelID, 'alpha');
+    const beforeReload = requests.find((body) => JSON.stringify(body).includes('INITIAL_WORKER_GUIDANCE'));
+    assert.ok(beforeReload !== undefined, 'send expanded prompt text to the provider');
+    assert.ok(!JSON.stringify(beforeReload).includes('{{include:'), 'never send unresolved directives');
     assert.equal((await request('main-follower')).info.modelID, 'beta');
     assert.equal((await request('small-follower')).info.modelID, 'beta');
     await savePlan(
@@ -252,7 +273,8 @@ test(
         choice: { model: 'fixture/beta', variant: 'high' },
       }),
     );
-    assert.deepEqual((await loadSnapshot(configRoot)).groups.developers, { modelRef: 'preset:balanced' });
+    assert.deepEqual((await loadSnapshot(configRoot)).groups.developers, composer.groups.agents.developers);
+    await writeFile(join(configRoot, 'shared-prompts/worker.md'), 'RELOADED_WORKER_GUIDANCE');
     await reloadConfiguration(await loadSnapshot(configRoot), async (plugin) => {
       await api('/global/config', { plugin }, 'PATCH');
     });
@@ -267,7 +289,15 @@ test(
     assert.equal(refreshed.find((agent) => agent.name === 'worker')?.model.modelID, 'beta');
     assert.equal(refreshed.find((agent) => agent.name === 'worker')?.variant, 'high');
     assert.equal(refreshed.find((agent) => agent.name === 'pinned')?.model.modelID, 'alpha');
+    assert.match(refreshed.find((agent) => agent.name === 'worker')?.prompt ?? '', /RELOADED_WORKER_GUIDANCE/);
+    assert.equal(
+      refreshed.find((agent) => agent.name === 'worker')?.prompt?.includes('INITIAL_WORKER_GUIDANCE'),
+      false,
+    );
     assert.equal((await request()).info.modelID, 'beta');
+    const reloadedRequest = requests.find((body) => JSON.stringify(body).includes('RELOADED_WORKER_GUIDANCE'));
+    assert.ok(reloadedRequest !== undefined, 'reread fragments after token reload');
+    assert.ok(!JSON.stringify(reloadedRequest).includes('INITIAL_WORKER_GUIDANCE'));
     await writeFile(
       join(project, 'opencode.json'),
       JSON.stringify({ model: 'fixture/alpha', small_model: 'fixture/alpha' }),
@@ -283,7 +313,12 @@ test(
     assert.equal(refreshed.find((agent) => agent.name === 'worker')?.model.modelID, 'beta');
     assert.ok(requests.some((body) => body.model === 'alpha'));
     assert.ok(requests.some((body) => body.model === 'beta'));
-    assert.ok(requests.every((body) => !/agent_group|modelRef|modelPresets/.test(JSON.stringify(body))));
+    assert.ok(
+      requests.every(
+        (body) => !/agent_group|modelRef|modelPresets|configFile|promptSources/.test(JSON.stringify(body)),
+      ),
+    );
     assert.match(await readFile(join(configRoot, 'opencode.jsonc'), 'utf8'), /^\/\/ Native integration fixture/);
+    assert.match(await readFile(join(configRoot, 'composer.jsonc'), 'utf8'), /^\/\/ Dedicated settings/);
   },
 );

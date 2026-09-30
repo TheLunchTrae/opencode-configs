@@ -1,5 +1,12 @@
 import type { Agent, AssistantMessage, Config, Message, Part, Session, SessionStatus } from '@opencode-ai/sdk/v2';
-import { SettingsError, readOptions, resolveGroup } from '../agent-groups/settings.ts';
+import {
+  type GroupOptions,
+  type PromptOperations,
+  SettingsError,
+  agentGroups,
+  readOptions,
+  resolveGroup,
+} from '../composer/settings.ts';
 
 export interface Entry {
   info: Message;
@@ -222,15 +229,128 @@ export interface Fact {
   label: string;
   value: string;
 }
+export interface SavedComposerConfiguration {
+  settings?: GroupOptions;
+  source?: string;
+  unavailable?: string;
+}
+
+function configuredGroupFacts(
+  group: string,
+  settings: GroupOptions,
+  config: Config,
+  global: Config | null | undefined,
+  saved: boolean,
+): Fact[] {
+  const prefix = saved ? `Saved group ${group}` : 'Group';
+  const choice = Object.hasOwn(settings.groups, group) ? settings.groups[group] : undefined;
+  if (choice === undefined) {
+    return saved ? [{ label: `${prefix} default`, value: 'No configured group model' }] : [];
+  }
+  try {
+    const resolved = resolveGroup(choice, { modelPresets: settings.modelPresets, native: config });
+    const facts: Fact[] = [
+      { label: saved ? `${prefix} default` : 'Configured group default', value: resolved.model ?? 'No group model' },
+      {
+        label: saved ? `${prefix} source` : 'Group model source',
+        value:
+          choice.modelRef ??
+          (choice.model !== undefined && choice.model !== '' ? 'Specific model' : 'OpenCode fallback'),
+      },
+      { label: saved ? `${prefix} variant` : 'Resolved group variant', value: resolved.variant ?? 'Model default' },
+    ];
+    if (choice.modelRef?.startsWith('opencode:') === true) {
+      const field = choice.modelRef === 'opencode:model' ? 'model' : 'small_model';
+      facts.push({
+        label: saved ? `${prefix} workspace reference` : 'Referenced workspace default',
+        value: cleanOr(config[field], 'Not configured'),
+      });
+      facts.push({
+        label: saved ? `${prefix} global reference` : 'Referenced global file default',
+        value: hasResponseData(global) ? cleanOr(global[field], 'Not configured') : 'Unavailable',
+      });
+    }
+    return facts;
+  } catch (error) {
+    if (!(error instanceof SettingsError)) {
+      throw error;
+    }
+    return [{ label: saved ? `${prefix} resolution` : 'Group model resolution', value: `Invalid: ${error.message}` }];
+  }
+}
+
+function promptSummary(operations: PromptOperations | undefined, enabled = true): string {
+  return `${enabled ? 'Enabled' : 'Skipped by agent policy'}; prepend ${operations?.prepend?.length ?? 0}; append ${operations?.append?.length ?? 0}`;
+}
+
+function savedComposerFacts(
+  name: string,
+  groups: string[],
+  saved: SavedComposerConfiguration,
+  config: Config,
+  global: Config | null | undefined,
+): Fact[] {
+  const settings = saved.settings;
+  const facts: Fact[] = [
+    { label: 'Composer settings file', value: saved.source ?? 'Unavailable' },
+    {
+      label: 'Saved Composer settings',
+      value:
+        settings === undefined
+          ? (saved.unavailable ?? 'Unavailable; runtime facts remain available')
+          : 'Saved file snapshot; may need reload. Server-resolved and last recorded models are shown separately.',
+    },
+  ];
+  if (settings === undefined) {
+    return facts;
+  }
+  const policy = Object.hasOwn(settings.agentPrompts, name) ? settings.agentPrompts[name] : undefined;
+  facts.push({
+    label: 'Saved prompt defaults',
+    value: promptSummary(settings.promptDefaults, policy?.inheritDefaults !== false),
+  });
+  for (const group of groups) {
+    facts.push(...configuredGroupFacts(group, settings, config, global, true));
+    facts.push({
+      label: `Saved group ${group} prompt`,
+      value: promptSummary(
+        Object.hasOwn(settings.groups, group) ? settings.groups[group].prompt : undefined,
+        policy?.inheritGroups !== false,
+      ),
+    });
+  }
+  facts.push({ label: 'Saved agent prompt layer', value: promptSummary(policy) });
+  for (const [name, path] of Object.entries(settings.promptSources)) {
+    facts.push({ label: `Saved prompt source ${name}`, value: path });
+  }
+  facts.push({
+    label: 'Prompt composition evidence',
+    value:
+      'Configured layers only; exact assembled text is not exposed. Native agents without authored prompts are unchanged.',
+  });
+  return facts;
+}
+
 export function configFacts(
   agent: Omit<Agent, 'model'> & { model?: Agent['model'] | null },
   config: Config,
   global: Config | null | undefined,
   entries: readonly Entry[],
+  savedComposer?: SavedComposerConfiguration,
 ): Fact[] {
   const last = lastAssistant(entries, agent.name);
   const model = hasResponseData(agent.model) ? `${agent.model.providerID}/${agent.model.modelID}` : undefined;
-  const group = clean(agent.options.agent_group);
+  const configured: unknown = config.agent?.[agent.name];
+  let memberships: string[] = [];
+  let membershipError = false;
+  try {
+    memberships = agentGroups({ ...agent.options, ...(record(configured) ? configured : {}) });
+  } catch (error) {
+    if (!(error instanceof SettingsError)) {
+      throw error;
+    }
+    membershipError = true;
+  }
   const facts: Fact[] = [
     { label: 'Agent default (server-resolved)', value: model ?? 'No agent model; OpenCode selects a fallback' },
     { label: 'Configured variant', value: cleanOr(agent.variant, 'Model default') },
@@ -256,39 +376,40 @@ export function configFacts(
     },
     { label: 'Origin file', value: 'V1 returns merged settings; exact file provenance is not exposed' },
   ];
-  if (group.length > 0) {
-    facts.push({ label: 'Agent group', value: group });
+  if (membershipError) {
+    facts.push({
+      label: 'Agent groups (ordered)',
+      value: 'Invalid membership metadata; runtime model facts remain available',
+    });
+  } else if (memberships.length > 0) {
+    facts.push({
+      label: memberships.length === 1 && savedComposer === undefined ? 'Agent group' : 'Agent groups (ordered)',
+      value: memberships.join(' → '),
+    });
+  }
+  if (savedComposer !== undefined) {
+    facts.push(...savedComposerFacts(agent.name, memberships, savedComposer, config, global));
+  } else if (memberships.length > 0) {
     for (const plugin of config.plugin ?? []) {
       if (
         !Array.isArray(plugin) ||
         typeof plugin[0] !== 'string' ||
-        !/[/\\]agent-groups[/\\]server\.(?:ts|js)$/.test(plugin[0])
+        !/[/\\](?:composer|agent-groups)[/\\]server\.(?:ts|js)$/.test(plugin[0])
       ) {
         continue;
       }
       const options: unknown = plugin[1];
-      if (!record(options) || !record(options.groups) || !record(options.groups[group])) {
+      if (record(options) && Object.hasOwn(options, 'configFile')) {
+        facts.push({ label: 'Saved Composer settings', value: 'Unavailable; runtime model facts remain available' });
+        continue;
+      }
+      if (!record(options) || !record(options.groups)) {
         continue;
       }
       try {
-        const { groups, modelPresets } = readOptions(options);
-        const choice = groups[group];
-        const resolved = resolveGroup(choice, { modelPresets, native: config });
-        facts.push({ label: 'Configured group default', value: resolved.model ?? 'No group model' });
-        facts.push({
-          label: 'Group model source',
-          value:
-            choice.modelRef ??
-            (choice.model !== undefined && choice.model !== '' ? 'Specific model' : 'OpenCode fallback'),
-        });
-        facts.push({ label: 'Resolved group variant', value: resolved.variant ?? 'Model default' });
-        if (choice.modelRef?.startsWith('opencode:') === true) {
-          const field = choice.modelRef === 'opencode:model' ? 'model' : 'small_model';
-          facts.push({ label: 'Referenced workspace default', value: cleanOr(config[field], 'Not configured') });
-          facts.push({
-            label: 'Referenced global file default',
-            value: hasResponseData(global) ? cleanOr(global[field], 'Not configured') : 'Unavailable',
-          });
+        const settings = readOptions(options);
+        for (const group of memberships) {
+          facts.push(...configuredGroupFacts(group, settings, config, global, memberships.length > 1));
         }
       } catch (error) {
         if (!(error instanceof SettingsError)) {

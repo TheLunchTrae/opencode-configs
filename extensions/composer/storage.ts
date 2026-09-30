@@ -2,26 +2,38 @@ import { lstat, open, readFile, readdir, realpath, rename, unlink } from 'node:f
 import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { randomUUID } from 'node:crypto';
-import { type Node as JsonNode, type ParseError, applyEdits, modify, parse, parseTree } from 'jsonc-parser';
+import {
+  type Node as JsonNode,
+  type ParseError,
+  applyEdits,
+  createScanner,
+  findNodeAtLocation,
+  modify,
+  parse,
+  parseTree,
+} from 'jsonc-parser';
 import { type Document, parseDocument } from 'yaml';
 import {
   type AgentSettings,
   type GroupChoice,
+  type GroupOptions,
   type Groups,
   type ModelChoice,
   type ModelPresets,
   type NativeModels,
   SettingsError,
-  agentGroup,
+  agentGroups,
   groupChoice,
   groupName,
   modelChoice,
   presetName,
   readOptions,
+  readSettings,
   record,
   resolveChoice,
   resolveGroup,
 } from './settings.ts';
+import { loadConfiguration } from './configuration.ts';
 
 export interface SourceFile {
   path: string;
@@ -44,6 +56,8 @@ export interface Snapshot {
   root: string;
   configFile: SourceFile;
   config: Record<string, unknown>;
+  settingsFile?: SourceFile;
+  settings: GroupOptions;
   pluginIndex: number;
   groups: Groups;
   modelPresets: ModelPresets;
@@ -56,7 +70,7 @@ export type Change =
   | { kind: 'deletePreset'; name: string }
   | { kind: 'global'; field: 'model' | 'small_model'; model: string }
   | { kind: 'all'; choice: ModelChoice }
-  | { kind: 'membership'; agent: string; group?: string }
+  | { kind: 'membership'; agent: string; groups?: string[]; group?: string }
   | { kind: 'override'; agent: string; choice: ModelChoice };
 export interface FileEdit {
   file: SourceFile;
@@ -130,7 +144,7 @@ function serverEntry(spec: unknown, root: string): boolean {
   try {
     return (
       resolve(spec.startsWith('file:') ? fileURLToPath(spec) : resolve(root, spec)) ===
-      join(root, 'extensions', 'agent-groups', 'server.ts')
+      join(root, 'extensions', 'composer', 'server.ts')
     );
   } catch {
     return false;
@@ -139,12 +153,12 @@ function serverEntry(spec: unknown, root: string): boolean {
 
 function pluginOptions(config: Record<string, unknown>, index: number): unknown {
   if (!Array.isArray(config.plugin)) {
-    throw new SettingsError('Configure the agent-groups server plugin first.');
+    throw new SettingsError('Configure the composer server plugin first.');
   }
   const plugins: unknown[] = config.plugin;
   const plugin = plugins[index];
   if (!Array.isArray(plugin)) {
-    throw new SettingsError('Configure agent-groups with a plugin options object.');
+    throw new SettingsError('Configure composer with a plugin options object.');
   }
   const entry: unknown[] = plugin;
   return entry[1];
@@ -163,17 +177,22 @@ export async function loadSnapshot(directory: string): Promise<Snapshot> {
   const configFile = await sourceFile(root, join(root, configs[0]));
   const config = parseConfig(configFile.text);
   if (!Array.isArray(config.plugin)) {
-    throw new SettingsError('Configure the agent-groups server plugin first.');
+    throw new SettingsError('Configure the composer server plugin first.');
   }
   const plugins: unknown[] = config.plugin;
   const matches = plugins.flatMap((entry, index) =>
     serverEntry(Array.isArray(entry) ? entry[0] : entry, root) ? [index] : [],
   );
   if (matches.length !== 1) {
-    throw new SettingsError('Configure exactly one agent-groups server plugin entry.');
+    throw new SettingsError('Configure exactly one composer server plugin entry.');
   }
   const pluginIndex = matches[0];
-  const { groups, modelPresets } = readOptions(pluginOptions(config, pluginIndex));
+  const loaded = await loadConfiguration(pluginOptions(config, pluginIndex), root);
+  const settingsFile = loaded.file === undefined ? undefined : await sourceFile(root, loaded.file.path);
+  if (settingsFile !== undefined && settingsFile.text !== loaded.file?.text) {
+    throw new SettingsError('Composer settings changed while loading. Reopen the editor.');
+  }
+  const { groups, modelPresets } = loaded.settings;
   const jsonAgents = record(config.agent) ? config.agent : {};
   const agents = new Map<string, StoredAgent>(
     Object.entries(jsonAgents).map(([name, value]) => {
@@ -183,7 +202,7 @@ export async function loadSnapshot(directory: string): Promise<Snapshot> {
       return [name, { name, settings: value }];
     }),
   );
-  const files = [configFile];
+  const files = settingsFile === undefined ? [configFile] : [configFile, settingsFile];
   const markdownNames = new Set<string>();
   async function scan(directory: string, base: string): Promise<void> {
     if ((await lstat(directory)).isSymbolicLink()) {
@@ -234,19 +253,24 @@ export async function loadSnapshot(directory: string): Promise<Snapshot> {
   const enabled = [...agents.values()]
     .filter((agent) => agent.settings.disable !== true)
     .sort((a, b) => a.name.localeCompare(b.name));
-  enabled.forEach((agent) => agentGroup(agent.settings));
-  return { root, configFile, config, pluginIndex, groups, modelPresets, agents: enabled, files };
+  enabled.forEach((agent) => agentGroups(agent.settings));
+  return {
+    root,
+    configFile,
+    config,
+    settingsFile,
+    settings: loaded.settings,
+    pluginIndex,
+    groups,
+    modelPresets,
+    agents: enabled,
+    files,
+  };
 }
 
 export function groupNames(snapshot: Snapshot): string[] {
   return [
-    ...new Set([
-      ...Object.keys(snapshot.groups),
-      ...snapshot.agents.flatMap((agent) => {
-        const group = agentGroup(agent.settings);
-        return group !== undefined && group !== '' ? [group] : [];
-      }),
-    ]),
+    ...new Set([...Object.keys(snapshot.groups), ...snapshot.agents.flatMap((agent) => agentGroups(agent.settings))]),
   ].sort();
 }
 
@@ -269,6 +293,36 @@ export function affectedGroups(snapshot: Snapshot, change: Change): string[] {
 }
 
 function editJson(text: string, path: (string | number)[], value: unknown): string {
+  const tree = parseTree(text);
+  if (value === undefined && (tree === undefined || findNodeAtLocation(tree, path) === undefined)) {
+    return text;
+  }
+  if (value === undefined && tree !== undefined) {
+    const property = findNodeAtLocation(tree, path)?.parent;
+    const object = property?.parent;
+    if (property?.type === 'property' && object?.type === 'object') {
+      const properties = object.children ?? [];
+      const index = properties.indexOf(property);
+      const next = properties.at(index + 1);
+      const previous = index > 0 ? properties.at(index - 1) : undefined;
+      const start = property.offset;
+      const end = start + property.length;
+      const scanner = createScanner(text);
+      scanner.setPosition(next === undefined && previous !== undefined ? previous.offset + previous.length : end);
+      const boundary = next?.offset ?? (previous === undefined ? object.offset + object.length - 1 : start);
+      while (scanner.getPosition() < boundary) {
+        scanner.scan();
+        if (text.slice(scanner.getTokenOffset(), scanner.getTokenOffset() + scanner.getTokenLength()) === ',') {
+          const comma = scanner.getTokenOffset();
+          // Delete the property and its separator, preserving neighboring JSONC comments.
+          return comma < start
+            ? text.slice(0, comma) + text.slice(comma + 1, start) + text.slice(end)
+            : text.slice(0, start) + text.slice(end, comma) + text.slice(comma + 1);
+        }
+      }
+      return text.slice(0, start) + text.slice(end);
+    }
+  }
   return applyEdits(
     text,
     modify(text, path, value, {
@@ -277,22 +331,54 @@ function editJson(text: string, path: (string | number)[], value: unknown): stri
   );
 }
 
+function membershipGroups(change: Extract<Change, { kind: 'membership' }>): string[] {
+  const groups = (change.groups ?? (change.group === undefined ? [] : [change.group])).map(groupName);
+  if (groups.length > 64) {
+    throw new SettingsError('Agent groups must contain no more than 64 memberships.');
+  }
+  if (new Set(groups).size !== groups.length) {
+    throw new SettingsError('An agent cannot list the same group twice.');
+  }
+  return groups;
+}
+
 export function planChange(snapshot: Snapshot, change: Change): EditPlan {
   let configText = snapshot.configFile.text;
+  let settingsText = snapshot.settingsFile?.text;
   const edits: FileEdit[] = [];
   const patch = (path: (string | number)[], value: unknown) => {
     configText = editJson(configText, path, value);
   };
-  const groupPath = ['plugin', snapshot.pluginIndex, 1, 'groups'];
-  const presetPath = ['plugin', snapshot.pluginIndex, 1, 'modelPresets'];
+  const patchSettings = (path: (string | number)[], value: unknown) => {
+    if (settingsText === undefined) {
+      patch(['plugin', snapshot.pluginIndex, 1, ...path], value);
+    } else {
+      settingsText = editJson(settingsText, path, value);
+    }
+  };
+  const groupPath = snapshot.settingsFile === undefined ? ['groups'] : ['groups', 'agents'];
+  const presetPath = ['modelPresets'];
+  const patchGroup = (name: string, value: GroupChoice) => {
+    const choice = groupChoice(value);
+    if (!Object.hasOwn(snapshot.groups, name)) {
+      patchSettings([...groupPath, name], choice);
+      return;
+    }
+    for (const field of ['model', 'modelRef', 'variant'] as const) {
+      patchSettings([...groupPath, name, field], choice[field]);
+    }
+    if (choice.prompt !== undefined) {
+      patchSettings([...groupPath, name, 'prompt'], choice.prompt);
+    }
+  };
   if (change.kind === 'group') {
-    patch([...groupPath, groupName(change.name)], groupChoice(change.choice));
+    patchGroup(groupName(change.name), change.choice);
   } else if (change.kind === 'preset') {
     const choice = modelChoice(change.choice);
     if (choice.model === undefined || choice.model === '') {
       throw new SettingsError('A model preset requires a concrete model.');
     }
-    patch([...presetPath, presetName(change.name)], choice);
+    patchSettings([...presetPath, presetName(change.name)], choice);
   } else if (change.kind === 'deletePreset') {
     const name = presetName(change.name);
     if (!Object.hasOwn(snapshot.modelPresets, name)) {
@@ -301,7 +387,7 @@ export function planChange(snapshot: Snapshot, change: Change): EditPlan {
     if (affectedGroups(snapshot, change).length > 0) {
       throw new SettingsError('This preset is referenced by groups. Reassign those groups before deleting it.');
     }
-    patch([...presetPath, name], undefined);
+    patchSettings([...presetPath, name], undefined);
   } else if (change.kind === 'global') {
     modelChoice({ model: change.model });
     patch([change.field], change.model);
@@ -313,15 +399,18 @@ export function planChange(snapshot: Snapshot, change: Change): EditPlan {
     patch(['model'], choice.model);
     patch(['small_model'], choice.model);
     for (const name of Object.keys(snapshot.modelPresets)) {
-      patch([...presetPath, name], choice);
+      patchSettings([...presetPath, name], choice);
     }
     for (const name of groupNames(snapshot)) {
       const group = Object.hasOwn(snapshot.groups, name) ? snapshot.groups[name] : undefined;
       const modelRef = group?.modelRef;
-      patch(
-        [...groupPath, name],
+      patchGroup(
+        name,
         modelRef !== undefined && modelRef !== ''
-          ? { modelRef, ...(choice.variant !== undefined && choice.variant !== '' ? { variant: choice.variant } : {}) }
+          ? {
+              modelRef,
+              ...(choice.variant !== undefined && choice.variant !== '' ? { variant: choice.variant } : {}),
+            }
           : choice,
       );
     }
@@ -332,13 +421,32 @@ export function planChange(snapshot: Snapshot, change: Change): EditPlan {
     }
     const values: Record<string, unknown> =
       change.kind === 'membership'
-        ? { agent_group: change.group === undefined ? undefined : groupName(change.group) }
+        ? { groups: membershipGroups(change) }
         : { model: modelChoice(change.choice).model, variant: change.choice.variant };
     if (change.kind === 'override' && (change.choice.model === undefined || change.choice.model === '')) {
       values.variant = undefined;
     }
     const document = agent.markdown?.document.clone();
     const options: unknown = agent.settings.options;
+    if (change.kind === 'membership') {
+      for (const name of membershipGroups(change)) {
+        if (!Object.hasOwn(snapshot.groups, name)) {
+          patchSettings([...groupPath, name], {});
+        }
+      }
+      // A new ordered membership replaces every legacy and lower-layer membership.
+      document?.delete('agent_group');
+      if (document?.has('options') === true) {
+        document.deleteIn(['options', 'agent_group']);
+        document.deleteIn(['options', 'groups']);
+      }
+      patch(['agent', agent.name, 'agent_group'], undefined);
+      patch(['agent', agent.name, 'options', 'agent_group'], undefined);
+      patch(['agent', agent.name, 'options', 'groups'], undefined);
+      if (document !== undefined) {
+        patch(['agent', agent.name, 'groups'], undefined);
+      }
+    }
     for (const [key, value] of Object.entries(values)) {
       if (document !== undefined) {
         if (value === undefined) {
@@ -351,7 +459,7 @@ export function planChange(snapshot: Snapshot, change: Change): EditPlan {
       if (document === undefined || value === undefined) {
         patch(['agent', agent.name, key], value);
       }
-      if (key === 'agent_group' && record(options) && Object.hasOwn(options, key)) {
+      if (key === 'groups' && record(options) && Object.hasOwn(options, key)) {
         if (document !== undefined) {
           document.deleteIn(['options', key]);
         }
@@ -368,7 +476,14 @@ export function planChange(snapshot: Snapshot, change: Change): EditPlan {
     }
   }
   const config = parseConfig(configText);
-  readOptions(pluginOptions(config, snapshot.pluginIndex));
+  if (settingsText !== undefined && snapshot.settingsFile !== undefined) {
+    readSettings(parseConfig(settingsText));
+    if (settingsText !== snapshot.settingsFile.text) {
+      edits.push({ file: snapshot.settingsFile, text: settingsText });
+    }
+  } else {
+    readOptions(pluginOptions(config, snapshot.pluginIndex));
+  }
   if (configText !== snapshot.configFile.text) {
     edits.push({ file: snapshot.configFile, text: configText });
   }
@@ -384,7 +499,7 @@ export function planChange(snapshot: Snapshot, change: Change): EditPlan {
             : change.kind === 'all'
               ? 'Update global defaults, presets, and groups; retain references and agent overrides'
               : change.kind === 'membership'
-                ? `Move ${change.agent} to ${change.group ?? 'Ungrouped'}; retain model overrides`
+                ? `Set ${change.agent} groups to ${membershipGroups(change).length > 0 ? membershipGroups(change).join(' → ') : 'Ungrouped'}; retain model overrides`
                 : `${change.choice.model !== undefined && change.choice.model !== '' ? 'Set an override for' : 'Use inherited defaults for'} ${change.agent}`;
   return { snapshot, change, edits, description };
 }
@@ -393,7 +508,14 @@ export function plannedChoices(plan: EditPlan, native: NativeModels = plan.snaps
   const { snapshot, change } = plan;
   const text = plan.edits.find((edit) => edit.file.path === snapshot.configFile.path)?.text ?? snapshot.configFile.text;
   const config = parseConfig(text);
-  const { groups, modelPresets } = readOptions(pluginOptions(config, snapshot.pluginIndex));
+  const settingsText =
+    snapshot.settingsFile === undefined
+      ? undefined
+      : (plan.edits.find((edit) => edit.file.path === snapshot.settingsFile?.path)?.text ?? snapshot.settingsFile.text);
+  const { groups, modelPresets } =
+    settingsText === undefined
+      ? readOptions(pluginOptions(config, snapshot.pluginIndex))
+      : readSettings(parseConfig(settingsText));
   // Validate a changed global value for all consumers, even when this workspace has an override.
   const defaults =
     change.kind === 'global'
@@ -418,8 +540,9 @@ export function plannedChoices(plan: EditPlan, native: NativeModels = plan.snaps
         ? { ...agent.settings, model: change.choice.model, variant: change.choice.variant }
         : {
             ...agent.settings,
-            agent_group: change.group,
-            options: { ...agent.settings.options, agent_group: undefined },
+            groups: membershipGroups(change),
+            agent_group: undefined,
+            options: { ...agent.settings.options, agent_group: undefined, groups: undefined },
           };
     return [resolveChoice(settings, groups, context)];
   }
@@ -428,7 +551,7 @@ export function plannedChoices(plan: EditPlan, native: NativeModels = plan.snaps
   for (const agent of snapshot.agents) {
     if (
       (typeof agent.settings.model !== 'string' || agent.settings.model === '') &&
-      affected.includes(agentGroup(agent.settings) ?? '')
+      agentGroups(agent.settings).some((group) => affected.includes(group))
     ) {
       choices.push(resolveChoice(agent.settings, groups, context));
     }
@@ -443,7 +566,7 @@ export function plannedChoices(plan: EditPlan, native: NativeModels = plan.snaps
 }
 
 async function atomicWrite(path: string, text: string, mode: number): Promise<void> {
-  const temporary = join(dirname(path), `.agent-groups-${randomUUID()}.tmp`);
+  const temporary = join(dirname(path), `.composer-${randomUUID()}.tmp`);
   try {
     const file = await open(temporary, 'wx', mode);
     try {
@@ -462,9 +585,9 @@ export async function savePlan(plan: EditPlan): Promise<void> {
   if (plan.edits.length === 0) {
     return;
   }
-  const lockPath = join(plan.snapshot.root, '.agent-groups.lock');
+  const lockPath = join(plan.snapshot.root, '.composer.lock');
   const lock = await open(lockPath, 'wx').catch(() => {
-    throw new SettingsError('Another settings edit is active, or a stale .agent-groups.lock needs attention.');
+    throw new SettingsError('Another settings edit is active, or a stale .composer.lock needs attention.');
   });
   const applied: FileEdit[] = [];
   try {
@@ -515,11 +638,16 @@ export async function reloadConfiguration(
   snapshot: Snapshot,
   update: (plugins: unknown[]) => Promise<void>,
 ): Promise<void> {
-  const lockPath = join(snapshot.root, '.agent-groups.lock');
+  const lockPath = join(snapshot.root, '.composer.lock');
   const lock = await open(lockPath, 'wx').catch(() => {
     throw new SettingsError('Another settings edit is active. Reload after it finishes.');
   });
   try {
+    for (const file of snapshot.files) {
+      if ((await sourceFile(snapshot.root, file.path)).text !== file.text) {
+        throw new SettingsError('Settings changed. Reopen the editor before reloading.');
+      }
+    }
     const original = await sourceFile(snapshot.root, snapshot.configFile.path);
     if (original.text !== snapshot.configFile.text) {
       throw new SettingsError('Settings changed. Reopen the editor before reloading.');
@@ -534,10 +662,15 @@ export async function reloadConfiguration(
       : JSON.stringify(config, null, 2);
     // The public API invalidates the global cache only after an actual configuration change.
     if (!Array.isArray(config.plugin)) {
-      throw new SettingsError('Configure the agent-groups server plugin first.');
+      throw new SettingsError('Configure the composer server plugin first.');
     }
     const plugins: unknown[] = config.plugin;
     await update(plugins);
+    for (const file of snapshot.files) {
+      if (file.path !== original.path && (await sourceFile(snapshot.root, file.path)).text !== file.text) {
+        throw new SettingsError('Settings changed during reload. Reopen the editor and check the saved configuration.');
+      }
+    }
     const current = await sourceFile(snapshot.root, original.path);
     if (current.text !== apiText) {
       throw new SettingsError('Settings changed during reload. Reopen the editor and check the saved configuration.');

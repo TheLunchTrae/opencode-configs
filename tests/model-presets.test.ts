@@ -20,9 +20,9 @@ import {
   resolveChoice,
   resolveGroup,
   validateChoice,
-} from '../extensions/agent-groups/settings.ts';
-import { AgentGroupsPlugin } from '../extensions/agent-groups/server.ts';
-import { registerSettings } from '../extensions/agent-groups/tui.ts';
+} from '../extensions/composer/settings.ts';
+import { AgentGroupsPlugin } from '../extensions/composer/server.ts';
+import { registerSettings } from '../extensions/composer/tui.ts';
 import {
   affectedGroups,
   loadSnapshot,
@@ -30,7 +30,7 @@ import {
   planChange,
   plannedChoices,
   savePlan,
-} from '../extensions/agent-groups/storage.ts';
+} from '../extensions/composer/storage.ts';
 
 const options = {
   modelPresets: { balanced: { model: 'fixture/fast', variant: 'high' }, unused: { model: 'fixture/fast' } },
@@ -56,8 +56,14 @@ const catalog = catalogModels(providers);
 const context = { modelPresets: options.modelPresets, native: { model: 'fixture/next', small_model: 'fixture/small' } };
 
 test('references are explicit, flat, validated, and separate from native fallback', () => {
-  assert.deepEqual(readOptions(options), options);
-  assert.deepEqual(readOptions(undefined), { groups: {}, modelPresets: {} });
+  assert.deepEqual(readOptions(options), { ...options, promptSources: {}, promptDefaults: {}, agentPrompts: {} });
+  assert.deepEqual(readOptions(undefined), {
+    groups: {},
+    modelPresets: {},
+    promptSources: {},
+    promptDefaults: {},
+    agentPrompts: {},
+  });
   assert.deepEqual(resolveGroup({}, context), {});
   assert.deepEqual(resolveGroup({ modelRef: 'opencode:model' }, context), {
     modelRef: 'opencode:model',
@@ -189,7 +195,7 @@ async function fixture(t: TestContext): Promise<string> {
     '// Preserve this comment.\n' +
       JSON.stringify(
         {
-          plugin: [['./extensions/agent-groups/server.ts', options]],
+          plugin: [['./extensions/composer/server.ts', options]],
           model: 'fixture/fast',
           small_model: 'fixture/small',
           permission: { edit: 'ask' },
@@ -281,7 +287,7 @@ test('validation includes variants on linked groups and unpinned agents', async 
   await writeFile(
     snapshot.configFile.path,
     JSON.stringify({
-      plugin: [['./extensions/agent-groups/server.ts', { groups: { developers: { modelRef: 'opencode:model' } } }]],
+      plugin: [['./extensions/composer/server.ts', { groups: { developers: { modelRef: 'opencode:model' } } }]],
       model: 'fixture/fast',
     }),
   );
@@ -376,7 +382,7 @@ function uiHarness(root: string) {
       providerError = value;
     },
     async command() {
-      await commands.find((command) => command.name === 'agent-groups.models')!.run();
+      await commands.find((command) => command.name === 'composer.models')!.run();
     },
     async select(value: string) {
       assert.ok(dialog !== undefined && 'options' in dialog);

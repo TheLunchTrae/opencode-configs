@@ -1,7 +1,7 @@
 # OpenCode Global Configuration
 
 Personal global configuration for OpenCode, with focused lead agents, specialists, commands, reusable skills,
-shared prompts, agent group and model controls, workflow panels, session bookmarks, and secret-path checks.
+shared prompt composition, agent group and model controls, workflow panels, session bookmarks, and secret-path checks.
 The default agent is `workflow-lead`. It coordinates complete development tasks.
 Select a focused lead when you want only planning, approved implementation, or assessment of existing work.
 
@@ -16,10 +16,11 @@ Select a focused lead when you want only planning, approved implementation, or a
 | [`skills/`](skills/) | Reusable task procedures. |
 | [`references/agent-prompts/`](references/agent-prompts/) | Shared prompt guidance. |
 | [`plugins/`](plugins/) | Local plugins, including secret-path checks. |
-| [`extensions/agent-groups/`](extensions/agent-groups/) | TUI settings and server-side group defaults. |
+| [`extensions/composer/`](extensions/composer/) | Composer: shared prompts, group defaults, and TUI settings. |
 | [`extensions/session-tools/`](extensions/session-tools/) | Workflow, config, context, bookmarks, and handoff panels. |
 | [`package.json`](package.json) | Pinned plugin dependencies and maintenance commands. |
 | [`opencode.jsonc`](opencode.jsonc) | Global models, permissions, MCP servers, shell, and plugin settings. |
+| [`composer.jsonc`](composer.jsonc) | Composer groups, model presets, prompt sources, and prompt defaults. |
 | [`tui.jsonc`](tui.jsonc) | TUI theme selection and plugin settings. |
 | [`themes/`](themes/) | Custom TUI themes. |
 | [`opencode-quota/quota-toast.jsonc`](opencode-quota/quota-toast.jsonc) | Quota display preferences. |
@@ -30,8 +31,8 @@ Select a focused lead when you want only planning, approved implementation, or a
 2. Authenticate your provider through `/connect` when supported.
 3. Back up your existing global configuration directory.
 4. Obtain a checkout or download of this repository.
-5. Copy `README.md`, `USAGE.md`, `AGENTS.md`, `opencode.jsonc`, `tui.jsonc`, `themes/`, `agents/`, `commands/`, `skills/`,
-   `references/`, `plugins/`, `extensions/`, `package.json`, `package-lock.json`, and `opencode-quota/`
+5. Copy `README.md`, `USAGE.md`, `AGENTS.md`, `opencode.jsonc`, `composer.jsonc`, `tui.jsonc`, `themes/`, `agents/`,
+   `commands/`, `skills/`, `references/`, `plugins/`, `extensions/`, `package.json`, `package-lock.json`, and `opencode-quota/`
    into the global configuration directory.
    Preserve the layout and merge your existing settings.
 
@@ -54,8 +55,9 @@ See the [V2 migration guide](https://opencode.ai/v2/docs/migrate-v1/).
 
 1. Set `shell` in `opencode.jsonc` to an installed shell.
    The supplied value is `C:/Program Files/Git/bin/bash.exe`; change it or remove it on other systems.
-2. Select models available from your authenticated provider. Global and group defaults are in `opencode.jsonc`.
-   Custom agents declare `agent_group` in their frontmatter. An explicit agent model overrides its group default.
+2. Select models available from your authenticated provider. Global defaults are in `opencode.jsonc`.
+   Composer group defaults and model presets are in `composer.jsonc`. Custom agents declare `groups` in frontmatter.
+   An explicit agent model overrides its group default.
    After launch, use `/agent-models` to select models and `/agent-groups` to assign agents to groups.
    See [agent groups and models](USAGE.md#agent-groups-and-models) for precedence and configuration examples.
 3. Use reasoning and sampling options supported by the selected models.
@@ -74,6 +76,11 @@ The quota plugin is configured for OpenAI. To opt out, remove its entries from b
 The session tools add a live workflow sidebar, read-only configuration and context inspectors, and session bookmarks
 with editable handoff drafts. Open them through the command palette or `/workflow-panel`, `/inspect-config`,
 `/inspect-context`, and `/bookmarks`. See [session tools](USAGE.md#session-tools) for use and individual opt-outs.
+
+Composer assembles shared guidance into custom agent prompts when configuration loads.
+Install `composer.jsonc`, `extensions/composer/`, and the referenced Markdown files together.
+The shipped agent prompts require Composer to resolve their explicit include directives.
+Conditional reference reads remain agent actions. See [shared prompt composition](USAGE.md#shared-prompt-composition).
 
 The selected `pink` theme uses pink accents, pastel syntax and status colors, and neutral dark backgrounds.
 It keeps the same dark appearance in both terminal modes. Install `themes/` with `tui.jsonc` so OpenCode can find it.
@@ -160,14 +167,26 @@ Check an approval prompt's scope before saving an approval.
 ## Upgrade an existing installation
 
 Back up the configuration first. Update `README.md`, `USAGE.md`, `AGENTS.md`, `agents/`, `commands/`, `skills/`,
-`references/agent-prompts/`, `plugins/`, `opencode.jsonc`, `tui.jsonc`, and `themes/` together,
+`references/agent-prompts/`, `plugins/`, `opencode.jsonc`, `composer.jsonc`, `tui.jsonc`, and `themes/` together,
 preserving local overrides and license notices.
 
-Install `extensions/`, `package.json`, and `package-lock.json` with both configuration files when adding agent groups.
+Install `extensions/`, `package.json`, and `package-lock.json` with the configuration files when adding Composer.
 Merge existing dependencies if your installation already has a package manifest.
-Keep the server plugin tuple and its group defaults in `opencode.jsonc`, and the TUI entry in `tui.jsonc`.
+Preserve a customized `composer.jsonc` and merge the new fields instead of overwriting it.
+Keep the server registration `["./extensions/composer/server.ts", { "configFile": "composer.jsonc" }]`
+in `opencode.jsonc` and the `./extensions/composer/tui.ts` entry in `tui.jsonc`.
+Copy the complete Composer directory, including `schema.json`, and its shared `extensions/tui/` dependencies.
 Custom agents with explicit model pins keep those models. Use **Use group defaults** to opt an agent into inheritance.
-Removing the server plugin also removes group inheritance; restore explicit models before disabling it.
+Removing the server plugin also removes group inheritance and prompt composition.
+Resolve include directives, restore shared guidance, and restore explicit models before disabling it.
+
+When upgrading from `extensions/agent-groups/`, replace its server and TUI registrations with the Composer entries.
+Remove only the obsolete `extensions/agent-groups/` directory after installing its replacement.
+Preserve unrelated extensions. Register only one Composer server entry and one Composer TUI entry
+to prevent duplicate loads.
+Move inline `modelPresets` into `composer.jsonc` and old `groups` into its `groups.agents` object.
+Legacy inline options and `agent_group` metadata remain supported, but the shipped setup uses the dedicated file
+and `groups` arrays. Do not keep both inline settings and a `configFile` setting in one server registration.
 
 Shared prompts now use the hidden `agent-prompts` directory reference.
 Update custom prompts to use paths such as `@agent-prompts/reviewer-standards.md`.

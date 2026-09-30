@@ -1,6 +1,7 @@
 # Design response
 
-Read `@agent-prompts/response-formats/common.md`. Use its envelope with these sections under `Result`:
+Read `@agent-prompts/response-formats/common.md` if its guidance was not already supplied.
+Use its envelope with these sections under `Result`:
 
 ### Requirements and current state
 

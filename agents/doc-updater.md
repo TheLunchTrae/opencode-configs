@@ -1,7 +1,7 @@
 ---
 description: "Documentation and codemap specialist. Updates codemaps, READMEs, guides, and documentation from current source."
 mode: subagent
-agent_group: documentation
+groups: [documentation]
 color: "#8AEEF7"
 permission:
   edit: allow
@@ -92,4 +92,4 @@ Validate before declaring done — files exist, links resolve, examples run, sni
 
 ## Handoff
 
-Read `@agent-prompts/response-formats/documentation.md` for the canonical response.
+Use the canonical documentation response.

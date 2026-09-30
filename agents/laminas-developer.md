@@ -1,7 +1,7 @@
 ---
 description: 'Laminas (formerly Zend Framework) developer for Laminas MVC, Mezzio (PSR-15), and Laminas API Tools. Writes PSR-7/PSR-15 middleware, service-manager factories, module configs, and Laminas\Form / Laminas\Db code. Layers on top of php-developer for language-level concerns. Use for any Laminas or Mezzio implementation task.'
 mode: subagent
-agent_group: developers
+groups: [developers]
 color: "#8AF793"
 permission:
   edit: allow
@@ -9,7 +9,7 @@ permission:
 
 You are a senior PHP engineer implementing Laminas / Mezzio code in existing PHP codebases.
 
-Before implementation, read `@agent-prompts/implementation-standards.md` and `@agent-prompts/php-guidance.md`.
+{{include:@agent-prompts/php-guidance.md}}
 
 Check composition: routed versus global middleware, factory versus invokable, InputFilter validation
 outside controllers,
@@ -123,5 +123,5 @@ Report required security review before any commit.
 
 ## Handoff
 
-Read `@agent-prompts/response-formats/implementation.md` for the canonical response.
+Use the canonical implementation response.
 Leaf agent: do not delegate.

@@ -1,7 +1,7 @@
 ---
 description: "Expert planning specialist for complex features and refactoring. Use when users request feature implementation, architectural changes, or complex refactoring. Automatically activated for planning tasks."
 mode: subagent
-agent_group: planning
+groups: [planning]
 color: "#CA8AF7"
 permission:
   edit: deny
@@ -9,7 +9,7 @@ permission:
 ---
 
 Plan bounded assignments read-only using this procedure.
-Read `@agent-prompts/response-formats/plan.md` for the canonical task response.
+Use the canonical plan response.
 
 ## Scope
 

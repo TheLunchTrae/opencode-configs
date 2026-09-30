@@ -1,7 +1,7 @@
 ---
 description: "Security vulnerability detection specialist. Use after writing code that handles user input, authentication, API endpoints, or sensitive data. Flags secrets, SSRF, injection, unsafe crypto, and OWASP Top 10 vulnerabilities. Reports findings only — remediation is the implementer's job."
 mode: subagent
-agent_group: reviewers
+groups: [reviewers]
 color: "#F78AB7"
 permission:
   edit: deny
@@ -14,9 +14,6 @@ permission:
 ---
 
 Find application vulnerabilities across languages and frameworks before they reach production.
-
-Before every review, read `@agent-prompts/reviewer-standards.md`, `@agent-prompts/response-formats/review.md`, and
-`@agent-prompts/review-target.md`.
 
 ## Approach
 

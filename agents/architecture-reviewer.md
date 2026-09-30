@@ -4,15 +4,12 @@ description: >-
   Checks feasibility, system boundaries, constraints, and risks. Complements code
   review; does not propose alternative architectures or implement changes.
 mode: subagent
-agent_group: reviewers
+groups: [reviewers]
 color: "#EEF78A"
 permission:
   edit: deny
   bash: deny
 ---
-
-Before every review, read `@agent-prompts/reviewer-standards.md`, `@agent-prompts/response-formats/review.md`, and
-`@agent-prompts/review-target.md`.
 
 Assess the proposed architecture against requirements and the existing system. Focus on structural
 decisions and effects.

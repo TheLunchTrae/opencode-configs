@@ -1,7 +1,8 @@
 # Review response
 
-Read `@agent-prompts/response-formats/common.md`. Apply `@agent-prompts/reviewer-standards.md` for review conduct
-and `@agent-prompts/review-criteria.md` for severity and verdicts. Use these sections under `Result`:
+Read `@agent-prompts/response-formats/common.md` if its guidance was not already supplied.
+Apply `@agent-prompts/reviewer-standards.md` for review conduct and `@agent-prompts/review-criteria.md` for severity
+and verdicts. Read either reference if its guidance was not supplied. Use these sections under `Result`:
 
 ### Findings
 

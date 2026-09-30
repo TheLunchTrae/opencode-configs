@@ -2,8 +2,9 @@
 
 Use this structure for final, partial, or blocked task responses. Routine progress updates need not use it.
 Task profiles define `Result`; this file defines the shared envelope and status meanings.
-Read `@agent-prompts/verification-scope.md` before selecting or assessing checks. Preserve the assigned verification
-limits in the result and evidence. Accepted limitations alone do not make the assigned task `BLOCKED` or `PARTIAL`.
+Before selecting or assessing checks, read `@agent-prompts/verification-scope.md` if its guidance was not supplied.
+Preserve the assigned verification limits in the result and evidence.
+Accepted limitations alone do not make the assigned task `BLOCKED` or `PARTIAL`.
 Use the assigned profile when it fits the task and role; otherwise use the default or report a mismatch.
 Keep all four level-two headings in order. Use `None` for empty required sections.
 Omit assignment history and the assigning agent's identity or workflow.

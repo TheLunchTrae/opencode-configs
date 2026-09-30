@@ -1,6 +1,6 @@
 # Reviewer Standards
 
-Shared conduct for reviewer agents. Load this reference for each review.
+Shared conduct for reviewer agents. Apply this guidance for each review.
 The current agent file defines specialty, delegation authority, and stopping conditions.
 
 ## Review conduct
@@ -15,8 +15,8 @@ Use project and language authorities for style findings; read `@agent-prompts/gl
 Read `@agent-prompts/testing-standards.md` when assessing test quality, coverage, or a testing design.
 Use `test-audit` for an explicit suite audit. Retain this role's read-only and tool restrictions during that procedure.
 
-Read `@agent-prompts/review-criteria.md` for severity and verdicts and
-`@agent-prompts/response-formats/review.md` for report structure.
+Use `@agent-prompts/review-criteria.md` for severity and verdicts and
+`@agent-prompts/response-formats/review.md` for report structure. Read either reference if its guidance was not supplied.
 For code reviews, resolve scope with `@agent-prompts/review-target.md`. For design reviews, assess the supplied design.
 
 ## Verification

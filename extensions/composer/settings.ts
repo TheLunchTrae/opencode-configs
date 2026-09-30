@@ -2,7 +2,15 @@ export interface ModelChoice {
   model?: string;
   variant?: string;
 }
-export type GroupChoice = ModelChoice & { modelRef?: string };
+export interface PromptOperations {
+  prepend?: string[];
+  append?: string[];
+}
+export interface AgentPrompt extends PromptOperations {
+  inheritDefaults?: boolean;
+  inheritGroups?: boolean;
+}
+export type GroupChoice = ModelChoice & { modelRef?: string; prompt?: PromptOperations };
 export type Groups = Record<string, GroupChoice>;
 export type ModelPresets = Record<string, ModelChoice>;
 export interface NativeModels {
@@ -16,8 +24,12 @@ export interface ResolutionContext {
 export interface GroupOptions {
   groups: Groups;
   modelPresets: ModelPresets;
+  promptSources: Record<string, string>;
+  promptDefaults: PromptOperations;
+  agentPrompts: Record<string, AgentPrompt>;
 }
 export type AgentSettings = ModelChoice & {
+  groups?: string[];
   agent_group?: string;
   disable?: boolean;
   options?: Record<string, unknown>;
@@ -25,6 +37,7 @@ export type AgentSettings = ModelChoice & {
 };
 export type EffectiveChoice = GroupChoice & {
   group?: string;
+  groups?: string[];
   source: 'agent' | 'group' | 'native';
 };
 
@@ -91,36 +104,73 @@ export function modelReference(value: unknown): string {
   throw new SettingsError('Select opencode:model, opencode:small_model, or preset:<name> as the model reference.');
 }
 
-export function groupChoice(value: unknown): GroupChoice {
-  if (!record(value) || Object.keys(value).some((key) => !['model', 'modelRef', 'variant'].includes(key))) {
-    throw new SettingsError('Group defaults support only model, modelRef, and variant.');
+export function promptOperations(value: unknown, perAgent = false): AgentPrompt {
+  const keys = perAgent ? ['prepend', 'append', 'inheritDefaults', 'inheritGroups'] : ['prepend', 'append'];
+  if (!record(value) || Object.keys(value).some((key) => !keys.includes(key))) {
+    throw new SettingsError('Prompt settings support prepend and append arrays and per-agent inheritance options.');
   }
+  const result: AgentPrompt = {};
+  for (const key of ['prepend', 'append'] as const) {
+    const items: unknown = value[key];
+    if (items === undefined) {
+      continue;
+    }
+    if (!Array.isArray(items) || items.length > 256 || !items.every((item) => typeof item === 'string')) {
+      throw new SettingsError('Prompt prepend and append values must be arrays of up to 256 strings.');
+    }
+    result[key] = items.map((item: string) => item);
+  }
+  for (const key of ['inheritDefaults', 'inheritGroups'] as const) {
+    if (value[key] !== undefined) {
+      if (typeof value[key] !== 'boolean') {
+        throw new SettingsError('Prompt inheritance options must be boolean values.');
+      }
+      result[key] = value[key];
+    }
+  }
+  return result;
+}
+
+export function groupChoice(value: unknown): GroupChoice {
+  if (!record(value) || Object.keys(value).some((key) => !['model', 'modelRef', 'variant', 'prompt'].includes(key))) {
+    throw new SettingsError('Group defaults support only model, modelRef, variant, and prompt.');
+  }
+  const prompt = value.prompt === undefined ? {} : { prompt: promptOperations(value.prompt) };
   if (value.modelRef === undefined) {
-    return modelChoice({ model: value.model, variant: value.variant });
+    return { ...modelChoice({ model: value.model, variant: value.variant }), ...prompt };
   }
   if (value.model !== undefined) {
     throw new SettingsError('Choose either a model or a model reference, not both.');
   }
   const modelRef = modelReference(value.modelRef);
   const variant = variantName(value.variant);
-  return { modelRef, ...(variant !== undefined ? { variant } : {}) };
+  return { modelRef, ...(variant !== undefined ? { variant } : {}), ...prompt };
 }
 
-export function readOptions(options: unknown): GroupOptions {
-  if (options === undefined) {
-    return { groups: {}, modelPresets: {} };
-  }
+function configuredName(value: string): string {
   if (
-    !record(options) ||
-    Object.keys(options).some((key) => !['groups', 'modelPresets', 'reloadToken'].includes(key)) ||
-    (options.reloadToken !== undefined && typeof options.reloadToken !== 'string') ||
-    (options.groups !== undefined && !record(options.groups)) ||
-    (options.modelPresets !== undefined && !record(options.modelPresets))
+    value.length === 0 ||
+    value.length > 256 ||
+    /[\s\\]/.test(value) ||
+    value.split('/').some((part) => ['.', '..', '__proto__', 'constructor', 'prototype', ''].includes(part))
   ) {
-    throw new SettingsError('Agent group plugin options must contain valid groups and modelPresets objects.');
+    throw new SettingsError('Use a valid configured agent name.');
   }
+  return value;
+}
+
+function normalizedSettings(options: Record<string, unknown>, rawGroups: unknown): GroupOptions {
+  if (
+    (rawGroups !== undefined && !record(rawGroups)) ||
+    ['modelPresets', 'promptSources', 'agentPrompts'].some((key) => options[key] !== undefined && !record(options[key]))
+  ) {
+    throw new SettingsError(
+      'Composer settings must contain valid groups, modelPresets, promptSources, and agentPrompts objects.',
+    );
+  }
+  const rawPresets = record(options.modelPresets) ? options.modelPresets : {};
   const modelPresets = Object.fromEntries(
-    Object.entries(options.modelPresets ?? {}).map(([name, value]) => {
+    Object.entries(rawPresets).map(([name, value]) => {
       const choice = modelChoice(value);
       if (choice.model === undefined || choice.model === '') {
         throw new SettingsError('Each model preset requires a concrete model.');
@@ -129,7 +179,7 @@ export function readOptions(options: unknown): GroupOptions {
     }),
   );
   const groups = Object.fromEntries(
-    Object.entries(options.groups ?? {}).map(([name, choice]) => [groupName(name), groupChoice(choice)]),
+    Object.entries(record(rawGroups) ? rawGroups : {}).map(([name, choice]) => [groupName(name), groupChoice(choice)]),
   );
   for (const choice of Object.values(groups)) {
     if (choice.modelRef?.startsWith('preset:') === true && !Object.hasOwn(modelPresets, choice.modelRef.slice(7))) {
@@ -138,16 +188,101 @@ export function readOptions(options: unknown): GroupOptions {
       );
     }
   }
-  return { groups, modelPresets };
+  const promptSources = Object.fromEntries(
+    Object.entries(record(options.promptSources) ? options.promptSources : {}).map(([name, value]) => {
+      if (typeof value !== 'string' || value.trim() === '' || value.includes('\0')) {
+        throw new SettingsError('Each prompt source requires a directory path.');
+      }
+      return [settingName(name, 'prompt source'), value];
+    }),
+  );
+  const agentPrompts = Object.fromEntries(
+    Object.entries(record(options.agentPrompts) ? options.agentPrompts : {}).map(([name, value]) => [
+      configuredName(name),
+      promptOperations(value, true),
+    ]),
+  );
+  return {
+    groups,
+    modelPresets,
+    promptSources,
+    promptDefaults: promptOperations(options.promptDefaults ?? {}),
+    agentPrompts,
+  };
+}
+
+export function readSettings(value: unknown): GroupOptions {
+  if (
+    !record(value) ||
+    Object.keys(value).some(
+      (key) => !['$schema', 'groups', 'modelPresets', 'promptSources', 'promptDefaults', 'agentPrompts'].includes(key),
+    ) ||
+    (value.$schema !== undefined && typeof value.$schema !== 'string')
+  ) {
+    throw new SettingsError('Use a valid Composer configuration object.');
+  }
+  const namespaces = value.groups ?? {};
+  if (!record(namespaces) || Object.keys(namespaces).some((key) => !['agents', 'commands', 'skills'].includes(key))) {
+    throw new SettingsError('Composer groups must use agents, commands, and skills namespaces.');
+  }
+  for (const namespace of ['commands', 'skills']) {
+    const entries: unknown = namespaces[namespace];
+    if (entries !== undefined && (!record(entries) || Object.keys(entries).length !== 0)) {
+      throw new SettingsError(
+        `Composer ${namespace} groups are reserved and are not supported yet. Leave this namespace empty.`,
+      );
+    }
+  }
+  return normalizedSettings(value, namespaces.agents);
+}
+
+export function readOptions(options: unknown): GroupOptions {
+  if (options === undefined) {
+    return normalizedSettings({}, {});
+  }
+  if (
+    !record(options) ||
+    Object.keys(options).some((key) => !['groups', 'modelPresets', 'reloadToken'].includes(key)) ||
+    (options.reloadToken !== undefined && typeof options.reloadToken !== 'string')
+  ) {
+    throw new SettingsError(
+      'Composer inline options support only groups, modelPresets, and reloadToken. Use configFile for dedicated settings.',
+    );
+  }
+  return normalizedSettings(options, options.groups);
 }
 
 export function readGroups(options: unknown): Groups {
   return readOptions(options).groups;
 }
 
-export function agentGroup(agent: AgentSettings): string | undefined {
+export function agentGroups(agent: AgentSettings, available?: Groups): string[] {
+  const memberships: unknown = agent.groups ?? agent.options?.groups;
+  if (memberships !== undefined) {
+    if (
+      !Array.isArray(memberships) ||
+      memberships.length > 64 ||
+      !memberships.every((name) => typeof name === 'string')
+    ) {
+      throw new SettingsError('Agent groups must be an ordered array of up to 64 group names.');
+    }
+    const groups = memberships.map(groupName);
+    if (new Set(groups).size !== groups.length) {
+      throw new SettingsError('Agent groups must not contain duplicate memberships.');
+    }
+    if (available !== undefined && groups.some((name) => !Object.hasOwn(available, name))) {
+      throw new SettingsError(
+        'An agent names an unknown Composer group. Create the group or correct its ordered memberships.',
+      );
+    }
+    return groups;
+  }
   const rawGroup = agent.agent_group ?? agent.options?.agent_group;
-  return rawGroup === undefined ? undefined : groupName(rawGroup);
+  return rawGroup === undefined ? [] : [groupName(rawGroup)];
+}
+
+export function agentGroup(agent: AgentSettings): string | undefined {
+  return agentGroups(agent).at(-1);
 }
 
 export function resolveGroup(choice: GroupChoice, context: ResolutionContext = {}): GroupChoice {
@@ -173,24 +308,41 @@ export function resolveGroup(choice: GroupChoice, context: ResolutionContext = {
 }
 
 export function resolveChoice(agent: AgentSettings, groups: Groups, context: ResolutionContext = {}): EffectiveChoice {
-  const group = agentGroup(agent);
+  const memberships = agentGroups(agent, groups);
+  const group =
+    memberships.findLast(
+      (name) =>
+        Object.hasOwn(groups, name) && (groups[name].model !== undefined || groups[name].modelRef !== undefined),
+    ) ?? memberships.at(-1);
+  const metadata = agent.groups !== undefined || agent.options?.groups !== undefined ? { groups: memberships } : {};
   if (typeof agent.model === 'string' && agent.model !== '') {
-    return { group, model: agent.model, variant: agent.variant, source: 'agent' };
+    return { group, ...metadata, model: agent.model, variant: agent.variant, source: 'agent' };
   }
-  const defaults =
-    group !== undefined && group !== '' && Object.hasOwn(groups, group)
-      ? resolveGroup(groups[group], context)
-      : undefined;
-  if (defaults?.model !== undefined && defaults.model !== '') {
+  const defaults: GroupChoice = {};
+  for (const name of memberships) {
+    if (!Object.hasOwn(groups, name)) {
+      continue;
+    }
+    const next = resolveGroup(groups[name], context);
+    if (next.model !== undefined) {
+      defaults.model = next.model;
+      defaults.modelRef = next.modelRef;
+    }
+    if (next.variant !== undefined) {
+      defaults.variant = next.variant;
+    }
+  }
+  if (defaults.model !== undefined && defaults.model !== '') {
     return {
       group,
+      ...metadata,
       model: defaults.model,
       variant: agent.variant ?? defaults.variant,
       source: 'group',
       ...(defaults.modelRef !== undefined && defaults.modelRef !== '' ? { modelRef: defaults.modelRef } : {}),
     };
   }
-  return { group, variant: agent.variant, source: 'native' };
+  return { group, ...metadata, variant: agent.variant, source: 'native' };
 }
 
 export function applyDefaults(

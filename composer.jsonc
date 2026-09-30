@@ -1,0 +1,65 @@
+{
+  "$schema": "./extensions/composer/schema.json",
+  "modelPresets": {
+    "balanced": { "model": "openai/gpt-5.6-sol", "variant": "medium" },
+    "lightweight": { "model": "openai/gpt-5.6-terra", "variant": "medium" }
+  },
+  "promptSources": {
+    "agent-prompts": "./references/agent-prompts"
+  },
+  "promptDefaults": {
+    "append": ["@agent-prompts/response-formats/common.md"]
+  },
+  "groups": {
+    "agents": {
+      "workflow": { "modelRef": "opencode:model", "variant": "high" },
+      "planning": { "modelRef": "opencode:model", "variant": "high" },
+      "developers": {
+        "modelRef": "preset:balanced",
+        "prompt": {
+          "prepend": ["@agent-prompts/implementation-standards.md"],
+          "append": ["@agent-prompts/response-formats/implementation.md"]
+        }
+      },
+      "reviewers": {
+        "modelRef": "opencode:model",
+        "variant": "high",
+        "prompt": {
+          "prepend": [
+            "@agent-prompts/reviewer-standards.md",
+            "@agent-prompts/review-target.md",
+            "@agent-prompts/review-criteria.md"
+          ],
+          "append": ["@agent-prompts/response-formats/review.md"]
+        }
+      },
+      "refactoring": {
+        "modelRef": "preset:balanced",
+        "prompt": {
+          "prepend": ["@agent-prompts/implementation-standards.md"]
+        }
+      },
+      "documentation": {
+        "modelRef": "preset:lightweight",
+        "prompt": {
+          "append": ["@agent-prompts/response-formats/documentation.md"]
+        }
+      },
+      "research": { "modelRef": "preset:lightweight" },
+      "system": { "modelRef": "preset:lightweight" }
+    },
+    "commands": {},
+    "skills": {}
+  },
+  "agentPrompts": {
+    "workflow-lead": { "inheritDefaults": false, "inheritGroups": false },
+    "planning-lead": { "inheritDefaults": false, "inheritGroups": false },
+    "implementation-lead": { "inheritDefaults": false, "inheritGroups": false },
+    "review-lead": { "inheritDefaults": false, "inheritGroups": false },
+    "architect": { "append": ["@agent-prompts/response-formats/design.md"] },
+    "planner": { "append": ["@agent-prompts/response-formats/plan.md"] },
+    "code-simplifier": { "append": ["@agent-prompts/response-formats/implementation.md"] },
+    "refactor-cleaner": { "append": ["@agent-prompts/response-formats/implementation.md"] },
+    "performance-optimizer": { "append": ["@agent-prompts/response-formats/performance.md"] }
+  }
+}
