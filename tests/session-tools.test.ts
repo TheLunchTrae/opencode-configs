@@ -49,7 +49,7 @@ test('saved Config Composer inspection reads matching local settings and rejects
   const api = (directory: string) => ({ state: { path: { config: directory } } }) as unknown as TuiPluginApi;
   await writeFile(
     join(local, 'config-composer.jsonc'),
-    JSON.stringify({ groups: { agents: { developers: { model: 'fixture/local' } }, skills: {}, commands: {} } }),
+    JSON.stringify({ agent: { groups: { developers: { model: 'fixture/local' } } }, skill: {}, command: {} }),
   );
   const saved = await savedConfigComposerConfiguration(api(local), config);
   assert.equal(saved?.source, join(local, 'config-composer.jsonc'));

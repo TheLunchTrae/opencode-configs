@@ -26,42 +26,88 @@ async function directory(t: TestContext): Promise<string> {
 
 test('dedicated settings normalize typed groups and reject unsupported namespaces and malformed prompt settings', () => {
   const settings = readSettings({
-    groups: {
-      agents: { developers: { modelRef: 'preset:balanced', prompt: { append: ['Guidance'] } } },
-      commands: {},
-      skills: {},
+    agent: {
+      groups: { developers: { modelRef: 'preset:balanced', prompt: { append: ['Guidance'] } } },
+      modelPresets: { balanced: { model: 'fixture/fast', variant: 'high' } },
+      prompts: { overrides: { 'team/lead': { inheritDefaults: false, append: ['Lead'] } } },
     },
-    modelPresets: { balanced: { model: 'fixture/fast', variant: 'high' } },
-    promptSources: { shared: './references' },
-    agentPrompts: { 'team/lead': { inheritDefaults: false, append: ['Lead'] } },
+    command: {},
+    skill: {},
+    sourceDirectories: { shared: './references' },
   });
   assert.equal(settings.groups.developers.modelRef, 'preset:balanced');
   assert.deepEqual(settings.groups.developers.prompt, { append: ['Guidance'] });
   assert.deepEqual(settings.promptDefaults, {});
   assert.deepEqual(settings.agentPrompts['team/lead'], { inheritDefaults: false, append: ['Lead'] });
-  assert.throws(() => readSettings({ groups: { commands: { build: {} } } }), /reserved/);
-  assert.throws(() => readSettings({ groups: { skills: { reviewer: {} } } }), /reserved/);
-  assert.throws(() => readSettings({ groups: { other: {} } }), /namespaces/);
-  assert.throws(() => readSettings({ promptDefaults: { append: 'wrong' } }), /arrays/);
-  assert.throws(() => readSettings({ promptDefaults: { inheritDefaults: false } }), /Prompt settings/);
-  assert.throws(() => readSettings({ agentPrompts: { lead: { inheritGroups: 'wrong' } } }), /boolean/);
+  assert.throws(() => readSettings({ command: { groups: { build: {} } } }), /reserved/);
+  assert.throws(() => readSettings({ skill: { groups: { reviewer: {} } } }), /reserved/);
+  assert.throws(() => readSettings({ agent: { prompts: { defaults: { append: 'wrong' } } } }), /arrays/);
   assert.throws(
-    () => readSettings({ groups: { agents: { reviewer: { modelRef: 'preset:absent' } } } }),
+    () => readSettings({ agent: { prompts: { defaults: { inheritDefaults: false } } } }),
+    /Prompt settings/,
+  );
+  assert.throws(
+    () => readSettings({ agent: { prompts: { overrides: { lead: { inheritGroups: 'wrong' } } } } }),
+    /boolean/,
+  );
+  assert.throws(
+    () => readSettings({ agent: { groups: { reviewer: { modelRef: 'preset:absent' } } } }),
     /does not exist/,
   );
   assert.throws(() => readOptions({ configFile: 'config-composer.jsonc', groups: {} }), /configFile/);
 });
 
+test('dedicated settings reject misplaced flat fields and malformed entity sections', () => {
+  for (const invalid of [
+    { groups: { agents: {} } },
+    { modelPresets: {} },
+    { promptSources: {} },
+    { promptDefaults: {} },
+    { agentPrompts: {} },
+    { agent: null },
+    { agent: [] },
+    { agent: { groups: null } },
+    { agent: { modelPresets: [] } },
+    { agent: { promptDefaults: {} } },
+    { agent: { prompts: null } },
+    { agent: { prompts: [] } },
+    { agent: { prompts: { agentPrompts: {} } } },
+    { agent: { prompts: { defaults: null } } },
+    { agent: { prompts: { overrides: [] } } },
+    { sourceDirectories: null },
+    { sourceDirectories: [] },
+    { sourceDirectories: { shared: null } },
+    { sourceDirectories: { shared: ' ' } },
+    { sourceDirectories: { shared: '\0' } },
+    { command: null },
+    { skill: [] },
+  ]) {
+    assert.throws(() => readSettings(invalid));
+  }
+  const defaults = readSettings({ sourceDirectories: {}, agent: { prompts: {} }, command: {}, skill: {} });
+  assert.deepEqual(defaults, {
+    groups: {},
+    modelPresets: {},
+    promptSources: {},
+    promptDefaults: {},
+    agentPrompts: {},
+  });
+  assert.equal(
+    readOptions({ groups: { developers: { model: 'fixture/legacy' } } }).groups.developers.model,
+    'fixture/legacy',
+  );
+});
+
 test('ordered memberships merge fields and explicit agent models keep their precedence', () => {
   const settings = readSettings({
-    groups: {
-      agents: {
+    agent: {
+      groups: {
         base: { modelRef: 'preset:balanced' },
         developers: { model: 'fixture/next' },
         reviewers: { modelRef: 'opencode:small_model', variant: 'low' },
       },
+      modelPresets: { balanced: { model: 'fixture/fast', variant: 'high' } },
     },
-    modelPresets: { balanced: { model: 'fixture/fast', variant: 'high' } },
   });
   const context = { modelPresets: settings.modelPresets, native: { small_model: 'fixture/small' } };
   const agents: Record<string, AgentSettings> = {
@@ -97,13 +143,13 @@ test('loader resolves paths from the dedicated file and rereads external edits w
   const path = join(root, 'config-composer.jsonc');
   await writeFile(
     path,
-    '// Keep comments.\n{"groups":{"agents":{},"commands":{},"skills":{}},"promptSources":{"shared":"./references"},}\n',
+    '// Keep comments.\n{"agent":{"groups":{}},"command":{},"skill":{},"sourceDirectories":{"shared":"./references"},}\n',
   );
   const initial = await loadConfiguration({ configFile: 'config-composer.jsonc', reloadToken: 'token' }, root);
   assert.equal(initial.file?.path, path);
   assert.match(initial.file.text, /Keep comments/);
   assert.equal(initial.settings.promptSources.shared, join(root, 'references'));
-  await writeFile(path, '{"promptDefaults":{"append":["Updated"]}}');
+  await writeFile(path, '{"agent":{"prompts":{"defaults":{"append":["Updated"]}}}}');
   assert.deepEqual((await loadConfiguration({ configFile: path }, '/unused')).settings.promptDefaults, {
     append: ['Updated'],
   });
@@ -117,9 +163,12 @@ test('loader resolves paths from the dedicated file and rereads external edits w
 });
 
 test('JSONC parser rejects duplicate keys at any depth and invalid root objects', () => {
-  assert.deepEqual(parseConfiguration('{"groups":{"agents":{},},}'), { groups: { agents: {} } });
-  assert.throws(() => parseConfiguration('{"groups":{},"groups":{}}'), /duplicate/);
-  assert.throws(() => parseConfiguration('{"agentPrompts":{"lead":{"append":[],"append":[]}}}'), /duplicate/);
+  assert.deepEqual(parseConfiguration('{"agent":{"groups":{},},}'), { agent: { groups: {} } });
+  assert.throws(() => parseConfiguration('{"agent":{},"agent":{}}'), /duplicate/);
+  assert.throws(
+    () => parseConfiguration('{"agent":{"prompts":{"overrides":{"lead":{"append":[],"append":[]}}}}}'),
+    /duplicate/,
+  );
   assert.throws(() => parseConfiguration('[]'), /invalid/);
   assert.throws(() => parseConfiguration('{'), /invalid/);
 });

@@ -64,7 +64,7 @@ When a supported CRITICAL vulnerability is found:
 ## Language review delegation
 
 You may delegate only to `typescript-reviewer`, `go-reviewer`, `csharp-reviewer`, and `php-reviewer`,
-for language-specific security evidence. Read `@agent-prompts/delegation-contract.md` before assigning work.
+for language-specific security evidence. Read `@agent-references/delegation-contract.md` before assigning work.
 Reuse applicable current-scope findings and checks; delegate only uncovered scope.
 Validate returned citations, scope, and uncertainty before incorporating findings.
 
@@ -81,6 +81,6 @@ Missing or failing CI does not prevent review; a verdict alone does not establis
 
 ## Reference
 
-Read `@agent-prompts/owasp-2021.md` when detailed vulnerability patterns or remediation examples are needed.
+Read `@agent-references/owasp-2021.md` when detailed vulnerability patterns or remediation examples are needed.
 Use the canonical review response for findings. Do not infer a confirmed CVE from a dependency's apparent age;
 use verified advisory or permitted scanner evidence. State missing context for design or logging risks.

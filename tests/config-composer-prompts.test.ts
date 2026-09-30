@@ -20,17 +20,19 @@ test('composition preserves authored text and applies default, group, and agent 
   await writeFile(join(root, 'shared/inner.md'), 'Included');
   await writeFile(join(root, 'shared/outer.md'), 'Outer {{include:@shared/inner.md}}');
   const settings = readSettings({
-    promptSources: { shared: join(root, 'shared') },
-    promptDefaults: { prepend: ['Default before'], append: ['Default after'] },
-    groups: {
-      agents: {
+    sourceDirectories: { shared: join(root, 'shared') },
+    agent: {
+      groups: {
         base: { prompt: { prepend: ['Base before'], append: ['Base after'] } },
         team: { prompt: { prepend: ['Team before'], append: ['Team after'] } },
       },
-    },
-    agentPrompts: {
-      worker: { prepend: ['@shared/outer.md'], append: ['Agent after'] },
-      lead: { inheritDefaults: false, inheritGroups: false, append: ['Lead after'] },
+      prompts: {
+        defaults: { prepend: ['Default before'], append: ['Default after'] },
+        overrides: {
+          worker: { prepend: ['@shared/outer.md'], append: ['Agent after'] },
+          lead: { inheritDefaults: false, inheritGroups: false, append: ['Lead after'] },
+        },
+      },
     },
   });
   const agents = {
@@ -53,7 +55,7 @@ test('composition preserves authored text and applies default, group, and agent 
 
 test('includes reject missing paths, traversal, symlink escapes, unsafe text, cycles, and size limits', async (t) => {
   const root = await directory(t);
-  const settings = readSettings({ promptSources: { shared: join(root, 'shared') } });
+  const settings = readSettings({ sourceDirectories: { shared: join(root, 'shared') } });
   const attempt = (reference: string) => composePrompts({ worker: { prompt: `{{include:${reference}}}` } }, settings);
   await assert.rejects(attempt('@shared/missing.md'), /Could not read/);
   await assert.rejects(attempt('@missing/file.md'), /does not exist/);
@@ -107,10 +109,12 @@ test('server stages every model and prompt before mutation and recomposes withou
   await writeFile(
     file,
     JSON.stringify({
-      promptSources: { shared: './shared' },
-      promptDefaults: { append: ['Default after'] },
-      groups: { agents: { developers: { modelRef: 'preset:balanced' } } },
-      modelPresets: { balanced: { model: 'fixture/fast', variant: 'high' } },
+      sourceDirectories: { shared: './shared' },
+      agent: {
+        prompts: { defaults: { append: ['Default after'] } },
+        groups: { developers: { modelRef: 'preset:balanced' } },
+        modelPresets: { balanced: { model: 'fixture/fast', variant: 'high' } },
+      },
     }),
   );
   const hooks = await ConfigComposerPlugin({} as PluginInput, { configFile: file });
@@ -141,8 +145,8 @@ test('recomposition reloads fragments, removes prior inherited fields, and retai
   await writeFile(
     file,
     JSON.stringify({
-      promptSources: { shared: './shared' },
-      groups: { agents: { base: { modelRef: 'opencode:model' } } },
+      sourceDirectories: { shared: './shared' },
+      agent: { groups: { base: { modelRef: 'opencode:model' } } },
     }),
   );
   const hooks = await ConfigComposerPlugin({} as PluginInput, { configFile: file });
@@ -166,7 +170,7 @@ test('recomposition reloads fragments, removes prior inherited fields, and retai
   const variantFile = join(root, 'variant.jsonc');
   await writeFile(
     variantFile,
-    JSON.stringify({ groups: { agents: { base: { model: 'fixture/first', variant: 'low' } } } }),
+    JSON.stringify({ agent: { groups: { base: { model: 'fixture/first', variant: 'low' } } } }),
   );
   const variantHooks = await ConfigComposerPlugin({} as PluginInput, { configFile: variantFile });
   const inherited: AgentSettings = { groups: ['base'], prompt: 'Authored' };

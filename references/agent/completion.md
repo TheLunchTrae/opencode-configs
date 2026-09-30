@@ -26,6 +26,6 @@ Use `checkpoint` before a context reset only when saving is authorized.
 
 ## Project learning
 
-When recurring mistakes have concrete evidence, read `@agent-prompts/project-learning.md`.
+When recurring mistakes have concrete evidence, read `@agent-references/project-learning.md`.
 Consolidate recommendations under the lead contract's coordination and approval rules.
 Reuse prior stop-time assessments. Update only when new evidence changes the cause or proposed prevention.

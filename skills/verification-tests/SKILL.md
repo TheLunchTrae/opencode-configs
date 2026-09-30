@@ -7,10 +7,10 @@ description: Design and generate reusable verification tests for existing reposi
 
 Apply only the assigned portion within scope, authorization, review requirements, and budget.
 This skill does not expand roles, permissions, or read-only assignments.
-Read `@agent-prompts/verification-scope.md` before discovery. Apply its limits separately to coverage design,
+Read `@agent-references/verification-scope.md` before discovery. Apply its limits separately to coverage design,
 test generation, execution, and infrastructure changes throughout this procedure.
 Before writing tests, read `@agent-prompts/implementation-standards.md` and applicable project and language guidance.
-Read `@agent-prompts/testing-standards.md` for coverage design and authoring decisions.
+Read `@agent-references/testing-standards.md` for coverage design and authoring decisions.
 
 Build executable coverage for established behavior. Use `test-first` when implementing a new behavior or fixing a bug.
 A verification suite can combine unit, integration, contract, CLI, API, or end-to-end tests as the scope requires.

@@ -356,8 +356,8 @@ export function planChange(snapshot: Snapshot, change: Change): EditPlan {
       settingsText = editJson(settingsText, path, value);
     }
   };
-  const groupPath = snapshot.settingsFile === undefined ? ['groups'] : ['groups', 'agents'];
-  const presetPath = ['modelPresets'];
+  const groupPath = snapshot.settingsFile === undefined ? ['groups'] : ['agent', 'groups'];
+  const presetPath = snapshot.settingsFile === undefined ? ['modelPresets'] : ['agent', 'modelPresets'];
   const patchGroup = (name: string, value: GroupChoice) => {
     const choice = groupChoice(value);
     if (!Object.hasOwn(snapshot.groups, name)) {

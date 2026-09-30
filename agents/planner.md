@@ -17,12 +17,12 @@ Do not edit files, execute scripts, run tests, or delegate.
 Return consequential product ambiguities as focused questions in unresolved items.
 
 Default to an immediate full-state change. Do not invent migration windows or compatibility scaffolding.
-Read `@agent-prompts/phased-plan.md` when the user requests phases or safe deployment structurally requires them.
+Read `@agent-references/phased-plan.md` when the user requests phases or safe deployment structurally requires them.
 Acceptance slices organize work; they do not imply separate releases.
 
 ## Coverage design
 
-For behavior or test changes, read `@agent-prompts/testing-standards.md`.
+For behavior or test changes, read `@agent-references/testing-standards.md`.
 Map acceptance examples to existing assertions and meaningful gaps. Select test levels by the failures they can detect.
 For user journeys with integration risks, use the design portion of `end-to-end-tests`.
 Include real/substituted boundaries, outcomes, fixtures, cleanup, execution prerequisites, and

@@ -11,8 +11,8 @@ For diff reviews, prioritize changed material and use unchanged surrounding code
 For explicit file or suite audits, assess the complete requested scope, including unchanged material.
 Report defects outside the requested scope only for a CRITICAL security issue.
 Explain evidence, impact, and an actionable correction.
-Use project and language authorities for style findings; read `@agent-prompts/global-coding-style.md` when applicable.
-Read `@agent-prompts/testing-standards.md` when assessing test quality, coverage, or a testing design.
+Use project and language authorities for style findings; read `@agent-references/global-coding-style.md` when applicable.
+Read `@agent-references/testing-standards.md` when assessing test quality, coverage, or a testing design.
 Use `test-audit` for an explicit suite audit. Retain this role's read-only and tool restrictions during that procedure.
 
 Use `@agent-prompts/review-criteria.md` for severity and verdicts and

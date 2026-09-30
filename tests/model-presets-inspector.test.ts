@@ -85,17 +85,19 @@ test('inspector reports saved dedicated ordered groups without exposing prompt t
     plugin: [['/config/extensions/config-composer/server.ts', { configFile: 'config-composer.jsonc' }]],
   };
   const settings = readSettings({
-    groups: {
-      agents: {
+    agent: {
+      groups: {
         developers: { model: 'fixture/development', prompt: { prepend: ['PRIVATE_PROMPT_TEXT'] } },
         reviewers: { modelRef: 'preset:review', prompt: { append: ['PRIVATE_REVIEW_TEXT'] } },
       },
-      commands: {},
-      skills: {},
+      modelPresets: { review: { model: 'fixture/review', variant: 'high' } },
+      prompts: {
+        defaults: { append: ['PRIVATE_GLOBAL_TEXT'] },
+        overrides: { worker: { inheritDefaults: false, append: ['PRIVATE_AGENT_TEXT'] } },
+      },
     },
-    modelPresets: { review: { model: 'fixture/review', variant: 'high' } },
-    promptDefaults: { append: ['PRIVATE_GLOBAL_TEXT'] },
-    agentPrompts: { worker: { inheritDefaults: false, append: ['PRIVATE_AGENT_TEXT'] } },
+    command: {},
+    skill: {},
   });
   const before = JSON.stringify(settings);
   const facts = configFacts(configured, input, undefined, [], { settings, source: '/config/config-composer.jsonc' });

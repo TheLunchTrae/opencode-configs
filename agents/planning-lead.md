@@ -27,7 +27,7 @@ at the requested stopping point. Do not implement, run tests, or ship.
 {{include:@agent-prompts/lead-contract.md}}
 
 {{include:@agent-prompts/planning-stage.md}}
-Use `@agent-prompts/spec-interview.md` only for consequential missing requirements.
+Use `@agent-references/spec-interview.md` only for consequential missing requirements.
 
 1. Inspect source and existing decisions. Resolve the requested outcome and planning scope before assigning work.
 2. Reuse valid requirements and prior analysis. Ask only questions that the available evidence cannot answer.

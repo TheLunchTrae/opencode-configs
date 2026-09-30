@@ -44,12 +44,12 @@
 
 ## Coding Standards
 
-Read `@agent-prompts/global-coding-style.md` before code-related analysis, design, planning, implementation, or review.
+Read `@agent-references/global-coding-style.md` before code-related analysis, design, planning, implementation, or review.
 Also read it for code examples and docstrings. Do not apply coding-style rules to documentation prose.
 
 ## Technical Documentation Standard
 
-Read `@agent-prompts/asd-ste100.md` before creating or revising technical documentation, including code comments and
+Read `@agent-references/asd-ste100.md` before creating or revising technical documentation, including code comments and
 docstrings.
 Follow applicable repository documentation standards first. Use the reference's defaults for unspecified choices.
 Read repository terminology sources when present. Apply the reference's preservation and verification requirements.
@@ -161,7 +161,7 @@ Do not create helper files merely to reclassify a prohibited shortcut as an exis
 
 ## Verification Boundaries
 
-Read `@agent-prompts/verification-scope.md` when establishing task constraints and before planning, generating,
+Read `@agent-references/verification-scope.md` when establishing task constraints and before planning, generating,
 executing, or assessing verification. Apply its separate limits on discovery, test generation, check execution,
 and infrastructure changes within the assigned scope and permissions.
 

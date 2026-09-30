@@ -2,7 +2,7 @@
 
 Apply when planning, writing, reviewing, or removing tests. Follow project and language rules within assigned scope,
 permissions, and approved verification boundaries.
-Read `@agent-prompts/verification-scope.md` before applying these standards. Honor its separate limits on discovery,
+Read `@agent-references/verification-scope.md` before applying these standards. Honor its separate limits on discovery,
 test generation, execution, and infrastructure changes throughout the work.
 
 ## Decide what evidence is needed

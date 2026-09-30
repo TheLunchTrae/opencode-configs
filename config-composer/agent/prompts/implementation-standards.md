@@ -1,7 +1,7 @@
 # Shared implementation guidance
 
 Use this reference for implementation technique within the assigned scope, permissions, and authorization.
-Before selecting tests or checks, read `@agent-prompts/verification-scope.md` if its guidance was not already supplied.
+Before selecting tests or checks, read `@agent-references/verification-scope.md` if its guidance was not already supplied.
 Apply its boundary to the guidance below.
 
 ## Ground the change
@@ -16,7 +16,7 @@ Apply its boundary to the guidance below.
 
 ## Implement and verify
 
-- For behavior or test changes, read `@agent-prompts/testing-standards.md` before selecting or writing coverage.
+- For behavior or test changes, read `@agent-references/testing-standards.md` before selecting or writing coverage.
   Use the assigned testing skills within the approved scope. Report missing coverage without expanding the task.
 - Preserve intended behavior, interfaces, and security boundaries. Handle relevant failure paths.
 - Add or update tests when they can detect a meaningful regression.

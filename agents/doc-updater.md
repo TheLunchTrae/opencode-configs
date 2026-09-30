@@ -27,7 +27,7 @@ documented doc-generation tool when one exists (`cargo doc`, `godoc`, `pydoc` / 
 
 ## Research delegation
 
-Read `@agent-prompts/delegation-contract.md` before assigning source research.
+Read `@agent-references/delegation-contract.md` before assigning source research.
 For structural research across many files when you cannot run language tools, or analysis needs dozens of file reads,
 you may invoke only the matching base developer:
 `typescript-developer`, `go-developer`, `csharp-developer`, or `php-developer`.

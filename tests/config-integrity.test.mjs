@@ -105,20 +105,20 @@ const markdown = (directory) =>
   });
 const promptPaths = [
   'AGENTS.md',
-  ...['agents/', 'commands/', 'skills/', 'references/agent-prompts/'].flatMap(markdown),
+  ...['agents/', 'commands/', 'skills/', 'references/agent/', 'config-composer/agent/prompts/'].flatMap(markdown),
 ];
 const documentPaths = [...promptPaths, 'config-composer.jsonc', 'README.md', 'USAGE.md', '.opencode/AGENTS.md'];
 
 const promptReferences = (text) => [...text.matchAll(/@([a-z][a-z0-9-]*)\/([\w./-]+\.md)/g)];
 const configuredFragments = (name) => {
   const settings = authoredAgents[name];
-  const overrides = composer.agentPrompts[name] ?? {};
+  const overrides = composer.agent.prompts.overrides[name] ?? {};
   const operations = [];
   if (overrides.inheritDefaults !== false) {
-    operations.push(composer.promptDefaults);
+    operations.push(composer.agent.prompts.defaults);
   }
   if (overrides.inheritGroups !== false) {
-    operations.push(...(settings.groups ?? []).map((group) => composer.groups.agents[group]?.prompt ?? {}));
+    operations.push(...(settings.groups ?? []).map((group) => composer.agent.groups[group]?.prompt ?? {}));
   }
   operations.push(overrides);
   return operations.flatMap((operation) => [...(operation.prepend ?? []), ...(operation.append ?? [])]);
@@ -504,11 +504,17 @@ test('commands do not shadow documented built-in commands or aliases', () => {
   }
 });
 
-test('shared prompts use a hidden directory reference', () => {
-  const reference = config.references['agent-prompts'];
-  assert.equal(reference.hidden, true);
-  assert.ok(reference.description?.trim(), 'missing directory description');
-  assert.ok(statSync(new URL(reference.path, root)).isDirectory(), 'references must point to directories');
+test('composition prompts and conditional agent references use separate hidden directory references', () => {
+  for (const [alias, path] of [
+    ['agent-prompts', './config-composer/agent/prompts'],
+    ['agent-references', './references/agent'],
+  ]) {
+    const reference = config.references[alias];
+    assert.equal(reference.path, path);
+    assert.equal(reference.hidden, true);
+    assert.ok(reference.description?.trim(), `${alias}: missing directory description`);
+    assert.ok(statSync(new URL(reference.path, root)).isDirectory(), `${alias}: reference must point to a directory`);
+  }
 });
 
 test('Config Composer owns shared settings in a dedicated typed configuration', () => {
@@ -516,10 +522,10 @@ test('Config Composer owns shared settings in a dedicated typed configuration', 
     (plugin) => Array.isArray(plugin) && plugin[0] === './extensions/config-composer/server.ts',
   );
   assert.deepEqual(entry?.[1], { configFile: 'config-composer.jsonc' });
-  assert.deepEqual(Object.keys(composer.groups), ['agents', 'commands', 'skills']);
-  assert.deepEqual(composer.groups.commands, {});
-  assert.deepEqual(composer.groups.skills, {});
-  assert.equal(composer.promptSources['agent-prompts'], config.references['agent-prompts'].path);
+  assert.deepEqual(Object.keys(composer.agent), ['modelPresets', 'groups', 'prompts']);
+  assert.deepEqual(composer.command, {});
+  assert.deepEqual(composer.skill, {});
+  assert.equal(composer.sourceDirectories['agent-prompts'], config.references['agent-prompts'].path);
   for (const [name, settings] of Object.entries(authoredAgents)) {
     assert.ok(Array.isArray(settings.groups), `${name}: use an ordered membership array`);
     assert.equal(settings.agent_group, undefined, `${name}: legacy membership remains`);
@@ -527,8 +533,10 @@ test('Config Composer owns shared settings in a dedicated typed configuration', 
 });
 
 test('prompt references resolve to files under the configured directory', () => {
-  const promptFiles = markdown('references/agent-prompts/').map((path) =>
-    path.slice('references/agent-prompts/'.length),
+  const promptFiles = Object.entries(config.references).flatMap(([alias, reference]) =>
+    ['agent-prompts', 'agent-references'].includes(alias)
+      ? markdown(`${reference.path.replace(/^\.\//, '').replace(/\/$/, '')}/`)
+      : [],
   );
   const referenced = new Set();
   for (const path of documentPaths) {
@@ -544,8 +552,8 @@ test('prompt references resolve to files under the configured directory', () => 
       const target = new URL(file, directory);
       assert.ok(target.href.startsWith(directory.href), `${path}: reference escapes its directory`);
       assert.ok(statSync(target).isFile(), `${path}: missing prompt ${file}`);
-      if (alias === 'agent-prompts') {
-        referenced.add(file);
+      if (['agent-prompts', 'agent-references'].includes(alias)) {
+        referenced.add(fileURLToPath(target).slice(fileURLToPath(root).length));
       }
     }
   }
@@ -554,7 +562,7 @@ test('prompt references resolve to files under the configured directory', () => 
   }
 });
 
-const responseDirectory = 'references/agent-prompts/response-formats/';
+const responseDirectory = 'config-composer/agent/prompts/response-formats/';
 const responseProfiles = markdown(responseDirectory).filter((path) => !/\/(?:common|catalog)\.md$/.test(path));
 const sharedReferences = (path, visited = new Set()) => {
   if (visited.has(path)) {
@@ -565,8 +573,8 @@ const sharedReferences = (path, visited = new Set()) => {
   const sources = name === undefined ? [read(path)] : [read(path), ...configuredFragments(name)];
   for (const source of sources) {
     for (const [, alias, file] of promptReferences(source)) {
-      if (alias === 'agent-prompts') {
-        sharedReferences(`references/agent-prompts/${file}`, visited);
+      if (['agent-prompts', 'agent-references'].includes(alias)) {
+        sharedReferences(`${config.references[alias].path.replace(/^\.\//, '').replace(/\/$/, '')}/${file}`, visited);
       }
     }
   }
@@ -596,7 +604,7 @@ test('every specialist receives or conditionally references one canonical task r
         [read(`agents/${name}.md`), ...configuredFragments(name)]
           .flatMap(promptReferences)
           .filter(([, alias, file]) => alias === 'agent-prompts' && file.startsWith('response-formats/'))
-          .map(([, , file]) => `references/agent-prompts/${file}`)
+          .map(([, , file]) => `config-composer/agent/prompts/${file}`)
           .filter((path) => !/\/(?:common|catalog)\.md$/.test(path)),
       ),
     ];
@@ -614,11 +622,13 @@ test('standing guidance is compiled into specialist prompts while conditional re
   }
   for (const name of leads) {
     assert.ok(
-      effectivePrompts[name].includes(read('references/agent-prompts/lead-contract.md').trim()),
+      effectivePrompts[name].includes(read('config-composer/agent/prompts/lead-contract.md').trim()),
       `${name}: missing compiled lead contract`,
     );
   }
-  assert.ok(!effectivePrompts['workflow-lead'].includes(read('references/agent-prompts/planning-stage.md').trim()));
+  assert.ok(
+    !effectivePrompts['workflow-lead'].includes(read('config-composer/agent/prompts/planning-stage.md').trim()),
+  );
   assert.ok(read('agents/workflow-lead.md').includes('@agent-prompts/planning-stage.md'));
   for (const name of ['general', 'explore', 'summary', 'compaction', 'title']) {
     assert.equal(effectivePrompts[name], undefined, `${name}: preserve OpenCode's native prompt`);
@@ -638,11 +648,12 @@ test('every delegating agent can read the canonical response catalog', () => {
 });
 
 test('specialist references and reusable task skills do not import primary workflow procedures', () => {
-  const primaryProcedures = new Set(
-    ['lead-contract', 'planning-stage', 'implementation-stage', 'review-stage', 'completion', 'spec-interview'].map(
-      (name) => `references/agent-prompts/${name}.md`,
+  const primaryProcedures = new Set([
+    ...['lead-contract', 'planning-stage', 'implementation-stage', 'review-stage'].map(
+      (name) => `config-composer/agent/prompts/${name}.md`,
     ),
-  );
+    ...['completion', 'spec-interview'].map((name) => `references/agent/${name}.md`),
+  ]);
   const paths = Object.keys(agents)
     .filter((name) => agents[name].mode === 'subagent')
     .map((name) => `agents/${name}.md`);

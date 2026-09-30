@@ -77,20 +77,22 @@ async function dedicatedFixture(t: TestContext): Promise<string> {
     '// Preserve dedicated comments.\n' +
       JSON.stringify(
         {
-          modelPresets: { shared: { model: 'example/fast', variant: 'medium' } },
-          groups: {
-            agents: {
+          sourceDirectories: { shared: './references' },
+          agent: {
+            modelPresets: { shared: { model: 'example/fast', variant: 'medium' } },
+            groups: {
               developers: { modelRef: 'preset:shared', prompt: { append: ['DEVELOPMENT_GUIDANCE'] } },
               reviewers: { model: 'example/deep', variant: 'high' },
               'custom-team': {},
               'instructions-only': { prompt: { prepend: ['COMMON_GUIDANCE'] } },
             },
-            skills: {},
-            commands: {},
+            prompts: {
+              defaults: { append: ['GLOBAL_GUIDANCE'] },
+              overrides: { 'nested/pinned': { inheritDefaults: false, append: ['PINNED_GUIDANCE'] } },
+            },
           },
-          promptSources: { shared: './references' },
-          promptDefaults: { append: ['GLOBAL_GUIDANCE'] },
-          agentPrompts: { 'nested/pinned': { inheritDefaults: false, append: ['PINNED_GUIDANCE'] } },
+          skill: {},
+          command: {},
         },
         null,
         2,
@@ -112,14 +114,12 @@ test('dedicated model edits preserve prompt composition, typed namespaces, comme
   assert.equal(snapshot.settingsFile?.path, join(root, 'config-composer.jsonc'));
   await savePlan(planChange(snapshot, { kind: 'group', name: 'developers', choice: { model: 'other/new' } }));
   const after = parseConfig(await readFile(join(root, 'config-composer.jsonc'), 'utf8'));
-  assert.deepEqual((after.groups as Record<string, unknown>).skills, (before.groups as Record<string, unknown>).skills);
-  assert.deepEqual(
-    (after.groups as Record<string, unknown>).commands,
-    (before.groups as Record<string, unknown>).commands,
-  );
-  assert.deepEqual(after.promptSources, before.promptSources);
-  assert.deepEqual(after.promptDefaults, before.promptDefaults);
-  assert.deepEqual(after.agentPrompts, before.agentPrompts);
+  assert.deepEqual(after.skill, before.skill);
+  assert.deepEqual(after.command, before.command);
+  assert.deepEqual(after.sourceDirectories, before.sourceDirectories);
+  assert.deepEqual((after.agent as Record<string, unknown>).prompts, (before.agent as Record<string, unknown>).prompts);
+  assert.equal(after.groups, undefined, 'editor must not create a flat group section');
+  assert.equal(after.modelPresets, undefined, 'editor must not create a flat preset section');
   assert.deepEqual((await loadSnapshot(root)).groups.developers, {
     model: 'other/new',
     prompt: { append: ['DEVELOPMENT_GUIDANCE'] },
@@ -961,8 +961,11 @@ test('TUI model edits save to the dedicated file while retaining shared prompt o
     prompt: { append: ['DEVELOPMENT_GUIDANCE'] },
   });
   const saved = parseConfig(await readFile(join(root, 'config-composer.jsonc'), 'utf8'));
-  assert.deepEqual(saved.promptDefaults, original.promptDefaults);
-  assert.deepEqual(saved.agentPrompts, original.agentPrompts);
+  assert.deepEqual(
+    (saved.agent as Record<string, unknown>).prompts,
+    (original.agent as Record<string, unknown>).prompts,
+  );
+  assert.deepEqual(saved.sourceDirectories, original.sourceDirectories);
   assert.match(await readFile(join(root, 'config-composer.jsonc'), 'utf8'), /Keep fragment operations/);
   assert.equal(await readFile(join(root, 'opencode.jsonc'), 'utf8'), originalNative);
 });

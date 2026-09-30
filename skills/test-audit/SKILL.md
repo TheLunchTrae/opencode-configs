@@ -5,7 +5,7 @@ description: Audit existing test suites for useful coverage, duplication, mislea
 
 # Audit an existing test suite
 
-Read `@agent-prompts/testing-standards.md` and applicable repository instructions.
+Read `@agent-references/testing-standards.md` and applicable repository instructions.
 Apply only assigned assessment or implementation. This skill grants no edit, execution, or delegation authority.
 Audits are read-only unless approved scope explicitly includes cleanup.
 

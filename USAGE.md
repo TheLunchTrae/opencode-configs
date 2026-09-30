@@ -42,7 +42,8 @@ The planning lead cannot edit files or run shell commands. The review lead canno
 checks with ordinary tool approvals. Checks can produce normal build artifacts; verification does not apply repairs.
 Neither lead can delegate to writing agents. Configured permissions still apply to every task.
 
-Specialists use [canonical response formats](references/agent-prompts/response-formats/catalog.md) for bounded tasks.
+Specialists use [canonical response formats](config-composer/agent/prompts/response-formats/catalog.md)
+for bounded tasks.
 Each response separates task completion, the result, evidence, and unresolved items. A completed task can still report
 failed checks or blocking findings. The selected lead validates the evidence and handles follow-up under its own scope.
 Specialists receive task inputs and constraints without needing the lead's identity or workflow instructions.
@@ -65,7 +66,7 @@ Connect providers with `/connect` first. Models and affected variants are checke
 | Individual agent overrides | Select an agent to set a model exception, clear its override, or change its groups. |
 
 Use `/agent-groups` to create groups, select their defaults, and change agent membership.
-The list combines names in `config-composer.jsonc`'s `groups.agents` with `groups` values found in agent files.
+The list combines names in `config-composer.jsonc`'s `agent.groups` with `groups` values found in agent files.
 New groups appear without a code change. Empty configured groups remain available.
 Agents without a group appear under **Ungrouped**. Disabled agents are excluded.
 Agents can list several groups in their frontmatter. Their order controls model and prompt precedence.
@@ -112,7 +113,7 @@ References are resolved again when configuration is reloaded or OpenCode restart
 
 The bundled [Config Composer configuration](config-composer.jsonc) uses main-model references and two presets,
 `balanced` and `lightweight`.
-Its `groups.agents` object defines agent group defaults. Explicit agent exceptions remain in the agent configuration.
+Its `agent.groups` object defines agent group defaults. Explicit agent exceptions remain in the agent configuration.
 Main-model groups retain their `high` variant. Preset-linked groups inherit the variant stored in their preset.
 
 In `/agent-models`, use **Global defaults → Main model** to change the main slot.
@@ -134,21 +135,22 @@ Configure groups and presets in `config-composer.jsonc`. The model IDs below are
 ```jsonc
 {
   "$schema": "./extensions/config-composer/schema.json",
-  "modelPresets": {
-    "balanced": { "model": "provider/model-id", "variant": "medium" }
-  },
-  "groups": {
-    "agents": {
+  "sourceDirectories": {},
+  "agent": {
+    "modelPresets": {
+      "balanced": { "model": "provider/model-id", "variant": "medium" }
+    },
+    "groups": {
       "developers": { "modelRef": "preset:balanced" },
       "refactoring": { "modelRef": "preset:balanced" },
       "reviewers": { "modelRef": "opencode:model", "variant": "high" },
       "utility": { "modelRef": "opencode:small_model" },
       "research": { "model": "provider/another-model-id" },
       "fallback": {}
-    },
-    "commands": {},
-    "skills": {}
-  }
+    }
+  },
+  "command": {},
+  "skill": {}
 }
 ```
 
@@ -163,8 +165,10 @@ Register Config Composer in `opencode.jsonc`, preserving your other plugin entri
 Register `./extensions/config-composer/tui.ts` in the `plugin` array of `tui.jsonc`.
 Config Composer settings belong in the dedicated file.
 Native settings and built-in agent overrides stay in `opencode.jsonc`.
-The `commands` and `skills` group namespaces are reserved. Leave these namespaces empty.
+The top-level `agent` object owns agent groups, model presets, and prompt settings.
+Shared source directories remain at the top level. The `command` and `skill` objects are reserved. Leave them empty.
 This version composes agent prompts and agent model defaults.
+The `$schema` field points to the schema installed in `extensions/config-composer/`.
 Group and preset names use lowercase kebab-case, start with a letter, and contain at most 64 characters.
 Use a model and variant supported by your provider. Set the referenced native slots before assigning their references.
 Presets are optional. Updating the plugin alone does not convert existing concrete models into references.
@@ -218,7 +222,9 @@ Models that the native provider cannot resolve remain errors. These checks do no
 
 ### Editing and compatibility
 
-Install `extensions/config-composer/`, its schema, and `config-composer.jsonc` with the server and TUI registrations.
+Install `extensions/config-composer/`, `config-composer.jsonc`, and their source files with the server and
+TUI registrations.
+The extension includes `schema.json`. The configuration's `$schema` field uses its relative path.
 Older plugin versions cannot resolve the shipped prompt directives. Do not update agent prompts or configuration alone.
 Preserve customized Config Composer settings when upgrading. Legacy inline options remain supported for migration.
 
@@ -245,18 +251,20 @@ Config Composer supplies always-applicable guidance when configuration loads.
 An agent receives the composed prompt before its first request. It does not need a Read call for that content.
 Native configuration still owns permissions and tools.
 
-Map source namespaces in `config-composer.jsonc`:
+Map shared source directories in `config-composer.jsonc`:
 
 ```jsonc
-"promptSources": {
-  "agent-prompts": "./references/agent-prompts"
+"sourceDirectories": {
+  "agent-prompts": "./config-composer/agent/prompts"
 }
 ```
 
 Source directories resolve from the Config Composer settings file,
 independently of the extension's installation directory.
-Namespaces are independent mappings. A Config Composer source does not automatically register an OpenCode reference.
-Keep the native hidden `agent-prompts` reference for conditional reads and separately installed skills.
+Source aliases are independent mappings. A Config Composer source does not automatically register an OpenCode reference.
+Composition fragments live in `config-composer/agent/prompts/`.
+The native hidden `agent-prompts` reference points there for fallback reads and separately installed skills.
+Conditional guidance lives in `references/agent/`, registered as the hidden `agent-references` reference.
 
 Insert a fragment at a specific position in an agent's Markdown body:
 
@@ -266,17 +274,15 @@ Insert a fragment at a specific position in an agent's Markdown body:
 Coordinate the assigned stage.
 ```
 
-Only explicit include directives expand. A sentence such as `Read @agent-prompts/testing-standards.md when tests change`
-remains an instruction for the agent. Use `\{{include:@agent-prompts/lead-contract.md}}` to retain a literal directive.
+Only explicit include directives expand.
+A sentence such as `Read @agent-references/testing-standards.md when tests change` remains an instruction for the agent.
+Use `\{{include:@agent-prompts/lead-contract.md}}` to retain a literal directive.
 
 Configure shared prompt defaults, group fragments, and individual exceptions in the dedicated file:
 
 ```jsonc
-"promptDefaults": {
-  "append": ["@agent-prompts/response-formats/common.md"]
-},
-"groups": {
-  "agents": {
+"agent": {
+  "groups": {
     "developers": {
       "modelRef": "preset:balanced",
       "prompt": {
@@ -285,21 +291,24 @@ Configure shared prompt defaults, group fragments, and individual exceptions in 
       }
     }
   },
-  "commands": {},
-  "skills": {}
-},
-"agentPrompts": {
-  "react-developer": {
-    "prepend": ["@agent-prompts/typescript-guidance.md"]
-  },
-  "implementation-lead": {
-    "inheritDefaults": false,
-    "inheritGroups": false
+  "prompts": {
+    "defaults": {
+      "append": ["@agent-prompts/response-formats/common.md"]
+    },
+    "overrides": {
+      "react-developer": {
+        "prepend": ["@agent-prompts/typescript-guidance.md"]
+      },
+      "implementation-lead": {
+        "inheritDefaults": false,
+        "inheritGroups": false
+      }
+    }
   }
 }
 ```
 
-Merge these fields with your existing groups and presets. Each `prepend` and `append` field is an ordered string array.
+Merge these fields with your existing `agent` settings. Each `prepend` and `append` field is an ordered string array.
 A whole string such as `@agent-prompts/reviewer-standards.md` includes that file. Other strings supply literal text with
 explicit include directives. Source files must be regular UTF-8 `.md` or `.txt` files within their mapped directories.
 Missing files, invalid sources, escaping paths, and include cycles fail configuration loading
@@ -472,7 +481,7 @@ For substantial work, planning identifies consequential gaps in architecture gui
 commands, and access to relevant fixtures or runtime evidence. The plan separates blockers from optional improvements
 and proposes the smallest necessary correction using existing project documentation, tools, and tests.
 
-Primary agents and specialists use the [project learning procedure](references/agent-prompts/project-learning.md)
+Primary agents and specialists use the [project learning procedure](references/agent/project-learning.md)
 for assigned failure-prevention assessments, evidenced recurring mistakes, or repeated attempts that stop at a blocker.
 Leads also invoke it when the repair budget is exhausted. Specialists return assessments in their existing task reports.
 The lead validates the evidence, combines duplicate recommendations, and selects at most one justified
@@ -610,7 +619,7 @@ New terminology entries stay in the selected file unless an existing glossary al
 Each entry records its spelling, meaning, grammatical use, scope, usage, and supporting source.
 The list supplements ordinary English. It does not contain ASD's official dictionary or establish formal STE compliance.
 
-Repository documentation standards override the [shared STE defaults](references/agent-prompts/asd-ste100.md).
+Repository documentation standards override the [shared STE defaults](references/agent/asd-ste100.md).
 The defaults apply to choices that the repository leaves unspecified.
 Rerunning `/init-docs` preserves established rules and terms while proposing supported updates.
 Review the setup under the active lead's approval policy before implementation.
@@ -640,7 +649,8 @@ Naming a skill never expands the current agent's role, permissions, or approval 
 | [push](skills/push/SKILL.md) | Push an authorized branch. |
 
 These procedures support more than one lead or specialist. Requirements interviews, phased planning, review routing,
-and completion procedures are internal [agent references](references/agent-prompts/).
+and completion procedures use internal [agent references](references/agent/) and
+[composition sources](config-composer/agent/prompts/).
 They are loaded by their owning agents and do not appear as separate skill entrypoints.
 Routine tests, verification, and fixes do not require the `project-standards` skill.
 
@@ -777,7 +787,7 @@ For new behavior and bug fixes, `test-first` supplies meaningful failure and pas
 available. An established-behavior baseline can pass immediately. Missing services or unrelated failures are not proof
 that the intended regression was detected.
 
-Authors and reviewers share the [testing standards](references/agent-prompts/testing-standards.md).
+Authors and reviewers share the [testing standards](references/agent/testing-standards.md).
 Checks that cannot run and verification exclusions approved for the task remain explicit. They do not count as passes.
 New tools, CI changes, or infrastructure work must be in the approved scope.
 Use `planning-lead` for design alone and `review-lead` to assess or execute existing tests without repairs.
@@ -830,7 +840,7 @@ You can name `verification-tests` explicitly in a lead request, but doing so doe
 ## Limit verification
 
 You can limit agent verification for a task or establish a default in the work project's existing instructions.
-The [verification scope rules](references/agent-prompts/verification-scope.md) apply to primary agents and specialists.
+The [verification scope rules](references/agent/verification-scope.md) apply to primary agents and specialists.
 State whether the limit covers capability discovery, test generation, check execution, or infrastructure changes.
 An instruction to skip execution alone still permits requested test generation.
 
@@ -875,4 +885,4 @@ A saved agent name does not change the selected role. A saved approval claim is 
 Do not reset files or change branches to make a handoff match.
 
 For the underlying procedures, see the [workflow lead](agents/workflow-lead.md),
-[lead contract](references/agent-prompts/lead-contract.md), and [agent references](references/agent-prompts/).
+[lead contract](config-composer/agent/prompts/lead-contract.md), and [agent references](references/agent/).

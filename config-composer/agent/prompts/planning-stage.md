@@ -4,13 +4,13 @@ Use within the active lead's scope and `@agent-prompts/lead-contract.md`.
 
 Inspect project instructions, manifests, adjacent implementations, and checks within the agreed verification scope.
 Reuse current requirements and decisions before asking questions.
-For consequential product ambiguity, read `@agent-prompts/spec-interview.md` and resolve it with the user.
+For consequential product ambiguity, read `@agent-references/spec-interview.md` and resolve it with the user.
 Use `architect` when consequential alternatives remain or the user wants to compare approaches.
 
 For non-trivial implementation, dispatch `planner` with verified paths, requirements, constraints, and unresolved
 decisions. It owns the planning procedure and output. Mark proposed components as new.
 For a verification baseline, pass `verification-tests` and request the coverage design only.
-The planner reads `@agent-prompts/phased-plan.md` for an explicitly requested or structurally necessary rollout.
+The planner reads `@agent-references/phased-plan.md` for an explicitly requested or structurally necessary rollout.
 Review outcome, non-goals, data ownership, failure behavior, invariants, and acceptance slices.
 Acceptance slices do not imply separate releases. Reuse existing test seams; do not invent a framework for the workflow.
 

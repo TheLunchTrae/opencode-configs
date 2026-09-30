@@ -2,7 +2,7 @@
 
 Use only under the active lead's approved implementation scope and `@agent-prompts/lead-contract.md`.
 
-Dispatch the matching specialist under `@agent-prompts/delegation-contract.md` with the reviewed, approved plan,
+Dispatch the matching specialist under `@agent-references/delegation-contract.md` with the reviewed, approved plan,
 rationale, acceptance examples, file ownership, dependencies, existing checks, verification limits,
 and stopping conditions.
 Use `test-first` for testable behavior changes and characterization checks for refactors within that verification scope.

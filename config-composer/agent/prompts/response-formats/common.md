@@ -2,7 +2,7 @@
 
 Use this structure for final, partial, or blocked task responses. Routine progress updates need not use it.
 Task profiles define `Result`; this file defines the shared envelope and status meanings.
-Before selecting or assessing checks, read `@agent-prompts/verification-scope.md` if its guidance was not supplied.
+Before selecting or assessing checks, read `@agent-references/verification-scope.md` if its guidance was not supplied.
 Preserve the assigned verification limits in the result and evidence.
 Accepted limitations alone do not make the assigned task `BLOCKED` or `PARTIAL`.
 Use the assigned profile when it fits the task and role; otherwise use the default or report a mismatch.
@@ -57,7 +57,7 @@ A response grants no permission to edit, delegate, approve, commit, or ship.
 ## Project learning
 
 For an assigned failure-prevention assessment, an evidenced recurring mistake, or repeated attempts that stop
-at a blocker, read `@agent-prompts/project-learning.md` within the task's budget and stopping conditions.
+at a blocker, read `@agent-references/project-learning.md` within the task's budget and stopping conditions.
 Put the assessment and justified prevention in existing `Result` sections, support in `Evidence`, and unassigned
 changes or decisions in `Unresolved items`. Preserve the profile and verdict criteria.
 Do not require a learning section in every response or invent findings to fill it.

@@ -52,7 +52,7 @@ async function snippet(reference: string, sources: Record<string, string>): Prom
   const [, alias, path] = match;
   const root = sources[alias];
   if (!Object.hasOwn(sources, alias) || root === '') {
-    throw new SettingsError(`Prompt source ${alias} does not exist. Configure it in promptSources.`);
+    throw new SettingsError(`Prompt source ${alias} does not exist. Configure it in sourceDirectories.`);
   }
   if (!safeSnippetPath(path)) {
     throw new SettingsError('Prompt includes require a safe relative .md or .txt file path.');

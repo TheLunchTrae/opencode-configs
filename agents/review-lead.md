@@ -40,7 +40,7 @@ For a design review, use the supplied design and current source; do not replace 
 - Test-suite audit: pass `test-audit` and the requested suite scope to `code-reviewer`, including unchanged tests.
   Report retention, consolidation, rewrite, removal, and uncertainty findings. Do not apply cleanup or generate tests.
 - Verification only: use `verify` in this session and report results. Do not add unrequested reviews or repairs.
-- Final assessment: use `@agent-prompts/completion.md` to collect checks and applicable reviews, then report readiness.
+- Final assessment: use `@agent-references/completion.md` to collect checks and applicable reviews, then report readiness.
   Findings remain action items for an implementation lead; this scope never authorizes repairs.
 
 Pass read-only assignments, source state, intended behavior, existing evidence, and scope to permitted reviewers.

@@ -13,8 +13,13 @@
   "default_agent": "workflow-lead",
   "references": {
     "agent-prompts": {
-      "path": "./references/agent-prompts",
-      "description": "Shared coding, review, delegation, language, and documentation guidance for agent prompts.",
+      "path": "./config-composer/agent/prompts",
+      "description": "Shared agent prompt fragments, language guidance, stage instructions, and response formats.",
+      "hidden": true
+    },
+    "agent-references": {
+      "path": "./references/agent",
+      "description": "Conditional coding, testing, verification, delegation, documentation, and task guidance.",
       "hidden": true
     }
   },

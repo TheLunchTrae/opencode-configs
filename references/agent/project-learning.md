@@ -4,7 +4,7 @@ Assess explicitly requested failure prevention, evidenced recurring mistakes, or
 Primary agents and specialists use available evidence within their task, role, stopping conditions,
 and remaining budget.
 Do not delay required immediate reporting to complete this assessment.
-Apply `@agent-prompts/verification-scope.md`. An accepted verification limitation alone is not a recurring mistake
+Apply `@agent-references/verification-scope.md`. An accepted verification limitation alone is not a recurring mistake
 or a reason to propose verification infrastructure. Preserve separately evidenced failures and defects.
 
 ## Assess the cause and prevention

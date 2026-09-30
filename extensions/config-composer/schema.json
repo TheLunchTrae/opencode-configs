@@ -5,35 +5,46 @@
   "additionalProperties": false,
   "properties": {
     "$schema": { "type": "string" },
-    "groups": {
+    "sourceDirectories": {
+      "type": "object",
+      "propertyNames": { "$ref": "#/$defs/name" },
+      "additionalProperties": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "\\S",
+        "not": { "pattern": "\\u0000" }
+      }
+    },
+    "agent": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "agents": {
+        "groups": {
           "type": "object",
           "propertyNames": { "$ref": "#/$defs/name" },
           "additionalProperties": { "$ref": "#/$defs/group" }
         },
-        "commands": { "type": "object", "maxProperties": 0 },
-        "skills": { "type": "object", "maxProperties": 0 }
+        "modelPresets": {
+          "type": "object",
+          "propertyNames": { "$ref": "#/$defs/name" },
+          "additionalProperties": { "$ref": "#/$defs/preset" }
+        },
+        "prompts": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "defaults": { "$ref": "#/$defs/prompt" },
+            "overrides": {
+              "type": "object",
+              "propertyNames": { "$ref": "#/$defs/agentName" },
+              "additionalProperties": { "$ref": "#/$defs/agentPrompt" }
+            }
+          }
+        }
       }
     },
-    "modelPresets": {
-      "type": "object",
-      "propertyNames": { "$ref": "#/$defs/name" },
-      "additionalProperties": { "$ref": "#/$defs/preset" }
-    },
-    "promptSources": {
-      "type": "object",
-      "propertyNames": { "$ref": "#/$defs/name" },
-      "additionalProperties": { "type": "string", "minLength": 1 }
-    },
-    "promptDefaults": { "$ref": "#/$defs/prompt" },
-    "agentPrompts": {
-      "type": "object",
-      "propertyNames": { "$ref": "#/$defs/agentName" },
-      "additionalProperties": { "$ref": "#/$defs/agentPrompt" }
-    }
+    "command": { "type": "object", "maxProperties": 0 },
+    "skill": { "type": "object", "maxProperties": 0 }
   },
   "$defs": {
     "name": {

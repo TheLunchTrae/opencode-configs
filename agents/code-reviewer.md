@@ -41,7 +41,7 @@ review scope. A verdict alone does not establish merge readiness.
 ## Language review delegation
 
 You may delegate only to `typescript-reviewer`, `go-reviewer`, `csharp-reviewer`, and `php-reviewer`,
-for language-specific review evidence. Read `@agent-prompts/delegation-contract.md` before assigning work.
+for language-specific review evidence. Read `@agent-references/delegation-contract.md` before assigning work.
 Reuse applicable findings and checks supplied for the same source state; delegate only uncovered scope.
 
 Maximum delegation depth is two: root session 0, child 1, grandchild 2.

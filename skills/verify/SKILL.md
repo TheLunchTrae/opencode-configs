@@ -7,7 +7,7 @@ description: Run configured checks and report source-linked PASS, FAIL, BLOCKED,
 
 Verify evidence within assigned scope and permissions. Do not expand roles, edit application code, or apply fixes.
 Commands may produce normal build artifacts; inspect side effects and retain permission checks.
-Read `@agent-prompts/verification-scope.md` before discovery or execution. Apply explicit limits to every step below.
+Read `@agent-references/verification-scope.md` before discovery or execution. Apply explicit limits to every step below.
 When all agent verification is excluded, report the limitation without inspecting capabilities or running checks.
 
 1. Inspect project instructions, manifests, and configured scripts. Confirm the installed toolchain when available.

@@ -5,7 +5,7 @@ description: Design and implement reliable end-to-end tests for new features or 
 
 # End-to-end coverage
 
-Read `@agent-prompts/testing-standards.md` and applicable project and language guidance.
+Read `@agent-references/testing-standards.md` and applicable project and language guidance.
 Honor assigned role, approved scope, and verification limits. Design-only work does not edit or execute.
 Implementation needs a reviewed, approved design covering any harness or dependency changes.
 Reuse feature-plan approval that covers this work.

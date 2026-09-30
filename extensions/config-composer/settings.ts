@@ -165,7 +165,7 @@ function normalizedSettings(options: Record<string, unknown>, rawGroups: unknown
     ['modelPresets', 'promptSources', 'agentPrompts'].some((key) => options[key] !== undefined && !record(options[key]))
   ) {
     throw new SettingsError(
-      'Config Composer settings must contain valid groups, modelPresets, promptSources, and agentPrompts objects.',
+      'Config Composer settings must contain valid group, model preset, source directory, and prompt override objects.',
     );
   }
   const rawPresets = record(options.modelPresets) ? options.modelPresets : {};
@@ -191,9 +191,9 @@ function normalizedSettings(options: Record<string, unknown>, rawGroups: unknown
   const promptSources = Object.fromEntries(
     Object.entries(record(options.promptSources) ? options.promptSources : {}).map(([name, value]) => {
       if (typeof value !== 'string' || value.trim() === '' || value.includes('\0')) {
-        throw new SettingsError('Each prompt source requires a directory path.');
+        throw new SettingsError('Each sourceDirectories entry requires a directory path.');
       }
-      return [settingName(name, 'prompt source'), value];
+      return [settingName(name, 'sourceDirectories alias'), value];
     }),
   );
   const agentPrompts = Object.fromEntries(
@@ -206,7 +206,7 @@ function normalizedSettings(options: Record<string, unknown>, rawGroups: unknown
     groups,
     modelPresets,
     promptSources,
-    promptDefaults: promptOperations(options.promptDefaults ?? {}),
+    promptDefaults: promptOperations(options.promptDefaults === undefined ? {} : options.promptDefaults),
     agentPrompts,
   };
 }
@@ -214,26 +214,39 @@ function normalizedSettings(options: Record<string, unknown>, rawGroups: unknown
 export function readSettings(value: unknown): GroupOptions {
   if (
     !record(value) ||
-    Object.keys(value).some(
-      (key) => !['$schema', 'groups', 'modelPresets', 'promptSources', 'promptDefaults', 'agentPrompts'].includes(key),
-    ) ||
+    Object.keys(value).some((key) => !['$schema', 'sourceDirectories', 'agent', 'command', 'skill'].includes(key)) ||
     (value.$schema !== undefined && typeof value.$schema !== 'string')
   ) {
     throw new SettingsError('Use a valid Config Composer configuration object.');
   }
-  const namespaces = value.groups ?? {};
-  if (!record(namespaces) || Object.keys(namespaces).some((key) => !['agents', 'commands', 'skills'].includes(key))) {
-    throw new SettingsError('Config Composer groups must use agents, commands, and skills namespaces.');
+  if (value.sourceDirectories !== undefined && !record(value.sourceDirectories)) {
+    throw new SettingsError('Config Composer sourceDirectories must map source aliases to directory paths.');
   }
-  for (const namespace of ['commands', 'skills']) {
-    const entries: unknown = namespaces[namespace];
+  const agent = value.agent === undefined ? {} : value.agent;
+  if (!record(agent) || Object.keys(agent).some((key) => !['groups', 'modelPresets', 'prompts'].includes(key))) {
+    throw new SettingsError('Config Composer agent settings support only groups, modelPresets, and prompts.');
+  }
+  const prompts = agent.prompts === undefined ? {} : agent.prompts;
+  if (!record(prompts) || Object.keys(prompts).some((key) => !['defaults', 'overrides'].includes(key))) {
+    throw new SettingsError('Config Composer agent prompts support only defaults and overrides.');
+  }
+  for (const namespace of ['command', 'skill']) {
+    const entries: unknown = value[namespace];
     if (entries !== undefined && (!record(entries) || Object.keys(entries).length !== 0)) {
       throw new SettingsError(
-        `Config Composer ${namespace} groups are reserved and are not supported yet. Leave this namespace empty.`,
+        `Config Composer ${namespace} settings are reserved and are not supported yet. Leave this namespace empty.`,
       );
     }
   }
-  return normalizedSettings(value, namespaces.agents);
+  return normalizedSettings(
+    {
+      modelPresets: agent.modelPresets,
+      promptSources: value.sourceDirectories,
+      promptDefaults: prompts.defaults,
+      agentPrompts: prompts.overrides,
+    },
+    agent.groups,
+  );
 }
 
 export function readOptions(options: unknown): GroupOptions {

@@ -122,19 +122,19 @@ test(
       },
     };
     const composer = {
-      modelPresets: { balanced: { model: 'fixture/alpha', variant: 'low' } },
-      promptSources: { shared: './shared-prompts' },
-      promptDefaults: { append: ['{{include:@shared/default.md}}'] },
-      groups: {
-        agents: {
+      sourceDirectories: { shared: './shared-prompts' },
+      agent: {
+        modelPresets: { balanced: { model: 'fixture/alpha', variant: 'low' } },
+        prompts: { defaults: { append: ['{{include:@shared/default.md}}'] } },
+        groups: {
           base: { model: 'fixture/beta', variant: 'high' },
           developers: { modelRef: 'preset:balanced', prompt: { append: ['GROUP_GUIDANCE'] } },
           primary: { modelRef: 'opencode:model', variant: 'low' },
           small: { modelRef: 'opencode:small_model', variant: 'low' },
         },
-        commands: {},
-        skills: {},
       },
+      command: {},
+      skill: {},
     };
     await writeFile(
       join(configRoot, 'config-composer.jsonc'),
@@ -273,7 +273,7 @@ test(
         choice: { model: 'fixture/beta', variant: 'high' },
       }),
     );
-    assert.deepEqual((await loadSnapshot(configRoot)).groups.developers, composer.groups.agents.developers);
+    assert.deepEqual((await loadSnapshot(configRoot)).groups.developers, composer.agent.groups.developers);
     await writeFile(join(configRoot, 'shared-prompts/worker.md'), 'RELOADED_WORKER_GUIDANCE');
     await reloadConfiguration(await loadSnapshot(configRoot), async (plugin) => {
       await api('/global/config', { plugin }, 'PATCH');
@@ -315,7 +315,8 @@ test(
     assert.ok(requests.some((body) => body.model === 'beta'));
     assert.ok(
       requests.every(
-        (body) => !/agent_group|modelRef|modelPresets|configFile|promptSources/.test(JSON.stringify(body)),
+        (body) =>
+          !/agent_group|modelRef|modelPresets|configFile|promptSources|sourceDirectories/.test(JSON.stringify(body)),
       ),
     );
     assert.match(await readFile(join(configRoot, 'opencode.jsonc'), 'utf8'), /^\/\/ Native integration fixture/);
