@@ -7,7 +7,7 @@ The default `workflow-lead` coordinates a complete development task. Focused lea
 
 - [Choose a lead](#choose-a-lead): select the scope and stopping point.
 - [Agent groups and models](#agent-groups-and-models): change models, defaults, and group membership in the TUI.
-- [Shared prompt composition](#shared-prompt-composition): include guidance and apply prompt defaults through Composer.
+- [Shared prompt composition](#shared-prompt-composition): include guidance and apply defaults through Config Composer.
 - [Session tools](#session-tools): inspect workflow, configuration, and context; bookmark decisions and draft handoffs.
 - [Run a complete workflow](#run-a-complete-workflow): start once, resolve questions, and approve the plan.
 - [Move between focused stages](#move-between-focused-stages): reuse reviewed plans, approvals, and evidence.
@@ -65,7 +65,7 @@ Connect providers with `/connect` first. Models and affected variants are checke
 | Individual agent overrides | Select an agent to set a model exception, clear its override, or change its groups. |
 
 Use `/agent-groups` to create groups, select their defaults, and change agent membership.
-The list combines names in `composer.jsonc`'s `groups.agents` with `groups` values found in agent files.
+The list combines names in `config-composer.jsonc`'s `groups.agents` with `groups` values found in agent files.
 New groups appear without a code change. Empty configured groups remain available.
 Agents without a group appear under **Ungrouped**. Disabled agents are excluded.
 Agents can list several groups in their frontmatter. Their order controls model and prompt precedence.
@@ -110,7 +110,7 @@ References are resolved again when configuration is reloaded or OpenCode restart
 
 ### Shipped model sources
 
-The bundled [Composer configuration](composer.jsonc) uses main-model references and two presets,
+The bundled [Config Composer configuration](config-composer.jsonc) uses main-model references and two presets,
 `balanced` and `lightweight`.
 Its `groups.agents` object defines agent group defaults. Explicit agent exceptions remain in the agent configuration.
 Main-model groups retain their `high` variant. Preset-linked groups inherit the variant stored in their preset.
@@ -129,11 +129,11 @@ Back up and merge local settings before adopting the shipped configuration. Pres
 
 ### Configure group defaults and presets
 
-Configure groups and presets in `composer.jsonc`. The model IDs below are placeholders:
+Configure groups and presets in `config-composer.jsonc`. The model IDs below are placeholders:
 
 ```jsonc
 {
-  "$schema": "./extensions/composer/schema.json",
+  "$schema": "./extensions/config-composer/schema.json",
   "modelPresets": {
     "balanced": { "model": "provider/model-id", "variant": "medium" }
   },
@@ -152,16 +152,17 @@ Configure groups and presets in `composer.jsonc`. The model IDs below are placeh
 }
 ```
 
-Register Composer in `opencode.jsonc`, preserving your other plugin entries:
+Register Config Composer in `opencode.jsonc`, preserving your other plugin entries:
 
 ```jsonc
 "plugin": [
-  ["./extensions/composer/server.ts", { "configFile": "composer.jsonc" }]
+  ["./extensions/config-composer/server.ts", { "configFile": "config-composer.jsonc" }]
 ]
 ```
 
-Register `./extensions/composer/tui.ts` in the `plugin` array of `tui.jsonc`.
-Composer settings belong in the dedicated file. Native settings and built-in agent overrides stay in `opencode.jsonc`.
+Register `./extensions/config-composer/tui.ts` in the `plugin` array of `tui.jsonc`.
+Config Composer settings belong in the dedicated file.
+Native settings and built-in agent overrides stay in `opencode.jsonc`.
 The `commands` and `skills` group namespaces are reserved. Leave these namespaces empty.
 This version composes agent prompts and agent model defaults.
 Group and preset names use lowercase kebab-case, start with a letter, and contain at most 64 characters.
@@ -195,8 +196,9 @@ Review the assigned changes.
 ```
 
 For a built-in agent, add `"groups": ["reviewers"]` to its entry under `agent` in `opencode.jsonc`.
-Membership is configuration metadata. Composer consumes it and removes it from request options before provider dispatch.
-Model references and preset definitions remain Composer configuration.
+Membership is configuration metadata.
+Config Composer consumes it and removes it from request options before provider dispatch.
+Model references and preset definitions remain Config Composer configuration.
 The legacy `agent_group: reviewers` form remains supported for existing installations.
 Use either `groups` or `agent_group`, not both, for an agent.
 
@@ -216,11 +218,11 @@ Models that the native provider cannot resolve remain errors. These checks do no
 
 ### Editing and compatibility
 
-Install `extensions/composer/`, its schema, and `composer.jsonc` with the updated server and TUI registrations.
+Install `extensions/config-composer/`, its schema, and `config-composer.jsonc` with the server and TUI registrations.
 Older plugin versions cannot resolve the shipped prompt directives. Do not update agent prompts or configuration alone.
-Preserve customized Composer settings when upgrading. Legacy inline options remain supported for migration.
+Preserve customized Config Composer settings when upgrading. Legacy inline options remain supported for migration.
 
-The editor manages this installation's global `opencode.jsonc` or `opencode.json`, its Composer settings file,
+The editor manages this installation's global `opencode.jsonc` or `opencode.json`, its Config Composer settings file,
 and its `agents/` or `agent/` files.
 Run it where the TUI and server share the same global configuration filesystem. Remote configuration editing and
 project-local agent editing are not supported. The editor rejects ambiguous duplicate files, agent symlinks,
@@ -228,10 +230,10 @@ invalid configuration, and settings that changed after a dialog opened.
 Merge legacy `config.json` settings into `opencode.jsonc` before using the editor.
 An installation in a separate `OPENCODE_CONFIG_DIR` can save edits, but needs a restart to apply them.
 JSONC comments, YAML comments, prompt bodies, and unrelated settings are preserved; edited fields can be reformatted.
-An interrupted write can leave `.composer.lock`. Remove that lock only after confirming no editor is saving.
+An interrupted write can leave `.config-composer.lock`. Remove that lock only after confirming no editor is saving.
 
 The server and TUI entrypoints target OpenCode V1 1.18.29.
-V2 needs a separate port. Install `extensions/composer/`, the shared `extensions/tui/` directory,
+V2 needs a separate port. Install `extensions/config-composer/`, the shared `extensions/tui/` directory,
 and the package manifest.
 Keep these entrypoints outside the automatically discovered `plugins/` directory to avoid loading them twice.
 Live reload records an internal `reloadToken` in the server plugin options so OpenCode invalidates its global cache.
@@ -239,10 +241,11 @@ You do not need to edit that value.
 
 ## Shared prompt composition
 
-Composer supplies always-applicable guidance when configuration loads. An agent receives the composed prompt before
-its first request. It does not need a Read call for that content. Native configuration still owns permissions and tools.
+Config Composer supplies always-applicable guidance when configuration loads.
+An agent receives the composed prompt before its first request. It does not need a Read call for that content.
+Native configuration still owns permissions and tools.
 
-Map source namespaces in `composer.jsonc`:
+Map source namespaces in `config-composer.jsonc`:
 
 ```jsonc
 "promptSources": {
@@ -250,8 +253,9 @@ Map source namespaces in `composer.jsonc`:
 }
 ```
 
-Source directories resolve from the Composer settings file, independently of the extension's installation directory.
-Namespaces are independent mappings. A Composer source does not automatically register an OpenCode reference.
+Source directories resolve from the Config Composer settings file,
+independently of the extension's installation directory.
+Namespaces are independent mappings. A Config Composer source does not automatically register an OpenCode reference.
 Keep the native hidden `agent-prompts` reference for conditional reads and separately installed skills.
 
 Insert a fragment at a specific position in an agent's Markdown body:
@@ -315,9 +319,10 @@ The composed prompt has this order:
 These opt-outs affect prompt content only. They do not disable model inheritance or explicit includes.
 Fragments are not deduplicated. Avoid configuring the same guidance in several inherited groups
 unless repetition is intended.
-Composer leaves built-in agents without authored prompts unchanged, preserving OpenCode's native prompt selection.
+Config Composer leaves built-in agents without authored prompts unchanged,
+preserving OpenCode's native prompt selection.
 
-The shipped configuration includes specialist conduct and response profiles through Composer.
+The shipped configuration includes specialist conduct and response profiles through Config Composer.
 Language guidance is supplied to matching developer, reviewer, and framework agents without requiring another model group.
 The four primary leads opt out of specialist defaults and envelopes. They include their shared lead contract explicitly.
 Focused leads include unconditional stage guidance. The workflow lead retains conditional stage reads.
@@ -363,7 +368,7 @@ Missing or older history can leave tasks and model details unavailable. A failed
 Choose an agent to compare its server-resolved model and variant, merged workspace default, global file default,
 and last recorded model for that agent in the current session.
 Ordered group membership comes from merged workspace settings.
-When the TUI and server share their configuration filesystem, the inspector also reads saved Composer settings.
+When the TUI and server share their configuration filesystem, the inspector also reads saved Config Composer settings.
 It labels saved group choices, source paths, prompt fragment counts, and inheritance opt-outs separately from runtime facts.
 Saved settings can need reload. Their presence does not prove that their prompt layers are active.
 Unavailable saved settings do not block runtime inspection.
@@ -418,7 +423,8 @@ See [continue a long task](#continue-a-long-task) for the lead's checkpoint and 
 ### Enable or disable panels
 
 Install `extensions/session-tools/` and the shared `extensions/tui/` directory.
-Keep `extensions/composer/settings.ts` installed as its shared model-resolution helper, even with the group editor disabled.
+Keep the complete `extensions/config-composer/` directory installed, even with the group editor disabled.
+The inspector uses its configuration loader and model-resolution helpers.
 The four TUI entries are independent:
 
 | Entry in `tui.jsonc` | Plugin |

@@ -3,6 +3,8 @@ node_modules
 /bun.lock
 .agent-groups.lock
 .agent-groups-*.tmp
+.config-composer.lock
+.config-composer-*.tmp
 .opencode/package.json
 .opencode/package-lock.json
 .opencode/bun.lock

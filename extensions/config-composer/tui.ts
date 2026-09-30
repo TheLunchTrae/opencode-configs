@@ -754,7 +754,7 @@ export function registerSettings(
   const unregister = api.keymap.registerLayer({
     commands: [
       {
-        name: 'composer.models',
+        name: 'config-composer.models',
         title: 'Agent models',
         category: 'Config',
         namespace: 'palette',
@@ -765,7 +765,7 @@ export function registerSettings(
         },
       },
       {
-        name: 'composer.membership',
+        name: 'config-composer.membership',
         title: 'Agent groups',
         category: 'Config',
         namespace: 'palette',
@@ -781,7 +781,7 @@ export function registerSettings(
 }
 
 // eslint-disable-next-line @typescript-eslint/require-await -- OpenCode requires a Promise-returning TUI initializer.
-export const ComposerTui: TuiPlugin = async (api) => {
+export const ConfigComposerTui: TuiPlugin = async (api) => {
   registerSettings(api);
 };
-export default { id: 'composer', tui: ComposerTui } satisfies TuiPluginModule;
+export default { id: 'config-composer', tui: ConfigComposerTui } satisfies TuiPluginModule;

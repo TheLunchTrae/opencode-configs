@@ -7,7 +7,7 @@ function agentConfigurations(value: unknown): value is Record<string, AgentSetti
   return record(value) && Object.values(value).every(record);
 }
 
-export const ComposerPlugin: Plugin = async (_input, options) => {
+export const ConfigComposerPlugin: Plugin = async (_input, options) => {
   const { settings } = await loadConfiguration(options);
   const { groups, modelPresets } = settings;
   let agents: Partial<Record<string, AgentSettings>> = {};
@@ -139,6 +139,6 @@ export const ComposerPlugin: Plugin = async (_input, options) => {
   };
 };
 
-export const AgentGroupsPlugin = ComposerPlugin;
+export const AgentGroupsPlugin = ConfigComposerPlugin;
 
-export default { id: 'composer', server: ComposerPlugin } satisfies PluginModule;
+export default { id: 'config-composer', server: ConfigComposerPlugin } satisfies PluginModule;

@@ -4,13 +4,13 @@ import { test } from 'node:test';
 import { parseDocument } from 'yaml';
 import { parse } from 'jsonc-parser';
 import { fileURLToPath } from 'node:url';
-import { loadSnapshot } from '../extensions/composer/storage.ts';
-import { composePrompts } from '../extensions/composer/prompts.ts';
+import { loadSnapshot } from '../extensions/config-composer/storage.ts';
+import { composePrompts } from '../extensions/config-composer/prompts.ts';
 
 const root = new URL('../', import.meta.url);
 const read = (path) => readFileSync(new URL(path, root), 'utf8');
 const config = JSON.parse(read('opencode.jsonc'));
-const composer = parse(read('composer.jsonc'));
+const composer = parse(read('config-composer.jsonc'));
 const snapshot = await loadSnapshot(fileURLToPath(root));
 const authoredAgents = Object.fromEntries(
   snapshot.agents.map((agent) => [
@@ -107,7 +107,7 @@ const promptPaths = [
   'AGENTS.md',
   ...['agents/', 'commands/', 'skills/', 'references/agent-prompts/'].flatMap(markdown),
 ];
-const documentPaths = [...promptPaths, 'composer.jsonc', 'README.md', 'USAGE.md', '.opencode/AGENTS.md'];
+const documentPaths = [...promptPaths, 'config-composer.jsonc', 'README.md', 'USAGE.md', '.opencode/AGENTS.md'];
 
 const promptReferences = (text) => [...text.matchAll(/@([a-z][a-z0-9-]*)\/([\w./-]+\.md)/g)];
 const configuredFragments = (name) => {
@@ -511,11 +511,11 @@ test('shared prompts use a hidden directory reference', () => {
   assert.ok(statSync(new URL(reference.path, root)).isDirectory(), 'references must point to directories');
 });
 
-test('composer owns shared settings in a dedicated typed configuration', () => {
+test('Config Composer owns shared settings in a dedicated typed configuration', () => {
   const entry = config.plugin.find(
-    (plugin) => Array.isArray(plugin) && plugin[0] === './extensions/composer/server.ts',
+    (plugin) => Array.isArray(plugin) && plugin[0] === './extensions/config-composer/server.ts',
   );
-  assert.deepEqual(entry?.[1], { configFile: 'composer.jsonc' });
+  assert.deepEqual(entry?.[1], { configFile: 'config-composer.jsonc' });
   assert.deepEqual(Object.keys(composer.groups), ['agents', 'commands', 'skills']);
   assert.deepEqual(composer.groups.commands, {});
   assert.deepEqual(composer.groups.skills, {});

@@ -28,8 +28,9 @@ Check the installed version against the [V1 documentation](https://opencode.ai/d
 ## Agents and model settings
 
 - Custom agent `groups`, explicit `model`, and `variant` settings belong in `agents/*.md` frontmatter.
-  Root `opencode.jsonc` owns global defaults, the Composer server registration, and built-in overrides.
-  `composer.jsonc` owns `modelPresets`, `groups.agents`, prompt sources, prompt defaults, and per-agent prompt settings.
+  Root `opencode.jsonc` owns global defaults, the Config Composer server registration, and built-in overrides.
+  `config-composer.jsonc` owns `modelPresets`, `groups.agents`, prompt sources, prompt defaults,
+  and per-agent prompt settings.
   Keep `groups.commands` and `groups.skills` reserved for their own member types. Do not apply agent models to them.
   Preserve explicit exceptions. Group inheritance fills missing models before native agent initialization.
 - Agent Markdown bodies are prompts. Do not add a separate `prompt` frontmatter field.
@@ -59,15 +60,16 @@ Check the installed version against the [V1 documentation](https://opencode.ai/d
   [Planner](../agents/planner.md) owns planning procedure. Each specialist owns its scope and stopping conditions.
 - Shared prompt content belongs in `references/agent-prompts/`. Register that directory once as the hidden
   `agent-prompts` reference, with a description, in root `opencode.jsonc` for conditional reads.
-  Map the Composer `agent-prompts` source to the same directory in `composer.jsonc`.
+  Map the Config Composer `agent-prompts` source to the same directory in `config-composer.jsonc`.
   Use full paths such as `@agent-prompts/reviewer-standards.md`; verify every referenced file exists.
 - Hidden affects interactive visibility. It does not remove agent context or grant tool permissions.
-- Composer resolves explicit `{{include:@agent-prompts/reviewer-standards.md}}` directives and prepend/append fragments
-  when configuration loads. Bare `@` references remain conditional reads. Do not expand every reference automatically.
+- Config Composer resolves explicit `{{include:@agent-prompts/reviewer-standards.md}}` directives
+  and prepend/append fragments when configuration loads.
+  Bare `@` references remain conditional reads. Do not expand every reference automatically.
   Agent group prompt content follows the listed `groups` order. Keep model and prompt precedence deterministic.
-  Framework agents do not inherit another agent's body. Supply their shared language guidance through Composer
+  Framework agents do not inherit another agent's body. Supply their shared language guidance through Config Composer
   or an explicit read, and preserve every condition on task-specific reads.
-  Prompt fragments must stay readable without Composer because reusable skills can consume them separately.
+  Prompt fragments must stay readable without Config Composer because reusable skills can consume them separately.
   Preserve fallback reads when required guidance was not already supplied. Avoid include cycles and duplicate fragments.
   Preserve primary-lead opt-outs from specialist standards and response envelopes.
 - Put universal task-agent rules in root `AGENTS.md`. OpenCode loads them for primary and subagent task sessions.
@@ -161,11 +163,13 @@ The current plugin uses the V1 `@opencode-ai/plugin` hook API. A V2 port is a se
 V2 also ignores top-level `subagent_depth`; its supported setting is `experimental.subagent_depth`.
 Consult the [migration guide](https://opencode.ai/v2/docs/migrate-v1/) and verify behavior before claiming V2 support.
 
-Composer entrypoints are in `extensions/composer/`, outside auto-discovery, and explicitly registered in
+Config Composer entrypoints are in `extensions/config-composer/`, outside auto-discovery, and explicitly registered in
 the server and TUI configuration files. Keep their runtime metadata out of provider request options.
-Register the server with `configFile: "composer.jsonc"`. Relative source paths resolve from that file's directory.
+Register the server with `configFile: "config-composer.jsonc"`.
+Relative source paths resolve from that file's directory.
 Keep the schema, dedicated configuration, extension, and templated prompts compatible when installing or upgrading.
-Preserve customized Composer files. Legacy inline options remain an upgrade route, not a second registered instance.
+Preserve customized Config Composer files.
+Legacy inline options remain an upgrade route, not a second registered instance.
 Built-in agents without authored prompts must retain native prompts. Do not add prompt defaults to them.
 The settings editor must preserve unrelated configuration, prompts, comments, explicit exceptions, and permissions.
 Group names and membership are discovered from configuration; do not hardcode a group inventory in the UI.

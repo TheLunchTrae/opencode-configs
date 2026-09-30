@@ -165,7 +165,7 @@ function normalizedSettings(options: Record<string, unknown>, rawGroups: unknown
     ['modelPresets', 'promptSources', 'agentPrompts'].some((key) => options[key] !== undefined && !record(options[key]))
   ) {
     throw new SettingsError(
-      'Composer settings must contain valid groups, modelPresets, promptSources, and agentPrompts objects.',
+      'Config Composer settings must contain valid groups, modelPresets, promptSources, and agentPrompts objects.',
     );
   }
   const rawPresets = record(options.modelPresets) ? options.modelPresets : {};
@@ -219,17 +219,17 @@ export function readSettings(value: unknown): GroupOptions {
     ) ||
     (value.$schema !== undefined && typeof value.$schema !== 'string')
   ) {
-    throw new SettingsError('Use a valid Composer configuration object.');
+    throw new SettingsError('Use a valid Config Composer configuration object.');
   }
   const namespaces = value.groups ?? {};
   if (!record(namespaces) || Object.keys(namespaces).some((key) => !['agents', 'commands', 'skills'].includes(key))) {
-    throw new SettingsError('Composer groups must use agents, commands, and skills namespaces.');
+    throw new SettingsError('Config Composer groups must use agents, commands, and skills namespaces.');
   }
   for (const namespace of ['commands', 'skills']) {
     const entries: unknown = namespaces[namespace];
     if (entries !== undefined && (!record(entries) || Object.keys(entries).length !== 0)) {
       throw new SettingsError(
-        `Composer ${namespace} groups are reserved and are not supported yet. Leave this namespace empty.`,
+        `Config Composer ${namespace} groups are reserved and are not supported yet. Leave this namespace empty.`,
       );
     }
   }
@@ -246,7 +246,7 @@ export function readOptions(options: unknown): GroupOptions {
     (options.reloadToken !== undefined && typeof options.reloadToken !== 'string')
   ) {
     throw new SettingsError(
-      'Composer inline options support only groups, modelPresets, and reloadToken. Use configFile for dedicated settings.',
+      'Config Composer inline options support only groups, modelPresets, and reloadToken. Use configFile for dedicated settings.',
     );
   }
   return normalizedSettings(options, options.groups);
@@ -272,7 +272,7 @@ export function agentGroups(agent: AgentSettings, available?: Groups): string[] 
     }
     if (available !== undefined && groups.some((name) => !Object.hasOwn(available, name))) {
       throw new SettingsError(
-        'An agent names an unknown Composer group. Create the group or correct its ordered memberships.',
+        'An agent names an unknown Config Composer group. Create the group or correct its ordered memberships.',
       );
     }
     return groups;

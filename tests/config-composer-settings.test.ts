@@ -3,7 +3,11 @@ import { mkdtemp, rm, symlink, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { type TestContext, test } from 'node:test';
-import { configurationDirectory, loadConfiguration, parseConfiguration } from '../extensions/composer/configuration.ts';
+import {
+  configurationDirectory,
+  loadConfiguration,
+  parseConfiguration,
+} from '../extensions/config-composer/configuration.ts';
 import {
   type AgentSettings,
   agentGroup,
@@ -12,10 +16,10 @@ import {
   readOptions,
   readSettings,
   resolveChoice,
-} from '../extensions/composer/settings.ts';
+} from '../extensions/config-composer/settings.ts';
 
 async function directory(t: TestContext): Promise<string> {
-  const root = await mkdtemp(join(tmpdir(), 'composer-settings-'));
+  const root = await mkdtemp(join(tmpdir(), 'config-composer-settings-'));
   t.after(() => rm(root, { recursive: true, force: true }));
   return root;
 }
@@ -45,7 +49,7 @@ test('dedicated settings normalize typed groups and reject unsupported namespace
     () => readSettings({ groups: { agents: { reviewer: { modelRef: 'preset:absent' } } } }),
     /does not exist/,
   );
-  assert.throws(() => readOptions({ configFile: 'composer.jsonc', groups: {} }), /configFile/);
+  assert.throws(() => readOptions({ configFile: 'config-composer.jsonc', groups: {} }), /configFile/);
 });
 
 test('ordered memberships merge fields and explicit agent models keep their precedence', () => {
@@ -81,18 +85,21 @@ test('ordered memberships merge fields and explicit agent models keep their prec
   assert.equal(agentGroup({ groups: ['base', 'developers'] }), 'developers');
   assert.throws(() => agentGroups({ groups: ['base', 'base'] }), /duplicate/);
   assert.throws(() => agentGroups({ options: { groups: 'base' } }), /ordered array/);
-  assert.throws(() => resolveChoice({ groups: ['missing'] }, settings.groups, context), /unknown Composer group/);
+  assert.throws(
+    () => resolveChoice({ groups: ['missing'] }, settings.groups, context),
+    /unknown Config Composer group/,
+  );
   assert.equal(resolveChoice({ agent_group: 'legacy-new-team' }, settings.groups, context).source, 'native');
 });
 
 test('loader resolves paths from the dedicated file and rereads external edits without a cache', async (t) => {
   const root = await directory(t);
-  const path = join(root, 'composer.jsonc');
+  const path = join(root, 'config-composer.jsonc');
   await writeFile(
     path,
     '// Keep comments.\n{"groups":{"agents":{},"commands":{},"skills":{}},"promptSources":{"shared":"./references"},}\n',
   );
-  const initial = await loadConfiguration({ configFile: 'composer.jsonc', reloadToken: 'token' }, root);
+  const initial = await loadConfiguration({ configFile: 'config-composer.jsonc', reloadToken: 'token' }, root);
   assert.equal(initial.file?.path, path);
   assert.match(initial.file.text, /Keep comments/);
   assert.equal(initial.settings.promptSources.shared, join(root, 'references'));

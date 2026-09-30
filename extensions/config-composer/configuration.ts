@@ -28,7 +28,7 @@ export function configurationDirectory(environment: NodeJS.ProcessEnv = process.
 
 export function configurationPath(value: string, directory: string): string {
   if (value.trim() === '' || value.includes('\0')) {
-    throw new SettingsError('Select a valid Composer configuration path.');
+    throw new SettingsError('Select a valid Config Composer configuration path.');
   }
   const expanded = value.startsWith('~/') ? join(homedir(), value.slice(2)) : value;
   return isAbsolute(expanded) ? resolve(expanded) : resolve(directory, expanded);
@@ -41,7 +41,7 @@ function uniqueKeys(node: JsonNode | undefined): void {
   if (node.type === 'object') {
     const keys = node.children?.map((child): unknown => child.children?.[0].value) ?? [];
     if (keys.length !== new Set(keys).size) {
-      throw new SettingsError('The Composer configuration has duplicate JSON keys.');
+      throw new SettingsError('The Config Composer configuration has duplicate JSON keys.');
     }
   }
   node.children?.forEach(uniqueKeys);
@@ -51,7 +51,7 @@ export function parseConfiguration(text: string): Record<string, unknown> {
   const errors: ParseError[] = [];
   const value: unknown = parse(text, errors, { allowTrailingComma: true });
   if (errors.length !== 0 || !record(value)) {
-    throw new SettingsError('Fix the invalid Composer JSONC configuration.');
+    throw new SettingsError('Fix the invalid Config Composer JSONC configuration.');
   }
   uniqueKeys(parseTree(text));
   return value;
@@ -61,7 +61,7 @@ async function configurationFile(path: string): Promise<ConfigurationFile> {
   try {
     const before = await lstat(path);
     if (!before.isFile() || before.size > MAX_CONFIGURATION_BYTES) {
-      throw new SettingsError('The Composer configuration must be a regular file no larger than 1 MiB.');
+      throw new SettingsError('The Config Composer configuration must be a regular file no larger than 1 MiB.');
     }
     const file = await open(path, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK);
     try {
@@ -72,11 +72,11 @@ async function configurationFile(path: string): Promise<ConfigurationFile> {
         current.dev !== before.dev ||
         current.size > MAX_CONFIGURATION_BYTES
       ) {
-        throw new SettingsError('The Composer configuration changed while loading. Try again.');
+        throw new SettingsError('The Config Composer configuration changed while loading. Try again.');
       }
       const bytes = await file.readFile();
       if (bytes.length > MAX_CONFIGURATION_BYTES) {
-        throw new SettingsError('The Composer configuration must be no larger than 1 MiB.');
+        throw new SettingsError('The Config Composer configuration must be no larger than 1 MiB.');
       }
       const text = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
       return { path, text, mode: current.mode };
@@ -88,7 +88,7 @@ async function configurationFile(path: string): Promise<ConfigurationFile> {
       throw error;
     }
     throw new SettingsError(
-      'Could not read the Composer configuration. Check that configFile names a readable UTF-8 regular file.',
+      'Could not read the Config Composer configuration. Check that configFile names a readable UTF-8 regular file.',
     );
   }
 }
@@ -106,7 +106,7 @@ export async function loadConfiguration(
     (options.reloadToken !== undefined && typeof options.reloadToken !== 'string')
   ) {
     throw new SettingsError(
-      'configFile cannot be mixed with inline Composer settings. Use only configFile and an optional reloadToken.',
+      'configFile cannot be mixed with inline Config Composer settings. Use only configFile and an optional reloadToken.',
     );
   }
   const file = await configurationFile(configurationPath(options.configFile, directory));

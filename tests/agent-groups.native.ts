@@ -8,7 +8,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { setTimeout } from 'node:timers/promises';
-import { loadSnapshot, planChange, reloadConfiguration, savePlan } from '../extensions/composer/storage.ts';
+import { loadSnapshot, planChange, reloadConfiguration, savePlan } from '../extensions/config-composer/storage.ts';
 
 // Real V1 configuration loading, provider dispatch, and cache invalidation; only the remote model is synthetic.
 test(
@@ -101,7 +101,7 @@ test(
       variants: { low: { reasoningEffort: 'low' }, high: { reasoningEffort: 'high' } },
     };
     const config = {
-      plugin: [['./extensions/composer/server.ts', { configFile: './composer.jsonc' }]],
+      plugin: [['./extensions/config-composer/server.ts', { configFile: './config-composer.jsonc' }]],
       model: 'fixture/alpha',
       small_model: 'fixture/alpha',
       default_agent: 'worker',
@@ -137,7 +137,7 @@ test(
       },
     };
     await writeFile(
-      join(configRoot, 'composer.jsonc'),
+      join(configRoot, 'config-composer.jsonc'),
       `// Dedicated settings\n${JSON.stringify(composer, null, 2)}\n`,
     );
     await writeFile(join(configRoot, 'shared-prompts/default.md'), 'GLOBAL_GUIDANCE');
@@ -150,7 +150,7 @@ test(
       join(configRoot, 'agents/worker.md'),
       '---\nmode: primary\ngroups: [base, developers]\n---\nReply briefly.\n{{include:@shared/worker.md}}\n',
     );
-    await writeFile(join(configRoot, 'tui.jsonc'), JSON.stringify({ plugin: ['./extensions/composer/tui.ts'] }));
+    await writeFile(join(configRoot, 'tui.jsonc'), JSON.stringify({ plugin: ['./extensions/config-composer/tui.ts'] }));
     await writeFile(
       join(project, 'opencode.json'),
       JSON.stringify({ model: 'fixture/beta', small_model: 'fixture/beta' }),
@@ -319,6 +319,6 @@ test(
       ),
     );
     assert.match(await readFile(join(configRoot, 'opencode.jsonc'), 'utf8'), /^\/\/ Native integration fixture/);
-    assert.match(await readFile(join(configRoot, 'composer.jsonc'), 'utf8'), /^\/\/ Dedicated settings/);
+    assert.match(await readFile(join(configRoot, 'config-composer.jsonc'), 'utf8'), /^\/\/ Dedicated settings/);
   },
 );

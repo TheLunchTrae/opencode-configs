@@ -16,11 +16,11 @@ Select a focused lead when you want only planning, approved implementation, or a
 | [`skills/`](skills/) | Reusable task procedures. |
 | [`references/agent-prompts/`](references/agent-prompts/) | Shared prompt guidance. |
 | [`plugins/`](plugins/) | Local plugins, including secret-path checks. |
-| [`extensions/composer/`](extensions/composer/) | Composer: shared prompts, group defaults, and TUI settings. |
+| [`extensions/config-composer/`](extensions/config-composer/) | Config Composer: shared prompts and group settings. |
 | [`extensions/session-tools/`](extensions/session-tools/) | Workflow, config, context, bookmarks, and handoff panels. |
 | [`package.json`](package.json) | Pinned plugin dependencies and maintenance commands. |
 | [`opencode.jsonc`](opencode.jsonc) | Global models, permissions, MCP servers, shell, and plugin settings. |
-| [`composer.jsonc`](composer.jsonc) | Composer groups, model presets, prompt sources, and prompt defaults. |
+| [`config-composer.jsonc`](config-composer.jsonc) | Config Composer groups, models, and shared prompts. |
 | [`tui.jsonc`](tui.jsonc) | TUI theme selection and plugin settings. |
 | [`themes/`](themes/) | Custom TUI themes. |
 | [`opencode-quota/quota-toast.jsonc`](opencode-quota/quota-toast.jsonc) | Quota display preferences. |
@@ -31,8 +31,9 @@ Select a focused lead when you want only planning, approved implementation, or a
 2. Authenticate your provider through `/connect` when supported.
 3. Back up your existing global configuration directory.
 4. Obtain a checkout or download of this repository.
-5. Copy `README.md`, `USAGE.md`, `AGENTS.md`, `opencode.jsonc`, `composer.jsonc`, `tui.jsonc`, `themes/`, `agents/`,
-   `commands/`, `skills/`, `references/`, `plugins/`, `extensions/`, `package.json`, `package-lock.json`, and `opencode-quota/`
+5. Copy `README.md`, `USAGE.md`, `AGENTS.md`, `opencode.jsonc`, `config-composer.jsonc`, `tui.jsonc`, `themes/`,
+   `agents/`, `commands/`, `skills/`, `references/`, `plugins/`, `extensions/`, `package.json`, `package-lock.json`,
+   and `opencode-quota/`
    into the global configuration directory.
    Preserve the layout and merge your existing settings.
 
@@ -56,7 +57,8 @@ See the [V2 migration guide](https://opencode.ai/v2/docs/migrate-v1/).
 1. Set `shell` in `opencode.jsonc` to an installed shell.
    The supplied value is `C:/Program Files/Git/bin/bash.exe`; change it or remove it on other systems.
 2. Select models available from your authenticated provider. Global defaults are in `opencode.jsonc`.
-   Composer group defaults and model presets are in `composer.jsonc`. Custom agents declare `groups` in frontmatter.
+   Config Composer group defaults and model presets are in `config-composer.jsonc`.
+   Custom agents declare `groups` in frontmatter.
    An explicit agent model overrides its group default.
    After launch, use `/agent-models` to select models and `/agent-groups` to assign agents to groups.
    See [agent groups and models](USAGE.md#agent-groups-and-models) for precedence and configuration examples.
@@ -77,9 +79,9 @@ The session tools add a live workflow sidebar, read-only configuration and conte
 with editable handoff drafts. Open them through the command palette or `/workflow-panel`, `/inspect-config`,
 `/inspect-context`, and `/bookmarks`. See [session tools](USAGE.md#session-tools) for use and individual opt-outs.
 
-Composer assembles shared guidance into custom agent prompts when configuration loads.
-Install `composer.jsonc`, `extensions/composer/`, and the referenced Markdown files together.
-The shipped agent prompts require Composer to resolve their explicit include directives.
+Config Composer assembles shared guidance into custom agent prompts when configuration loads.
+Install `config-composer.jsonc`, `extensions/config-composer/`, and the referenced Markdown files together.
+The shipped agent prompts require Config Composer to resolve their explicit include directives.
 Conditional reference reads remain agent actions. See [shared prompt composition](USAGE.md#shared-prompt-composition).
 
 The selected `pink` theme uses pink accents, pastel syntax and status colors, and neutral dark backgrounds.
@@ -167,24 +169,25 @@ Check an approval prompt's scope before saving an approval.
 ## Upgrade an existing installation
 
 Back up the configuration first. Update `README.md`, `USAGE.md`, `AGENTS.md`, `agents/`, `commands/`, `skills/`,
-`references/agent-prompts/`, `plugins/`, `opencode.jsonc`, `composer.jsonc`, `tui.jsonc`, and `themes/` together,
+`references/agent-prompts/`, `plugins/`, `opencode.jsonc`, `config-composer.jsonc`, `tui.jsonc`, and `themes/` together,
 preserving local overrides and license notices.
 
-Install `extensions/`, `package.json`, and `package-lock.json` with the configuration files when adding Composer.
+Install `extensions/`, `package.json`, and `package-lock.json` with the configuration files when adding Config Composer.
 Merge existing dependencies if your installation already has a package manifest.
-Preserve a customized `composer.jsonc` and merge the new fields instead of overwriting it.
-Keep the server registration `["./extensions/composer/server.ts", { "configFile": "composer.jsonc" }]`
-in `opencode.jsonc` and the `./extensions/composer/tui.ts` entry in `tui.jsonc`.
-Copy the complete Composer directory, including `schema.json`, and its shared `extensions/tui/` dependencies.
+Preserve a customized `config-composer.jsonc` and merge the new fields instead of overwriting it.
+Keep the server registration `["./extensions/config-composer/server.ts", { "configFile": "config-composer.jsonc" }]`
+in `opencode.jsonc` and the `./extensions/config-composer/tui.ts` entry in `tui.jsonc`.
+Copy the complete Config Composer directory, including `schema.json`, and its shared `extensions/tui/` dependencies.
 Custom agents with explicit model pins keep those models. Use **Use group defaults** to opt an agent into inheritance.
 Removing the server plugin also removes group inheritance and prompt composition.
 Resolve include directives, restore shared guidance, and restore explicit models before disabling it.
 
-When upgrading from `extensions/agent-groups/`, replace its server and TUI registrations with the Composer entries.
+When upgrading from `extensions/agent-groups/`, replace its server and TUI registrations
+with the Config Composer entries.
 Remove only the obsolete `extensions/agent-groups/` directory after installing its replacement.
-Preserve unrelated extensions. Register only one Composer server entry and one Composer TUI entry
+Preserve unrelated extensions. Register only one Config Composer server entry and one Config Composer TUI entry
 to prevent duplicate loads.
-Move inline `modelPresets` into `composer.jsonc` and old `groups` into its `groups.agents` object.
+Move inline `modelPresets` into `config-composer.jsonc` and old `groups` into its `groups.agents` object.
 Legacy inline options and `agent_group` metadata remain supported, but the shipped setup uses the dedicated file
 and `groups` arrays. Do not keep both inline settings and a `configFile` setting in one server registration.
 

@@ -20,9 +20,9 @@ import {
   resolveChoice,
   resolveGroup,
   validateChoice,
-} from '../extensions/composer/settings.ts';
-import { AgentGroupsPlugin } from '../extensions/composer/server.ts';
-import { registerSettings } from '../extensions/composer/tui.ts';
+} from '../extensions/config-composer/settings.ts';
+import { AgentGroupsPlugin } from '../extensions/config-composer/server.ts';
+import { registerSettings } from '../extensions/config-composer/tui.ts';
 import {
   affectedGroups,
   loadSnapshot,
@@ -30,7 +30,7 @@ import {
   planChange,
   plannedChoices,
   savePlan,
-} from '../extensions/composer/storage.ts';
+} from '../extensions/config-composer/storage.ts';
 
 const options = {
   modelPresets: { balanced: { model: 'fixture/fast', variant: 'high' }, unused: { model: 'fixture/fast' } },
@@ -195,7 +195,7 @@ async function fixture(t: TestContext): Promise<string> {
     '// Preserve this comment.\n' +
       JSON.stringify(
         {
-          plugin: [['./extensions/composer/server.ts', options]],
+          plugin: [['./extensions/config-composer/server.ts', options]],
           model: 'fixture/fast',
           small_model: 'fixture/small',
           permission: { edit: 'ask' },
@@ -287,7 +287,7 @@ test('validation includes variants on linked groups and unpinned agents', async 
   await writeFile(
     snapshot.configFile.path,
     JSON.stringify({
-      plugin: [['./extensions/composer/server.ts', { groups: { developers: { modelRef: 'opencode:model' } } }]],
+      plugin: [['./extensions/config-composer/server.ts', { groups: { developers: { modelRef: 'opencode:model' } } }]],
       model: 'fixture/fast',
     }),
   );
@@ -382,7 +382,7 @@ function uiHarness(root: string) {
       providerError = value;
     },
     async command() {
-      await commands.find((command) => command.name === 'composer.models')!.run();
+      await commands.find((command) => command.name === 'config-composer.models')!.run();
     },
     async select(value: string) {
       assert.ok(dialog !== undefined && 'options' in dialog);

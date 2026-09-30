@@ -4,12 +4,12 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { type TestContext, test } from 'node:test';
 import type { Hooks, PluginInput } from '@opencode-ai/plugin';
-import { composePrompts } from '../extensions/composer/prompts.ts';
-import { type AgentSettings, readSettings } from '../extensions/composer/settings.ts';
-import { ComposerPlugin } from '../extensions/composer/server.ts';
+import { composePrompts } from '../extensions/config-composer/prompts.ts';
+import { type AgentSettings, readSettings } from '../extensions/config-composer/settings.ts';
+import { ConfigComposerPlugin } from '../extensions/config-composer/server.ts';
 
 async function directory(t: TestContext): Promise<string> {
-  const root = await mkdtemp(join(tmpdir(), 'composer-prompts-'));
+  const root = await mkdtemp(join(tmpdir(), 'config-composer-prompts-'));
   t.after(() => rm(root, { recursive: true, force: true }));
   await mkdir(join(root, 'shared'));
   return root;
@@ -103,7 +103,7 @@ test('includes reject missing paths, traversal, symlink escapes, unsafe text, cy
 
 test('server stages every model and prompt before mutation and recomposes without repeated guidance', async (t) => {
   const root = await directory(t);
-  const file = join(root, 'composer.jsonc');
+  const file = join(root, 'config-composer.jsonc');
   await writeFile(
     file,
     JSON.stringify({
@@ -113,7 +113,7 @@ test('server stages every model and prompt before mutation and recomposes withou
       modelPresets: { balanced: { model: 'fixture/fast', variant: 'high' } },
     }),
   );
-  const hooks = await ComposerPlugin({} as PluginInput, { configFile: file });
+  const hooks = await ConfigComposerPlugin({} as PluginInput, { configFile: file });
   const agents: Record<string, AgentSettings> = {
     good: { groups: ['developers'], prompt: 'Authored' },
     bad: { groups: ['developers'], prompt: '{{include:@shared/missing.md}}' },
@@ -137,7 +137,7 @@ test('server stages every model and prompt before mutation and recomposes withou
 test('recomposition reloads fragments, removes prior inherited fields, and retains changed explicit fields', async (t) => {
   const root = await directory(t);
   await writeFile(join(root, 'shared/worker.md'), 'First');
-  const file = join(root, 'composer.jsonc');
+  const file = join(root, 'config-composer.jsonc');
   await writeFile(
     file,
     JSON.stringify({
@@ -145,7 +145,7 @@ test('recomposition reloads fragments, removes prior inherited fields, and retai
       groups: { agents: { base: { modelRef: 'opencode:model' } } },
     }),
   );
-  const hooks = await ComposerPlugin({} as PluginInput, { configFile: file });
+  const hooks = await ConfigComposerPlugin({} as PluginInput, { configFile: file });
   const worker: AgentSettings = { groups: ['base'], prompt: '{{include:@shared/worker.md}}' };
   await hooks.config!({ model: 'fixture/first', agent: { worker } });
   assert.equal(worker.model, 'fixture/first');
@@ -168,7 +168,7 @@ test('recomposition reloads fragments, removes prior inherited fields, and retai
     variantFile,
     JSON.stringify({ groups: { agents: { base: { model: 'fixture/first', variant: 'low' } } } }),
   );
-  const variantHooks = await ComposerPlugin({} as PluginInput, { configFile: variantFile });
+  const variantHooks = await ConfigComposerPlugin({} as PluginInput, { configFile: variantFile });
   const inherited: AgentSettings = { groups: ['base'], prompt: 'Authored' };
   await variantHooks.config!({ agent: { inherited } });
   assert.equal(inherited.variant, 'low');
@@ -179,7 +179,7 @@ test('recomposition reloads fragments, removes prior inherited fields, and retai
 });
 
 test('dispatch validates variants retained across ordered direct group model overrides', async () => {
-  const hooks = await ComposerPlugin({} as PluginInput, {
+  const hooks = await ConfigComposerPlugin({} as PluginInput, {
     groups: {
       base: { model: 'fixture/fast', variant: 'high' },
       later: { model: 'fixture/small' },

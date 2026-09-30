@@ -1,5 +1,5 @@
 {
-  "$schema": "./extensions/composer/schema.json",
+  "$schema": "./extensions/config-composer/schema.json",
   "modelPresets": {
     "balanced": { "model": "openai/gpt-5.6-sol", "variant": "medium" },
     "lightweight": { "model": "openai/gpt-5.6-terra", "variant": "medium" }

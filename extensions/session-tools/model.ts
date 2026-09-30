@@ -6,7 +6,7 @@ import {
   agentGroups,
   readOptions,
   resolveGroup,
-} from '../composer/settings.ts';
+} from '../config-composer/settings.ts';
 
 export interface Entry {
   info: Message;
@@ -229,7 +229,7 @@ export interface Fact {
   label: string;
   value: string;
 }
-export interface SavedComposerConfiguration {
+export interface SavedConfigComposerConfiguration {
   settings?: GroupOptions;
   source?: string;
   unavailable?: string;
@@ -283,18 +283,18 @@ function promptSummary(operations: PromptOperations | undefined, enabled = true)
   return `${enabled ? 'Enabled' : 'Skipped by agent policy'}; prepend ${operations?.prepend?.length ?? 0}; append ${operations?.append?.length ?? 0}`;
 }
 
-function savedComposerFacts(
+function savedConfigComposerFacts(
   name: string,
   groups: string[],
-  saved: SavedComposerConfiguration,
+  saved: SavedConfigComposerConfiguration,
   config: Config,
   global: Config | null | undefined,
 ): Fact[] {
   const settings = saved.settings;
   const facts: Fact[] = [
-    { label: 'Composer settings file', value: saved.source ?? 'Unavailable' },
+    { label: 'Config Composer settings file', value: saved.source ?? 'Unavailable' },
     {
-      label: 'Saved Composer settings',
+      label: 'Saved Config Composer settings',
       value:
         settings === undefined
           ? (saved.unavailable ?? 'Unavailable; runtime facts remain available')
@@ -336,7 +336,7 @@ export function configFacts(
   config: Config,
   global: Config | null | undefined,
   entries: readonly Entry[],
-  savedComposer?: SavedComposerConfiguration,
+  savedConfigComposer?: SavedConfigComposerConfiguration,
 ): Fact[] {
   const last = lastAssistant(entries, agent.name);
   const model = hasResponseData(agent.model) ? `${agent.model.providerID}/${agent.model.modelID}` : undefined;
@@ -383,24 +383,27 @@ export function configFacts(
     });
   } else if (memberships.length > 0) {
     facts.push({
-      label: memberships.length === 1 && savedComposer === undefined ? 'Agent group' : 'Agent groups (ordered)',
+      label: memberships.length === 1 && savedConfigComposer === undefined ? 'Agent group' : 'Agent groups (ordered)',
       value: memberships.join(' → '),
     });
   }
-  if (savedComposer !== undefined) {
-    facts.push(...savedComposerFacts(agent.name, memberships, savedComposer, config, global));
+  if (savedConfigComposer !== undefined) {
+    facts.push(...savedConfigComposerFacts(agent.name, memberships, savedConfigComposer, config, global));
   } else if (memberships.length > 0) {
     for (const plugin of config.plugin ?? []) {
       if (
         !Array.isArray(plugin) ||
         typeof plugin[0] !== 'string' ||
-        !/[/\\](?:composer|agent-groups)[/\\]server\.(?:ts|js)$/.test(plugin[0])
+        !/[/\\](?:config-composer|agent-groups)[/\\]server\.(?:ts|js)$/.test(plugin[0])
       ) {
         continue;
       }
       const options: unknown = plugin[1];
       if (record(options) && Object.hasOwn(options, 'configFile')) {
-        facts.push({ label: 'Saved Composer settings', value: 'Unavailable; runtime model facts remain available' });
+        facts.push({
+          label: 'Saved Config Composer settings',
+          value: 'Unavailable; runtime model facts remain available',
+        });
         continue;
       }
       if (!record(options) || !record(options.groups)) {

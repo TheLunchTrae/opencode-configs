@@ -144,7 +144,7 @@ function serverEntry(spec: unknown, root: string): boolean {
   try {
     return (
       resolve(spec.startsWith('file:') ? fileURLToPath(spec) : resolve(root, spec)) ===
-      join(root, 'extensions', 'composer', 'server.ts')
+      join(root, 'extensions', 'config-composer', 'server.ts')
     );
   } catch {
     return false;
@@ -153,12 +153,12 @@ function serverEntry(spec: unknown, root: string): boolean {
 
 function pluginOptions(config: Record<string, unknown>, index: number): unknown {
   if (!Array.isArray(config.plugin)) {
-    throw new SettingsError('Configure the composer server plugin first.');
+    throw new SettingsError('Configure the Config Composer server plugin first.');
   }
   const plugins: unknown[] = config.plugin;
   const plugin = plugins[index];
   if (!Array.isArray(plugin)) {
-    throw new SettingsError('Configure composer with a plugin options object.');
+    throw new SettingsError('Configure Config Composer with a plugin options object.');
   }
   const entry: unknown[] = plugin;
   return entry[1];
@@ -177,20 +177,20 @@ export async function loadSnapshot(directory: string): Promise<Snapshot> {
   const configFile = await sourceFile(root, join(root, configs[0]));
   const config = parseConfig(configFile.text);
   if (!Array.isArray(config.plugin)) {
-    throw new SettingsError('Configure the composer server plugin first.');
+    throw new SettingsError('Configure the Config Composer server plugin first.');
   }
   const plugins: unknown[] = config.plugin;
   const matches = plugins.flatMap((entry, index) =>
     serverEntry(Array.isArray(entry) ? entry[0] : entry, root) ? [index] : [],
   );
   if (matches.length !== 1) {
-    throw new SettingsError('Configure exactly one composer server plugin entry.');
+    throw new SettingsError('Configure exactly one Config Composer server plugin entry.');
   }
   const pluginIndex = matches[0];
   const loaded = await loadConfiguration(pluginOptions(config, pluginIndex), root);
   const settingsFile = loaded.file === undefined ? undefined : await sourceFile(root, loaded.file.path);
   if (settingsFile !== undefined && settingsFile.text !== loaded.file?.text) {
-    throw new SettingsError('Composer settings changed while loading. Reopen the editor.');
+    throw new SettingsError('Config Composer settings changed while loading. Reopen the editor.');
   }
   const { groups, modelPresets } = loaded.settings;
   const jsonAgents = record(config.agent) ? config.agent : {};
@@ -566,7 +566,7 @@ export function plannedChoices(plan: EditPlan, native: NativeModels = plan.snaps
 }
 
 async function atomicWrite(path: string, text: string, mode: number): Promise<void> {
-  const temporary = join(dirname(path), `.composer-${randomUUID()}.tmp`);
+  const temporary = join(dirname(path), `.config-composer-${randomUUID()}.tmp`);
   try {
     const file = await open(temporary, 'wx', mode);
     try {
@@ -585,9 +585,9 @@ export async function savePlan(plan: EditPlan): Promise<void> {
   if (plan.edits.length === 0) {
     return;
   }
-  const lockPath = join(plan.snapshot.root, '.composer.lock');
+  const lockPath = join(plan.snapshot.root, '.config-composer.lock');
   const lock = await open(lockPath, 'wx').catch(() => {
-    throw new SettingsError('Another settings edit is active, or a stale .composer.lock needs attention.');
+    throw new SettingsError('Another settings edit is active, or a stale .config-composer.lock needs attention.');
   });
   const applied: FileEdit[] = [];
   try {
@@ -638,7 +638,7 @@ export async function reloadConfiguration(
   snapshot: Snapshot,
   update: (plugins: unknown[]) => Promise<void>,
 ): Promise<void> {
-  const lockPath = join(snapshot.root, '.composer.lock');
+  const lockPath = join(snapshot.root, '.config-composer.lock');
   const lock = await open(lockPath, 'wx').catch(() => {
     throw new SettingsError('Another settings edit is active. Reload after it finishes.');
   });
@@ -662,7 +662,7 @@ export async function reloadConfiguration(
       : JSON.stringify(config, null, 2);
     // The public API invalidates the global cache only after an actual configuration change.
     if (!Array.isArray(config.plugin)) {
-      throw new SettingsError('Configure the composer server plugin first.');
+      throw new SettingsError('Configure the Config Composer server plugin first.');
     }
     const plugins: unknown[] = config.plugin;
     await update(plugins);
