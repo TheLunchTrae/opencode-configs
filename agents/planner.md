@@ -65,3 +65,7 @@ Separate safe-design or meaningful-verification blockers from optional improveme
 Reuse documentation, tools, and sufficient coverage. Include required changes in proposed files and task slices.
 For navigation problems, propose a short entry in existing docs linking verified architecture, invariants, and checks.
 Do not require a new knowledge base, fixed filename, or global project-specific instructions.
+
+{{include:@agent-prompts/response-formats/common.md}}
+
+{{include:@agent-prompts/response-formats/plan.md}}

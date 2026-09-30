@@ -2,7 +2,7 @@
 
 Use this structure for final, partial, or blocked task responses. Routine progress updates need not use it.
 Task profiles define `Result`; this file defines the shared envelope and status meanings.
-Before selecting or assessing checks, read `@agent-references/verification-scope.md` if its guidance was not supplied.
+Before selecting or assessing checks, read `@agent-references/verification-scope.md`.
 Preserve the assigned verification limits in the result and evidence.
 Accepted limitations alone do not make the assigned task `BLOCKED` or `PARTIAL`.
 Use the assigned profile when it fits the task and role; otherwise use the default or report a mismatch.
@@ -33,8 +33,9 @@ Choose one task status:
 
 Separate task completion, review verdicts, and check results. Completed reviews can find blocking defects; completed
 checks can fail. Missing required checks are not passes. Task status never establishes approval or readiness.
-For a research-only assignment, use `@agent-prompts/response-formats/research.md` for `Result`, even when the usual
-profile covers edits. Research remains bounded by the assigned specialty and permissions; it does not authorize edits.
+For a research-only assignment, read `@agent-prompts/response-formats/research.md` and use it for `Result`, even when
+the usual profile covers edits. Research remains bounded by the assigned specialty and permissions; it does not authorize
+edits.
 
 ## Evidence requirements
 

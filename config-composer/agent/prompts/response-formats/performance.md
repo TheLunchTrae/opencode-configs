@@ -1,7 +1,6 @@
 # Performance response
 
-Read `@agent-prompts/response-formats/common.md` if its guidance was not already supplied.
-Use its envelope with these sections under `Result`:
+Use the common envelope with these sections under `Result`:
 
 ### Objective and hypothesis
 

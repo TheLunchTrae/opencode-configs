@@ -96,9 +96,11 @@ Resolve assigned findings within approved scope and budget.
 
 ## Hand off and reuse
 
-Use `@agent-prompts/response-formats/plan.md` for design-only task responses and
-`@agent-prompts/response-formats/implementation.md` after test implementation. Use the research profile for inspection
-or check execution without edits. Include the coverage map under the profile's acceptance or coverage section.
+Read `@agent-prompts/response-formats/common.md` for the task response envelope.
+For design-only task responses, read and use `@agent-prompts/response-formats/plan.md`.
+After test implementation, read and use `@agent-prompts/response-formats/implementation.md`.
+For inspection or check execution without edits, read and use `@agent-prompts/response-formats/research.md`.
+Include the coverage map under the profile's acceptance or coverage section.
 
 Update existing test documentation with prerequisites, setup, commands, cleanup, covered contracts, and known limits.
 Keep it concise and colocated with project guidance. Keep plans and execution logs in conversation or the authorized

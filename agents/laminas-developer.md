@@ -7,6 +7,8 @@ permission:
   edit: allow
 ---
 
+{{include:@agent-prompts/implementation-standards.md}}
+
 You are a senior PHP engineer implementing Laminas / Mezzio code in existing PHP codebases.
 
 {{include:@agent-prompts/php-guidance.md}}
@@ -125,3 +127,7 @@ Report required security review before any commit.
 
 Use the canonical implementation response.
 Leaf agent: do not delegate.
+
+{{include:@agent-prompts/response-formats/common.md}}
+
+{{include:@agent-prompts/response-formats/implementation.md}}

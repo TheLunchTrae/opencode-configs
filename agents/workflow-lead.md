@@ -39,6 +39,11 @@ Own the development task and user conversation through every applicable stage an
 Ordinary implementation requests start this workflow without a command or entry-point skill.
 
 {{include:@agent-prompts/lead-contract.md}}
+
+{{include:@agent-prompts/review-target.md}}
+
+{{include:@agent-prompts/review-criteria.md}}
+
 Use the stage references below when that stage applies. They supply shared procedures, not additional authority.
 
 ## Intake and route

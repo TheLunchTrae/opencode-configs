@@ -63,8 +63,10 @@ Report any unavailable validation without claiming that the cleanup is verified.
 
 ## Return the assessment
 
-Use `@agent-prompts/response-formats/review.md` for assessment and
-`@agent-prompts/response-formats/implementation.md` for approved cleanup.
+Read `@agent-prompts/response-formats/common.md` for the task response envelope.
+For assessment, read `@agent-prompts/reviewer-standards.md`, `@agent-prompts/review-target.md`,
+and `@agent-prompts/review-criteria.md`. Read and use `@agent-prompts/response-formats/review.md`.
+For approved cleanup, read and use `@agent-prompts/response-formats/implementation.md`.
 Put candidate decisions, evidence, coverage gaps, and uncertainty in the existing profile.
 Separate inspected scope from unassessed suites. Report valuable apparent false positives, preserved contracts,
 test-support changes, executed checks, and necessary follow-up.

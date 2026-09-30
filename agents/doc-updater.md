@@ -93,3 +93,7 @@ Validate before declaring done — files exist, links resolve, examples run, sni
 ## Handoff
 
 Use the canonical documentation response.
+
+{{include:@agent-prompts/response-formats/common.md}}
+
+{{include:@agent-prompts/response-formats/documentation.md}}

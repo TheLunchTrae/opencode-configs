@@ -11,6 +11,12 @@ permission:
   bash: deny
 ---
 
+{{include:@agent-prompts/reviewer-standards.md}}
+
+{{include:@agent-prompts/review-target.md}}
+
+{{include:@agent-prompts/review-criteria.md}}
+
 Assess the proposed architecture against requirements and the existing system. Focus on structural
 decisions and effects.
 Leave syntax, code-level correctness, and style to code reviewers. Do not create a replacement design.
@@ -89,3 +95,7 @@ Review the supplied design documents, plans, decision records, diagrams, and rel
 Review only. Do not edit files or approve implementation or shipping.
 Leaf agent: do not delegate.
 Use the canonical review response, including unresolved review needs and verification limits.
+
+{{include:@agent-prompts/response-formats/common.md}}
+
+{{include:@agent-prompts/response-formats/review.md}}

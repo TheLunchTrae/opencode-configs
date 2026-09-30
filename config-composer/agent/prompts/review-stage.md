@@ -1,8 +1,8 @@
 # Review stage
 
 Use within the active lead's scope and `@agent-prompts/lead-contract.md`.
-When interpreting findings, read `@agent-prompts/review-criteria.md` if its guidance was not already supplied.
-When resolving scope, read `@agent-prompts/review-target.md` if its guidance was not already supplied.
+When interpreting findings, apply `@agent-prompts/review-criteria.md`.
+When resolving scope, apply `@agent-prompts/review-target.md`.
 
 ## Required implementation reviews
 

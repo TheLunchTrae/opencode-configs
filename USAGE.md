@@ -263,22 +263,28 @@ Source directories resolve from the Config Composer settings file,
 independently of the extension's installation directory.
 Source aliases are independent mappings. A Config Composer source does not automatically register an OpenCode reference.
 Composition fragments live in `config-composer/agent/prompts/`.
-The native hidden `agent-prompts` reference points there for fallback reads and separately installed skills.
+The native hidden `agent-prompts` reference points there for task-specific reads and separately installed skills.
 Conditional guidance lives in `references/agent/`, registered as the hidden `agent-references` reference.
 
-Insert a fragment at a specific position in an agent's Markdown body:
+Declare shared guidance directly in an agent's Markdown body to make its fragments and insertion points visible:
 
 ```markdown
-{{include:@agent-prompts/lead-contract.md}}
+{{include:@agent-prompts/implementation-standards.md}}
 
-Coordinate the assigned stage.
+Implement the assigned change.
+
+{{include:@agent-prompts/response-formats/common.md}}
+{{include:@agent-prompts/response-formats/implementation.md}}
 ```
 
 Only explicit include directives expand.
 A sentence such as `Read @agent-references/testing-standards.md when tests change` remains an instruction for the agent.
 Use `\{{include:@agent-prompts/lead-contract.md}}` to retain a literal directive.
 
-Configure shared prompt defaults, group fragments, and individual exceptions in the dedicated file:
+The shipped agents use body includes. Prefer this form when adding shared prompt content.
+Use configuration prepend/append as a last choice for additional layers.
+Optional prepend and append layers remain available for installation-wide defaults, group fragments, and
+individual exceptions. Configure these additional layers in the dedicated file:
 
 ```jsonc
 "agent": {
@@ -326,19 +332,22 @@ The composed prompt has this order:
 
 `inheritDefaults: false` skips default prompt fragments. `inheritGroups: false` skips group prompt fragments.
 These opt-outs affect prompt content only. They do not disable model inheritance or explicit includes.
-Fragments are not deduplicated. Avoid configuring the same guidance in several inherited groups
+Fragments are not deduplicated. Avoid repeating guidance already included by an agent body or another inherited layer
 unless repetition is intended.
 Config Composer leaves built-in agents without authored prompts unchanged,
 preserving OpenCode's native prompt selection.
 
-The shipped configuration includes specialist conduct and response profiles through Config Composer.
-Language guidance is supplied to matching developer, reviewer, and framework agents without requiring another model group.
-The four primary leads opt out of specialist defaults and envelopes. They include their shared lead contract explicitly.
+The shipped agent bodies include specialist conduct, language guidance, and response profiles explicitly.
+The dedicated configuration contains no default or group prompt fragments. Its prompt overrides retain the four
+primary leads' inheritance opt-outs. These leads include their shared lead contract explicitly.
 Focused leads include unconditional stage guidance. The workflow lead retains conditional stage reads.
 Universal and conditional coding, documentation, and verification reads stay in `AGENTS.md`.
 
-Shared Markdown files remain readable on their own. Their prerequisite reads apply when needed guidance was not already
-supplied. Keep those fallbacks when installing reusable skills separately.
+Shared Markdown files remain readable on their own.
+Standalone skill consumers must explicitly read their required shared guidance.
+Include those dependencies when installing a skill.
+Composed agents receive their configured guidance before the first request. Invalid includes fail configuration loading.
+Task-specific conditional reads still apply when their stated conditions are met.
 Restart or explicitly reload after prompt changes. The [context inspector](#context-evidence) does not show exact assembled
 prompt text or token counts per fragment.
 

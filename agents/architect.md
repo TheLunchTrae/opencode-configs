@@ -68,3 +68,7 @@ Design only. Do not edit files, run shell commands, or approve implementation.
 Leaf agent: do not delegate.
 Use the canonical design response.
 Identify unresolved security decisions and other implementation prerequisites in unresolved items.
+
+{{include:@agent-prompts/response-formats/common.md}}
+
+{{include:@agent-prompts/response-formats/design.md}}

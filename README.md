@@ -21,7 +21,7 @@ Select a focused lead when you want only planning, approved implementation, or a
 | [`extensions/session-tools/`](extensions/session-tools/) | Workflow, config, context, bookmarks, and handoff panels. |
 | [`package.json`](package.json) | Pinned plugin dependencies and maintenance commands. |
 | [`opencode.jsonc`](opencode.jsonc) | Global models, permissions, MCP servers, shell, and plugin settings. |
-| [`config-composer.jsonc`](config-composer.jsonc) | Config Composer groups, models, and shared prompts. |
+| [`config-composer.jsonc`](config-composer.jsonc) | Config Composer groups, models, and prompt settings. |
 | [`tui.jsonc`](tui.jsonc) | TUI theme selection and plugin settings. |
 | [`themes/`](themes/) | Custom TUI themes. |
 | [`opencode-quota/quota-toast.jsonc`](opencode-quota/quota-toast.jsonc) | Quota display preferences. |
@@ -86,7 +86,9 @@ Install `config-composer.jsonc`, `config-composer/`, `extensions/config-composer
 Shared source directories are configured at the top level.
 Agent groups, models, and prompt settings belong under `agent`.
 The `$schema` field points to `extensions/config-composer/schema.json`, installed with the extension.
-The shipped agent prompts require Config Composer to resolve their explicit include directives.
+The shipped agent bodies declare shared fragments with explicit include directives at their intended positions.
+These directives require Config Composer, which resolves them when configuration loads.
+Missing or invalid includes fail configuration loading.
 Conditional reference reads remain agent actions. See [shared prompt composition](USAGE.md#shared-prompt-composition).
 
 The selected `pink` theme uses pink accents, pastel syntax and status colors, and neutral dark backgrounds.
@@ -212,9 +214,18 @@ Earlier flat settings files are rejected. Remove the old keys after moving their
 Keep `$schema` pointing to `./extensions/config-composer/schema.json`.
 Preserve customized source mappings and prompt fragments instead of overwriting them.
 
+After installing the updated agent bodies, remove matching shared fragments from their configured prompt layers.
+The former shipped default appended `@agent-prompts/response-formats/common.md`.
+The former shipped group layers supplied implementation or reviewer standards, review target and criteria,
+and implementation, review, or documentation profiles. These fragments are now included directly in agent bodies.
+Remove matching per-agent profile appends for `architect`, `planner`, `code-simplifier`, `refactor-cleaner`,
+and `performance-optimizer` after installing their inline includes.
+Preserve custom additional fragments, models, memberships, and the four primary leads' inheritance opt-outs.
+Do not keep the same fragment in a configured layer and an inline include unless repetition is intended.
+
 Composition fragments now live in `config-composer/agent/prompts/`.
 Set the `agent-prompts` entry in `sourceDirectories` to `./config-composer/agent/prompts`.
-Keep the hidden native `agent-prompts` reference pointed there for fallback reads and separately installed skills.
+Keep the hidden native `agent-prompts` reference pointed there for task-specific reads and separately installed skills.
 Conditional guidance lives in `references/agent/`, exposed through the hidden `agent-references` reference.
 Update customized reads to that guidance, such as `@agent-references/testing-standards.md`.
 Move customized fragments and conditional references to their respective directories before removing obsolete copies.

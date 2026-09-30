@@ -35,4 +35,5 @@ dependency or environment.
 Describe unrun checks as plans. Use the common response rules for overall task status.
 Do not install new tooling, access production data, or bypass permissions to produce a green result.
 Respect the remaining task budget; return blockers when it is exhausted.
-For task responses, use `@agent-prompts/response-formats/implementation.md` with the observed red/green evidence.
+For task responses, read `@agent-prompts/response-formats/common.md` and
+`@agent-prompts/response-formats/implementation.md`. Use the implementation profile with the observed red/green evidence.

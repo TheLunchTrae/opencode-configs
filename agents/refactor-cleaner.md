@@ -13,6 +13,8 @@ permission:
     php-developer: allow
 ---
 
+{{include:@agent-prompts/implementation-standards.md}}
+
 Clean up and consolidate code: identify and remove dead code, duplicates, and unused exports.
 
 For test-suite cleanup, use `test-audit` and the approved candidate evidence before editing.
@@ -90,3 +92,7 @@ Use the canonical implementation response.
 
 Defer cleanup during active feature work on the same files or before an imminent production deployment.
 Cleanup churn before deployment hides regressions.
+
+{{include:@agent-prompts/response-formats/common.md}}
+
+{{include:@agent-prompts/response-formats/implementation.md}}

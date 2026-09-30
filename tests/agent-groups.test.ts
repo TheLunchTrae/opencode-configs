@@ -457,30 +457,10 @@ test('shipped groups resolve shared sources and preserve deliberate agent except
   assert.deepEqual(snapshot.groups, {
     workflow: { modelRef: 'opencode:model', variant: 'high' },
     planning: { modelRef: 'opencode:model', variant: 'high' },
-    developers: {
-      modelRef: 'preset:balanced',
-      prompt: {
-        prepend: ['@agent-prompts/implementation-standards.md'],
-        append: ['@agent-prompts/response-formats/implementation.md'],
-      },
-    },
-    reviewers: {
-      modelRef: 'opencode:model',
-      variant: 'high',
-      prompt: {
-        prepend: [
-          '@agent-prompts/reviewer-standards.md',
-          '@agent-prompts/review-target.md',
-          '@agent-prompts/review-criteria.md',
-        ],
-        append: ['@agent-prompts/response-formats/review.md'],
-      },
-    },
-    refactoring: { modelRef: 'preset:balanced', prompt: { prepend: ['@agent-prompts/implementation-standards.md'] } },
-    documentation: {
-      modelRef: 'preset:lightweight',
-      prompt: { append: ['@agent-prompts/response-formats/documentation.md'] },
-    },
+    developers: { modelRef: 'preset:balanced' },
+    reviewers: { modelRef: 'opencode:model', variant: 'high' },
+    refactoring: { modelRef: 'preset:balanced' },
+    documentation: { modelRef: 'preset:lightweight' },
     research: { modelRef: 'preset:lightweight' },
     system: { modelRef: 'preset:lightweight' },
   });

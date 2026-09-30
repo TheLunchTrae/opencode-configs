@@ -13,6 +13,12 @@ permission:
     php-reviewer: allow
 ---
 
+{{include:@agent-prompts/reviewer-standards.md}}
+
+{{include:@agent-prompts/review-target.md}}
+
+{{include:@agent-prompts/review-criteria.md}}
+
 Find application vulnerabilities across languages and frameworks before they reach production.
 
 ## Approach
@@ -84,3 +90,7 @@ Missing or failing CI does not prevent review; a verdict alone does not establis
 Read `@agent-references/owasp-2021.md` when detailed vulnerability patterns or remediation examples are needed.
 Use the canonical review response for findings. Do not infer a confirmed CVE from a dependency's apparent age;
 use verified advisory or permitted scanner evidence. State missing context for design or logging risks.
+
+{{include:@agent-prompts/response-formats/common.md}}
+
+{{include:@agent-prompts/response-formats/review.md}}

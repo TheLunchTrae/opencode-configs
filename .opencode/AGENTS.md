@@ -34,7 +34,9 @@ Check the installed version against the [V1 documentation](https://opencode.ai/d
   Keep top-level `command` and `skill` objects empty until their composition is supported.
   Reserve those objects for their own member types. Do not apply agent models to them.
   Preserve explicit exceptions. Group inheritance fills missing models before native agent initialization.
-- Agent Markdown bodies are prompts. Do not add a separate `prompt` frontmatter field.
+- Agent Markdown bodies are prompts. Declare shared fragments with explicit includes at their intended positions.
+  Keep the shipped guidance in those bodies. Configuration prepend and append layers remain optional capabilities.
+  Do not add a separate `prompt` frontmatter field.
 - `workflow-lead` is the default primary agent. Focused leads are alternative primary entrypoints, never children.
   Built-in `build` and `plan` are disabled; custom `planner` is a separate subagent.
 - Read the affected agent definitions for identities, models, and permissions. Do not maintain a second allocation
@@ -63,7 +65,7 @@ Check the installed version against the [V1 documentation](https://opencode.ai/d
 - Composition fragments belong in `config-composer/agent/prompts/`.
   Map the `agent-prompts` entry in `sourceDirectories` to that directory in `config-composer.jsonc`.
   Register the same directory once as the hidden native `agent-prompts` reference, with a description,
-  for fallback reads and standalone consumers.
+  for task-specific reads and standalone consumers.
   Keep conditional guidance in `references/agent/`, registered as the hidden native `agent-references` reference.
   Use full paths such as `@agent-prompts/reviewer-standards.md`; verify every referenced file exists.
 - Hidden affects interactive visibility. It does not remove agent context or grant tool permissions.
@@ -71,10 +73,14 @@ Check the installed version against the [V1 documentation](https://opencode.ai/d
   and prepend/append fragments when configuration loads.
   Bare `@` references remain conditional reads. Do not expand every reference automatically.
   Agent group prompt content follows the listed `groups` order. Keep model and prompt precedence deterministic.
-  Framework agents do not inherit another agent's body. Supply their shared language guidance through Config Composer
-  or an explicit read, and preserve every condition on task-specific reads.
+  Framework agents do not inherit another agent's body. Include shared language guidance in each owning agent body.
+  Preserve every condition on task-specific reads.
   Prompt fragments must stay readable without Config Composer because reusable skills can consume them separately.
-  Preserve fallback reads when required guidance was not already supplied. Avoid include cycles and duplicate fragments.
+  Supply required unconditional agent prompt fragments through explicit body includes.
+  Prefer body includes. Use configuration prepend/append as a last choice for additional layers.
+  Invalid includes must fail configuration loading.
+  Standalone skill consumers must explicitly read their required shared guidance.
+  Avoid include cycles and duplicate fragments.
   Preserve primary-lead opt-outs from specialist standards and response envelopes.
 - Put universal task-agent rules in root `AGENTS.md`. OpenCode loads them for primary and subagent task sessions.
   A child does not inherit its parent's role prompt. Keep role-specific guidance explicit through includes or reads,
@@ -84,7 +90,8 @@ Check the installed version against the [V1 documentation](https://opencode.ai/d
   Keep task-specific reporting fields, role boundaries, and stricter restrictions.
 - Canonical task responses belong in `config-composer/agent/prompts/response-formats/`.
   Keep the envelope in `common.md`, task sections in profiles, and the consumer index in `catalog.md`.
-  Each specialist selects a profile. Do not duplicate response structures in agent prompts or reusable skills.
+  Each specialist includes the envelope and its selected profile in its body.
+  Do not duplicate response structures in agent prompts or reusable skills.
   Delegating agents read the catalog and expected profile, then validate returned scope, source state, and evidence.
   Specialists need task context and constraints, not the invoking agent's identity or workflow.
   Keep task completion, review verdicts, and check results distinct. Preserve required empty sections with `None`.

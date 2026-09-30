@@ -7,7 +7,8 @@ description: Establish comparable performance measurements and test one bottlene
 
 Work within the performance assignment, specialty, and permissions. Retain planning, approval, security review,
 and correctness requirements. This skill grants no delegation.
-Use `@agent-prompts/response-formats/performance.md` for the canonical performance response.
+Read `@agent-prompts/response-formats/common.md` and `@agent-prompts/response-formats/performance.md`
+for the canonical performance response.
 Apply `@agent-references/verification-scope.md` before measurement discovery or execution. Honor excluded measurements
 without requiring a new measurement plan. Keep any approved unmeasured change distinct from a demonstrated improvement.
 

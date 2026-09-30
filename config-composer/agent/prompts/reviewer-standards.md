@@ -16,7 +16,7 @@ Read `@agent-references/testing-standards.md` when assessing test quality, cover
 Use `test-audit` for an explicit suite audit. Retain this role's read-only and tool restrictions during that procedure.
 
 Use `@agent-prompts/review-criteria.md` for severity and verdicts and
-`@agent-prompts/response-formats/review.md` for report structure. Read either reference if its guidance was not supplied.
+`@agent-prompts/response-formats/review.md` for report structure.
 For code reviews, resolve scope with `@agent-prompts/review-target.md`. For design reviews, assess the supplied design.
 
 ## Verification

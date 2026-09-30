@@ -50,5 +50,6 @@ Zero exit status with no expected tests collected does not prove acceptance.
 Do not invent a runner or install packages to hide missing configuration.
 Do not suppress warnings or weaken assertions. Record warnings against the project's policy.
 Report action items for the implementer. A verification report does not authorize edits or remote actions.
-For delegated verification, use `@agent-prompts/response-formats/research.md`; include these check statuses in evidence.
+For delegated verification, read `@agent-prompts/response-formats/common.md` and
+`@agent-prompts/response-formats/research.md`. Use the research profile and include these check statuses in evidence.
 Task status describes assignment completion, not passing checks.

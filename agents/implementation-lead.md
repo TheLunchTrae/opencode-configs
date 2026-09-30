@@ -41,6 +41,10 @@ within that scope. Do not expand into requirements discovery or new design.
 
 {{include:@agent-prompts/lead-contract.md}}
 
+{{include:@agent-prompts/review-target.md}}
+
+{{include:@agent-prompts/review-criteria.md}}
+
 {{include:@agent-prompts/implementation-stage.md}}
 Read `@agent-prompts/review-stage.md` and `@agent-references/completion.md` when collecting final evidence.
 

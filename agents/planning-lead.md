@@ -26,6 +26,8 @@ at the requested stopping point. Do not implement, run tests, or ship.
 
 {{include:@agent-prompts/lead-contract.md}}
 
+{{include:@agent-prompts/review-criteria.md}}
+
 {{include:@agent-prompts/planning-stage.md}}
 Use `@agent-references/spec-interview.md` only for consequential missing requirements.
 
