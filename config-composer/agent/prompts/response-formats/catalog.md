@@ -14,8 +14,11 @@ Profiles share `@agent-prompts/response-formats/common.md` and define their own 
 | Performance investigation and optimization | `@agent-prompts/response-formats/performance.md` |
 
 Before delegation, read the common structure and the applicable profile. Name the expected profile in the assignment.
+For review assignments, read `@agent-prompts/reviewer-standards.md` and `@agent-prompts/review-criteria.md`
+to interpret reviewers' conduct and reports. Those rules govern the review assignment.
+The coordinator retains its own role and permissions.
 Research-only assignments use the research profile. For a built-in agent without a local prompt, explicitly instruct it
-to read the profile and common structure, or include their requirements if those references are unavailable.
+to read the profile and common structure.
 Assignments still need sufficient inputs, scope, permissions, and acceptance conditions.
 
 On return, check required sections, assigned scope, source state, citations, check evidence, and unresolved items.

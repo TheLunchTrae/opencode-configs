@@ -1,5 +1,4 @@
 import { realpath } from 'node:fs/promises';
-import { fileURLToPath } from 'node:url';
 import { homedir } from 'node:os';
 import { isAbsolute, join } from 'node:path';
 import type { TuiDialogSelectOption, TuiPlugin, TuiPluginApi, TuiPluginModule } from '@opencode-ai/plugin/tui';
@@ -12,7 +11,7 @@ import {
   type NativeModels,
   type ResolutionContext,
   SettingsError,
-  agentGroup,
+  agentGroups,
   catalogModels,
   groupName,
   presetName,
@@ -33,9 +32,9 @@ import {
   reloadConfiguration,
   savePlan,
 } from './storage.ts';
+import { configurationDirectory } from './configuration.ts';
 
 type Action = TuiDialogSelectOption<string> & { run: () => void | Promise<void> };
-const installation = fileURLToPath(new URL('../../', import.meta.url));
 const label = (choice: ModelChoice) =>
   typeof choice.model === 'string' && choice.model !== ''
     ? `${choice.model}${typeof choice.variant === 'string' && choice.variant !== '' ? ` (${choice.variant})` : ''}`
@@ -44,7 +43,7 @@ const label = (choice: ModelChoice) =>
 // The directory argument also lets tests exercise the real file editor in an isolated installation.
 export function registerSettings(
   api: TuiPluginApi,
-  directory = installation,
+  directory = configurationDirectory(),
   globalDirectory = join(
     process.env.XDG_CONFIG_HOME !== undefined &&
       process.env.XDG_CONFIG_HOME !== '' &&
@@ -94,7 +93,7 @@ export function registerSettings(
         busy = false;
       });
   };
-  const menu = (title: string, options: Action[], current?: string, root = false) => {
+  const menu = (title: string, options: Action[] | (() => Action[]), current?: string, root = false) => {
     if (api.lifecycle.signal.aborted) {
       return;
     }
@@ -103,9 +102,14 @@ export function registerSettings(
         title,
         placeholder: 'Search…',
         current,
-        options,
+        get options() {
+          return typeof options === 'function' ? options() : options;
+        },
         // eslint-disable-next-line @typescript-eslint/no-misused-promises -- run handles rejection; return its Promise so callers can await completion.
-        onSelect: (option) => run(() => options.find((item) => item.value === option.value)?.run()),
+        onSelect: (option) =>
+          run(() =>
+            (typeof options === 'function' ? options() : options).find((item) => item.value === option.value)?.run(),
+          ),
       },
       root,
     );
@@ -296,7 +300,9 @@ export function registerSettings(
     const plan = planChange(snapshot, change);
     const preview = plannedChoices(plan, context(snapshot).native);
     const affected = affectedGroups(snapshot, change);
-    const members = snapshot.agents.filter((agent) => affected.includes(agentGroup(agent.settings) ?? ''));
+    const members = snapshot.agents.filter((agent) =>
+      agentGroups(agent.settings).some((group) => affected.includes(group)),
+    );
     const pinned = members.filter(
       (agent) => typeof agent.settings.model === 'string' && agent.settings.model !== '',
     ).length;
@@ -435,7 +441,7 @@ export function registerSettings(
           propose(
             snapshot,
             agent !== undefined
-              ? { kind: 'membership', agent: agent.name, group: name }
+              ? { kind: 'membership', agent: agent.name, groups: [...agentGroups(agent.settings), name] }
               : { kind: 'group', name, choice: {} },
           );
         }),
@@ -491,32 +497,106 @@ export function registerSettings(
         },
       },
     ]);
+  const membershipMenu = (snapshot: Snapshot, agent: StoredAgent) => {
+    const pending = [...agentGroups(agent.settings)];
+    const options = () => {
+      const settings = {
+        ...agent.settings,
+        groups: pending,
+        agent_group: undefined,
+        options: {
+          ...(record(agent.settings.options) ? agent.settings.options : {}),
+          groups: undefined,
+          agent_group: undefined,
+        },
+      };
+      return [
+        {
+          title: 'Save groups…',
+          value: '+save',
+          description: describeAgent(snapshot, { ...agent, settings }),
+          run: () => propose(snapshot, { kind: 'membership', agent: agent.name, groups: [...pending] }),
+        },
+        ...pending.map((name, index) => ({
+          title: `${index + 1}. ${name}`,
+          value: name,
+          description: 'Later groups override earlier settings',
+          run: () =>
+            menu(`Membership: ${name}`, [
+              {
+                title: 'Remove group',
+                value: 'remove',
+                run: () => {
+                  pending.splice(index, 1);
+                  navigation.back();
+                },
+              },
+              ...(index > 0
+                ? [
+                    {
+                      title: 'Move earlier',
+                      value: 'earlier',
+                      run: () => {
+                        pending.splice(index, 1);
+                        pending.splice(index - 1, 0, name);
+                        navigation.back();
+                      },
+                    },
+                  ]
+                : []),
+              ...(index < pending.length - 1
+                ? [
+                    {
+                      title: 'Move later',
+                      value: 'later',
+                      run: () => {
+                        pending.splice(index, 1);
+                        pending.splice(index + 1, 0, name);
+                        navigation.back();
+                      },
+                    },
+                  ]
+                : []),
+            ]),
+        })),
+        {
+          title: 'Add group',
+          value: '+add',
+          run: () =>
+            menu(
+              'Choose a group',
+              groupNames(snapshot)
+                .filter((name) => !pending.includes(name))
+                .map((name) => ({
+                  title: name,
+                  value: name,
+                  run: () => {
+                    pending.push(name);
+                    navigation.back();
+                  },
+                })),
+            ),
+        },
+        {
+          title: 'Clear all groups',
+          value: '+clear',
+          run: () => {
+            pending.splice(0);
+            navigation.refresh();
+          },
+        },
+      ];
+    };
+    menu(`${agent.name}: ordered groups`, options);
+  };
   const agentMenu = (snapshot: Snapshot, agent: StoredAgent) => {
-    const group = agentGroup(agent.settings);
-    menu(`${agent.name} · ${group ?? 'Ungrouped'}`, [
+    const groups = agentGroups(agent.settings);
+    menu(`${agent.name} · ${groups.length > 0 ? groups.join(' → ') : 'Ungrouped'}`, [
       {
-        title: 'Change group',
+        title: 'Manage ordered groups',
         value: 'group',
         description: 'Keep any explicit model override',
-        run: () => {
-          menu(
-            `Move ${agent.name}`,
-            [
-              ...groupNames(snapshot).map((group) => ({
-                title: group,
-                value: group,
-                run: () => propose(snapshot, { kind: 'membership', agent: agent.name, group }),
-              })),
-              {
-                title: 'Ungrouped',
-                value: '',
-                run: () => propose(snapshot, { kind: 'membership', agent: agent.name }),
-              },
-              { title: 'Create a new group…', value: '+', run: () => newGroup(snapshot, agent) },
-            ],
-            group ?? '',
-          );
-        },
+        run: () => membershipMenu(snapshot, agent),
       },
       {
         title: 'Set model override',
@@ -536,7 +616,9 @@ export function registerSettings(
     ]);
   };
   const members = (snapshot: Snapshot, group?: string) =>
-    snapshot.agents.filter((agent) => agentGroup(agent.settings) === group);
+    snapshot.agents.filter((agent) =>
+      group === undefined ? agentGroups(agent.settings).length === 0 : agentGroups(agent.settings).includes(group),
+    );
   const agentOptions = (snapshot: Snapshot, agents: StoredAgent[]): Action[] =>
     agents.map((agent) => ({
       title: agent.name,
@@ -559,17 +641,25 @@ export function registerSettings(
         run: () => propose(snapshot, { kind: 'group', name, choice: {} }),
       },
       {
-        title: 'Add or move an agent',
+        title: 'Add an agent to group',
         value: '+move',
         run: () =>
           menu(
             'Choose an agent',
-            snapshot.agents.map((agent) => ({
-              title: agent.name,
-              value: agent.name,
-              description: agentGroup(agent.settings) ?? 'Ungrouped',
-              run: () => propose(snapshot, { kind: 'membership', agent: agent.name, group: name }),
-            })),
+            snapshot.agents
+              .filter((agent) => !agentGroups(agent.settings).includes(name))
+              .map((agent) => ({
+                title: agent.name,
+                value: agent.name,
+                description:
+                  agentGroups(agent.settings).length > 0 ? agentGroups(agent.settings).join(' → ') : 'Ungrouped',
+                run: () =>
+                  propose(snapshot, {
+                    kind: 'membership',
+                    agent: agent.name,
+                    groups: [...agentGroups(agent.settings), name],
+                  }),
+              })),
           ),
       },
       ...agentOptions(snapshot, members(snapshot, name)).map((option) => ({ ...option, category: 'Members' })),
@@ -664,7 +754,7 @@ export function registerSettings(
   const unregister = api.keymap.registerLayer({
     commands: [
       {
-        name: 'agent-groups.models',
+        name: 'config-composer.models',
         title: 'Agent models',
         category: 'Config',
         namespace: 'palette',
@@ -675,7 +765,7 @@ export function registerSettings(
         },
       },
       {
-        name: 'agent-groups.membership',
+        name: 'config-composer.membership',
         title: 'Agent groups',
         category: 'Config',
         namespace: 'palette',
@@ -691,7 +781,7 @@ export function registerSettings(
 }
 
 // eslint-disable-next-line @typescript-eslint/require-await -- OpenCode requires a Promise-returning TUI initializer.
-export const AgentGroupsTui: TuiPlugin = async (api) => {
+export const ConfigComposerTui: TuiPlugin = async (api) => {
   registerSettings(api);
 };
-export default { id: 'agent-groups', tui: AgentGroupsTui } satisfies TuiPluginModule;
+export default { id: 'config-composer', tui: ConfigComposerTui } satisfies TuiPluginModule;

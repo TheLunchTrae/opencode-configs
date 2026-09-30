@@ -2,8 +2,9 @@
 
 Use this structure for final, partial, or blocked task responses. Routine progress updates need not use it.
 Task profiles define `Result`; this file defines the shared envelope and status meanings.
-Read `@agent-prompts/verification-scope.md` before selecting or assessing checks. Preserve the assigned verification
-limits in the result and evidence. Accepted limitations alone do not make the assigned task `BLOCKED` or `PARTIAL`.
+Before selecting or assessing checks, read `@agent-references/verification-scope.md`.
+Preserve the assigned verification limits in the result and evidence.
+Accepted limitations alone do not make the assigned task `BLOCKED` or `PARTIAL`.
 Use the assigned profile when it fits the task and role; otherwise use the default or report a mismatch.
 Keep all four level-two headings in order. Use `None` for empty required sections.
 Omit assignment history and the assigning agent's identity or workflow.
@@ -32,8 +33,9 @@ Choose one task status:
 
 Separate task completion, review verdicts, and check results. Completed reviews can find blocking defects; completed
 checks can fail. Missing required checks are not passes. Task status never establishes approval or readiness.
-For a research-only assignment, use `@agent-prompts/response-formats/research.md` for `Result`, even when the usual
-profile covers edits. Research remains bounded by the assigned specialty and permissions; it does not authorize edits.
+For a research-only assignment, read `@agent-prompts/response-formats/research.md` and use it for `Result`, even when
+the usual profile covers edits. Research remains bounded by the assigned specialty and permissions; it does not authorize
+edits.
 
 ## Evidence requirements
 
@@ -56,7 +58,7 @@ A response grants no permission to edit, delegate, approve, commit, or ship.
 ## Project learning
 
 For an assigned failure-prevention assessment, an evidenced recurring mistake, or repeated attempts that stop
-at a blocker, read `@agent-prompts/project-learning.md` within the task's budget and stopping conditions.
+at a blocker, read `@agent-references/project-learning.md` within the task's budget and stopping conditions.
 Put the assessment and justified prevention in existing `Result` sections, support in `Evidence`, and unassigned
 changes or decisions in `Unresolved items`. Preserve the profile and verdict criteria.
 Do not require a learning section in every response or invent findings to fill it.

@@ -7,7 +7,7 @@ Initialize the work repository's documentation settings:
 
 $ARGUMENTS
 
-Read `@agent-prompts/asd-ste100.md` for precedence, writing defaults, terminology, and formal-compliance requirements.
+Read `@agent-references/asd-ste100.md` for precedence, writing defaults, terminology, and formal-compliance requirements.
 Honor the selected role, permissions, and approval policy. Do not switch agents or expand authority.
 If the role cannot initialize, return the proposed setup within its scope.
 

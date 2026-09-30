@@ -5,7 +5,7 @@ description: Design and implement reliable end-to-end tests for new features or 
 
 # End-to-end coverage
 
-Read `@agent-prompts/testing-standards.md` and applicable project and language guidance.
+Read `@agent-references/testing-standards.md` and applicable project and language guidance.
 Honor assigned role, approved scope, and verification limits. Design-only work does not edit or execute.
 Implementation needs a reviewed, approved design covering any harness or dependency changes.
 Reuse feature-plan approval that covers this work.
@@ -70,7 +70,8 @@ unconditional waits, or optional assertions. Record retry-only passes and unreso
 Return the coverage map, real and substituted boundaries, commands, source state, results, and remaining gaps.
 Separate authored tests from executed proof. Unavailable integrations and approved exclusions do not count as passes.
 Update the project's existing test instructions with necessary setup, execution, and cleanup details.
-Use `@agent-prompts/response-formats/plan.md` for design and
-`@agent-prompts/response-formats/implementation.md` for implementation.
-Use `@agent-prompts/response-formats/research.md` for execution-only assignments.
+Read `@agent-prompts/response-formats/common.md` for the task response envelope.
+For design, read and use `@agent-prompts/response-formats/plan.md`.
+For implementation, read and use `@agent-prompts/response-formats/implementation.md`.
+For execution-only assignments, read and use `@agent-prompts/response-formats/research.md`.
 Do not apply repairs during verification.

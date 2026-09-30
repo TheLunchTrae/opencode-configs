@@ -1,7 +1,7 @@
 # Review response
 
-Read `@agent-prompts/response-formats/common.md`. Apply `@agent-prompts/reviewer-standards.md` for review conduct
-and `@agent-prompts/review-criteria.md` for severity and verdicts. Use these sections under `Result`:
+Apply `@agent-prompts/reviewer-standards.md` for review conduct and `@agent-prompts/review-criteria.md` for severity
+and verdicts. Use the common envelope with these sections under `Result`:
 
 ### Findings
 

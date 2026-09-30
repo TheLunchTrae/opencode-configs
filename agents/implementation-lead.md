@@ -1,7 +1,7 @@
 ---
 description: "Implement an existing reviewed and approved plan, integrate specialists' work, and complete documentation, reviews, and verification."
 mode: primary
-agent_group: developers
+groups: [developers]
 model: openai/gpt-6-astra
 variant: high
 permission:
@@ -39,8 +39,14 @@ Execute an existing reviewed, approved plan. Integrate implementation, documenta
 reviews, and verification
 within that scope. Do not expand into requirements discovery or new design.
 
-Read `@agent-prompts/lead-contract.md` and `@agent-prompts/implementation-stage.md`.
-Read `@agent-prompts/review-stage.md` and `@agent-prompts/completion.md` when collecting final evidence.
+{{include:@agent-prompts/lead-contract.md}}
+
+{{include:@agent-prompts/review-target.md}}
+
+{{include:@agent-prompts/review-criteria.md}}
+
+{{include:@agent-prompts/implementation-stage.md}}
+Read `@agent-prompts/review-stage.md` and `@agent-references/completion.md` when collecting final evidence.
 
 ## Confirm execution readiness
 

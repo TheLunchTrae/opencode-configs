@@ -3,22 +3,7 @@
   "plugin": [
     "@slkiser/opencode-quota@4.9.0",
     "./extensions/session-tools/server.ts",
-    ["./extensions/agent-groups/server.ts", {
-      "modelPresets": {
-        "balanced": { "model": "openai/gpt-5.6-sol", "variant": "medium" },
-        "lightweight": { "model": "openai/gpt-5.6-terra", "variant": "medium" }
-      },
-      "groups": {
-        "workflow": { "modelRef": "opencode:model", "variant": "high" },
-        "planning": { "modelRef": "opencode:model", "variant": "high" },
-        "developers": { "modelRef": "preset:balanced" },
-        "reviewers": { "modelRef": "opencode:model", "variant": "high" },
-        "refactoring": { "modelRef": "preset:balanced" },
-        "documentation": { "modelRef": "preset:lightweight" },
-        "research": { "modelRef": "preset:lightweight" },
-        "system": { "modelRef": "preset:lightweight" }
-      }
-    }]
+    ["./extensions/config-composer/server.ts", { "configFile": "config-composer.jsonc" }]
   ],
   "shell": "C:/Program Files/Git/bin/bash.exe",
   "disabled_providers": ["opencode"],
@@ -28,8 +13,13 @@
   "default_agent": "workflow-lead",
   "references": {
     "agent-prompts": {
-      "path": "./references/agent-prompts",
-      "description": "Shared coding, review, delegation, language, and documentation guidance for agent prompts.",
+      "path": "./config-composer/agent/prompts",
+      "description": "Shared agent prompt fragments, language guidance, stage instructions, and response formats.",
+      "hidden": true
+    },
+    "agent-references": {
+      "path": "./references/agent",
+      "description": "Conditional coding, testing, verification, delegation, documentation, and task guidance.",
       "hidden": true
     }
   },
@@ -89,30 +79,30 @@
       "disable": true
     },
     "general": {
-      "agent_group": "developers",
+      "groups": ["developers"],
       "color": "#8AF793",
       "permission": {
         "edit": "allow"
       }
     },
     "explore": {
-      "agent_group": "research",
+      "groups": ["research"],
       "color": "#8AEEF7",
       "permission": {
         "edit": "deny"
       }
     },
     "summary": {
-      "agent_group": "system"
+      "groups": ["system"]
     },
     "compaction": {
-      "agent_group": "system",
+      "groups": ["system"],
       "options": {
         "reasoningEffort": "medium"
       }
     },
     "title": {
-      "agent_group": "system",
+      "groups": ["system"],
       "model": "openai/gpt-5.6-luna",
       "variant": "low",
       "options": {

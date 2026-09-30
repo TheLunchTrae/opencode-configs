@@ -2,10 +2,28 @@ import assert from 'node:assert/strict';
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { test } from 'node:test';
 import { parseDocument } from 'yaml';
+import { parse } from 'jsonc-parser';
+import { fileURLToPath } from 'node:url';
+import { loadSnapshot } from '../extensions/config-composer/storage.ts';
+import { composePrompts } from '../extensions/config-composer/prompts.ts';
 
 const root = new URL('../', import.meta.url);
 const read = (path) => readFileSync(new URL(path, root), 'utf8');
 const config = JSON.parse(read('opencode.jsonc'));
+const composer = parse(read('config-composer.jsonc'));
+const snapshot = await loadSnapshot(fileURLToPath(root));
+const authoredAgents = Object.fromEntries(
+  snapshot.agents.map((agent) => [
+    agent.name,
+    {
+      ...agent.settings,
+      ...(agent.markdown === undefined
+        ? {}
+        : { prompt: agent.markdown.file.text.replace(/^---\r?\n[\s\S]*?\r?\n---(?:\r?\n|$)/, '') }),
+    },
+  ]),
+);
+const effectivePrompts = await composePrompts(authoredAgents, snapshot.settings);
 
 // Check this configuration's literal and * patterns, with V1 slash normalization and last-match order.
 // These policy examples do not launch OpenCode or model its full permission system.
@@ -87,9 +105,24 @@ const markdown = (directory) =>
   });
 const promptPaths = [
   'AGENTS.md',
-  ...['agents/', 'commands/', 'skills/', 'references/agent-prompts/'].flatMap(markdown),
+  ...['agents/', 'commands/', 'skills/', 'references/agent/', 'config-composer/agent/prompts/'].flatMap(markdown),
 ];
-const documentPaths = [...promptPaths, 'README.md', 'USAGE.md', '.opencode/AGENTS.md'];
+const documentPaths = [...promptPaths, 'config-composer.jsonc', 'README.md', 'USAGE.md', '.opencode/AGENTS.md'];
+
+const promptReferences = (text) => [...text.matchAll(/@([a-z][a-z0-9-]*)\/([\w./-]+\.md)/g)];
+const configuredFragments = (name) => {
+  const settings = authoredAgents[name];
+  const overrides = composer.agent.prompts.overrides[name] ?? {};
+  const operations = [];
+  if (overrides.inheritDefaults !== false) {
+    operations.push(composer.agent.prompts.defaults);
+  }
+  if (overrides.inheritGroups !== false) {
+    operations.push(...(settings.groups ?? []).map((group) => composer.agent.groups[group]?.prompt ?? {}));
+  }
+  operations.push(overrides);
+  return operations.flatMap((operation) => [...(operation.prepend ?? []), ...(operation.append ?? [])]);
+};
 
 // This checks our flat command/skill metadata, not arbitrary YAML or runtime loading.
 const metadata = (path) => {
@@ -471,21 +504,52 @@ test('commands do not shadow documented built-in commands or aliases', () => {
   }
 });
 
-test('shared prompts use a hidden directory reference', () => {
-  const reference = config.references['agent-prompts'];
-  assert.equal(reference.hidden, true);
-  assert.ok(reference.description?.trim(), 'missing directory description');
-  assert.ok(statSync(new URL(reference.path, root)).isDirectory(), 'references must point to directories');
+test('composition prompts and conditional agent references use separate hidden directory references', () => {
+  for (const [alias, path] of [
+    ['agent-prompts', './config-composer/agent/prompts'],
+    ['agent-references', './references/agent'],
+  ]) {
+    const reference = config.references[alias];
+    assert.equal(reference.path, path);
+    assert.equal(reference.hidden, true);
+    assert.ok(reference.description?.trim(), `${alias}: missing directory description`);
+    assert.ok(statSync(new URL(reference.path, root)).isDirectory(), `${alias}: reference must point to a directory`);
+  }
+});
+
+test('Config Composer owns shared settings in a dedicated typed configuration', () => {
+  const entry = config.plugin.find(
+    (plugin) => Array.isArray(plugin) && plugin[0] === './extensions/config-composer/server.ts',
+  );
+  assert.deepEqual(entry?.[1], { configFile: 'config-composer.jsonc' });
+  assert.deepEqual(Object.keys(composer.agent), ['modelPresets', 'groups', 'prompts']);
+  assert.deepEqual(composer.command, {});
+  assert.deepEqual(composer.skill, {});
+  assert.equal(composer.sourceDirectories['agent-prompts'], config.references['agent-prompts'].path);
+  assert.deepEqual(composer.agent.prompts.defaults, {}, 'shipped guidance belongs in explicit body includes');
+  assert.deepEqual(
+    composer.agent.prompts.overrides,
+    Object.fromEntries(leads.map((name) => [name, { inheritDefaults: false, inheritGroups: false }])),
+  );
+  for (const [name, group] of Object.entries(composer.agent.groups)) {
+    assert.equal(group.prompt, undefined, `${name}: shipped guidance belongs in explicit body includes`);
+  }
+  for (const [name, settings] of Object.entries(authoredAgents)) {
+    assert.ok(Array.isArray(settings.groups), `${name}: use an ordered membership array`);
+    assert.equal(settings.agent_group, undefined, `${name}: legacy membership remains`);
+  }
 });
 
 test('prompt references resolve to files under the configured directory', () => {
-  const promptFiles = markdown('references/agent-prompts/').map((path) =>
-    path.slice('references/agent-prompts/'.length),
+  const promptFiles = Object.entries(config.references).flatMap(([alias, reference]) =>
+    ['agent-prompts', 'agent-references'].includes(alias)
+      ? markdown(`${reference.path.replace(/^\.\//, '').replace(/\/$/, '')}/`)
+      : [],
   );
   const referenced = new Set();
   for (const path of documentPaths) {
     const text = read(path);
-    for (const [, alias, file] of text.matchAll(/`@([a-z][a-z0-9-]*)\/([^`\s]+)`/g)) {
+    for (const [, alias, file] of promptReferences(text)) {
       const reference = config.references[alias];
       // Scoped package names are not references. Still reject unknown aliases used with Markdown paths.
       if (!reference && !file.endsWith('.md')) {
@@ -496,8 +560,8 @@ test('prompt references resolve to files under the configured directory', () => 
       const target = new URL(file, directory);
       assert.ok(target.href.startsWith(directory.href), `${path}: reference escapes its directory`);
       assert.ok(statSync(target).isFile(), `${path}: missing prompt ${file}`);
-      if (alias === 'agent-prompts') {
-        referenced.add(file);
+      if (['agent-prompts', 'agent-references'].includes(alias)) {
+        referenced.add(fileURLToPath(target).slice(fileURLToPath(root).length));
       }
     }
   }
@@ -506,46 +570,166 @@ test('prompt references resolve to files under the configured directory', () => 
   }
 });
 
-const responseDirectory = 'references/agent-prompts/response-formats/';
+const responseDirectory = 'config-composer/agent/prompts/response-formats/';
 const responseProfiles = markdown(responseDirectory).filter((path) => !/\/(?:common|catalog)\.md$/.test(path));
 const sharedReferences = (path, visited = new Set()) => {
   if (visited.has(path)) {
     return visited;
   }
   visited.add(path);
-  for (const [, file] of read(path).matchAll(/`@agent-prompts\/([^`\s]+)`/g)) {
-    sharedReferences(`references/agent-prompts/${file}`, visited);
+  const name = /^agents\/(.+)\.md$/.exec(path)?.[1];
+  const sources = name === undefined ? [read(path)] : [read(path), ...configuredFragments(name)];
+  for (const source of sources) {
+    for (const [, alias, file] of promptReferences(source)) {
+      if (['agent-prompts', 'agent-references'].includes(alias)) {
+        sharedReferences(`${config.references[alias].path.replace(/^\.\//, '').replace(/\/$/, '')}/${file}`, visited);
+      }
+    }
   }
   return visited;
 };
 
-test('canonical response profiles share the envelope and are discoverable from the catalog', () => {
+test('canonical response profiles and the shared envelope are discoverable from the catalog', () => {
   const catalog = read(`${responseDirectory}catalog.md`);
   const listed = [...catalog.matchAll(/`@agent-prompts\/response-formats\/([^`]+)`/g)]
     .map(([, file]) => `${responseDirectory}${file}`)
     .filter((path) => !path.endsWith('/common.md'));
   assert.deepEqual(listed.sort(), [...responseProfiles].sort());
-  for (const path of responseProfiles) {
-    assert.ok(read(path).includes('`@agent-prompts/response-formats/common.md`'), `${path}: missing shared envelope`);
-  }
+  assert.ok(catalog.includes('`@agent-prompts/response-formats/common.md`'), 'catalog: missing shared envelope');
   assert.ok(!existsSync(new URL('references/agent-prompts/review-template.md', root)));
   assert.ok(read('README.md').includes('`references/agent-prompts/review-template.md`'), 'missing upgrade removal');
 });
 
-test('every specialist references one canonical task response profile', () => {
+test('standalone skill response consumers explicitly load the envelope and applicable review resources', () => {
+  const expectedProfiles = {
+    'end-to-end-tests': ['plan', 'implementation', 'research'],
+    'measured-performance': ['performance'],
+    'test-first': ['implementation'],
+    'test-audit': ['review', 'implementation'],
+    'verification-tests': ['plan', 'implementation', 'research'],
+    verify: ['research'],
+  };
+  for (const [name, profiles] of Object.entries(expectedProfiles)) {
+    const resources = new Set(
+      promptReferences(read(`skills/${name}/SKILL.md`))
+        .filter(([, alias]) => alias === 'agent-prompts')
+        .map(([, , file]) => `config-composer/agent/prompts/${file}`),
+    );
+    for (const profile of profiles) {
+      assert.ok(resources.has(`${responseDirectory}${profile}.md`), `${name}: missing ${profile} response profile`);
+    }
+    assert.ok(resources.has(`${responseDirectory}common.md`), `${name}: missing explicit response envelope`);
+    if (resources.has(`${responseDirectory}review.md`)) {
+      for (const reference of ['reviewer-standards', 'review-criteria', 'review-target']) {
+        assert.ok(
+          resources.has(`config-composer/agent/prompts/${reference}.md`),
+          `${name}: missing standalone review resource ${reference}`,
+        );
+      }
+    }
+  }
+});
+
+test('every specialist explicitly includes one canonical task response profile exactly once', () => {
   for (const [name, agent] of Object.entries(agents)) {
     if (agent.mode !== 'subagent') {
       continue;
     }
     const profiles = [
-      ...new Set(
-        [...read(`agents/${name}.md`).matchAll(/`@agent-prompts\/response-formats\/([^`]+)`/g)].map(
-          ([, file]) => `${responseDirectory}${file}`,
-        ),
-      ),
-    ];
-    assert.equal(profiles.length, 1, `${name}: reference exactly one distinct task response profile`);
+      ...read(`agents/${name}.md`).matchAll(/\{\{include:@agent-prompts\/response-formats\/([\w-]+\.md)\}\}/g),
+    ]
+      .map(([, file]) => `${responseDirectory}${file}`)
+      .filter((path) => !/\/(?:common|catalog)\.md$/.test(path));
+    assert.equal(profiles.length, 1, `${name}: explicitly include exactly one task response profile`);
     assert.ok(responseProfiles.includes(profiles[0]), `${name}: unknown task response profile`);
+    assert.equal(
+      effectivePrompts[name].split(read(profiles[0]).trim()).length - 1,
+      1,
+      `${name}: compile the complete profile exactly once`,
+    );
+    assert.ok(
+      effectivePrompts[name].indexOf(read(`${responseDirectory}common.md`).trim()) <
+        effectivePrompts[name].indexOf(read(profiles[0]).trim()),
+      `${name}: place the response envelope before the role profile`,
+    );
+  }
+});
+
+test('standing guidance is compiled into specialist prompts while conditional reads remain conditional', () => {
+  const common = read(`${responseDirectory}common.md`).trim();
+  for (const [name, agent] of Object.entries(agents)) {
+    if (agent.mode === 'subagent') {
+      assert.ok(
+        read(`agents/${name}.md`).includes('{{include:@agent-prompts/response-formats/common.md}}'),
+        `${name}: explicitly include the response envelope`,
+      );
+      assert.equal(effectivePrompts[name].split(common).length - 1, 1, `${name}: compile the envelope exactly once`);
+      const firstAuthoredLine = authoredAgents[name].prompt
+        .split('\n')
+        .find((line) => line.trim() !== '' && !line.startsWith('{{include:'));
+      assert.ok(firstAuthoredLine, `${name}: missing authored role body`);
+      const bodyPosition = effectivePrompts[name].indexOf(firstAuthoredLine);
+      assert.ok(
+        bodyPosition >= 0 && bodyPosition < effectivePrompts[name].indexOf(common),
+        `${name}: role body precedes response guidance`,
+      );
+      const groups = authoredAgents[name].groups;
+      const requirements = [
+        ...(groups.some((group) => ['developers', 'refactoring'].includes(group)) ? ['implementation-standards'] : []),
+        ...(groups.includes('reviewers') ? ['reviewer-standards', 'review-target', 'review-criteria'] : []),
+      ];
+      for (const reference of requirements) {
+        assert.equal(
+          effectivePrompts[name].split(read(`config-composer/agent/prompts/${reference}.md`).trim()).length - 1,
+          1,
+          `${name}: compile the required ${reference} exactly once`,
+        );
+        assert.ok(
+          effectivePrompts[name].indexOf(read(`config-composer/agent/prompts/${reference}.md`).trim()) < bodyPosition,
+          `${name}: ${reference} precedes the authored role body`,
+        );
+      }
+    }
+  }
+  for (const name of leads) {
+    assert.equal(
+      effectivePrompts[name].split(read('config-composer/agent/prompts/lead-contract.md').trim()).length - 1,
+      1,
+      `${name}: compile the lead contract exactly once`,
+    );
+    for (const reference of ['response-formats/common', 'implementation-standards', 'reviewer-standards']) {
+      assert.ok(
+        !effectivePrompts[name].includes(read(`config-composer/agent/prompts/${reference}.md`).trim()),
+        `${name}: preserve the specialist-guidance opt-out`,
+      );
+    }
+    const requirements = ['review-criteria', ...(name === 'planning-lead' ? [] : ['review-target'])];
+    for (const reference of requirements) {
+      assert.equal(
+        effectivePrompts[name].split(read(`config-composer/agent/prompts/${reference}.md`).trim()).length - 1,
+        1,
+        `${name}: compile ${reference} exactly once`,
+      );
+    }
+  }
+  const conditionalStages = {
+    'workflow-lead': ['planning-stage', 'implementation-stage', 'review-stage'],
+    'implementation-lead': ['review-stage'],
+  };
+  for (const [name, stages] of Object.entries(conditionalStages)) {
+    for (const stage of stages) {
+      assert.ok(
+        !effectivePrompts[name].includes(read(`config-composer/agent/prompts/${stage}.md`).trim()),
+        `${name}: keep ${stage} conditional`,
+      );
+      assert.ok(
+        effectivePrompts[name].includes(`@agent-prompts/${stage}.md`),
+        `${name}: retain the ${stage} task read`,
+      );
+    }
+  }
+  for (const name of ['general', 'explore', 'summary', 'compaction', 'title']) {
+    assert.equal(effectivePrompts[name], undefined, `${name}: preserve OpenCode's native prompt`);
   }
 });
 
@@ -562,11 +746,12 @@ test('every delegating agent can read the canonical response catalog', () => {
 });
 
 test('specialist references and reusable task skills do not import primary workflow procedures', () => {
-  const primaryProcedures = new Set(
-    ['lead-contract', 'planning-stage', 'implementation-stage', 'review-stage', 'completion', 'spec-interview'].map(
-      (name) => `references/agent-prompts/${name}.md`,
+  const primaryProcedures = new Set([
+    ...['lead-contract', 'planning-stage', 'implementation-stage', 'review-stage'].map(
+      (name) => `config-composer/agent/prompts/${name}.md`,
     ),
-  );
+    ...['completion', 'spec-interview'].map((name) => `references/agent/${name}.md`),
+  ]);
   const paths = Object.keys(agents)
     .filter((name) => agents[name].mode === 'subagent')
     .map((name) => `agents/${name}.md`);

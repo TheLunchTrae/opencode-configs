@@ -116,7 +116,7 @@ for (const custom of [false, true]) {
         JSON.stringify({
           plugin: [
             './extensions/session-tools/server.ts',
-            ['./extensions/agent-groups/server.ts', { groups: { workflow: { model: 'fixture/model' } } }],
+            ['./extensions/config-composer/server.ts', { groups: { workflow: { model: 'fixture/model' } } }],
           ],
           model: 'fixture/model',
           small_model: 'fixture/model',

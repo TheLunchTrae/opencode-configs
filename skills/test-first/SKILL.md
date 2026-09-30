@@ -7,10 +7,10 @@ description: Observe a meaningful failing test, implement a bounded behavior cha
 
 Use this skill for a behavior fix or feature with an available test seam.
 Follow the assigned scope, authorization, task budget, and role boundaries.
-Read `@agent-prompts/verification-scope.md` before applying the steps below. Honor separate limits on test generation
+Read `@agent-references/verification-scope.md` before applying the steps below. Honor separate limits on test generation
 and execution. Report excluded red/green checks as `SKIP`; continue the approved implementation without claiming
 an observed red/green cycle. An execution-only exclusion still permits assigned test generation.
-Read `@agent-prompts/testing-standards.md` before selecting or writing a test.
+Read `@agent-references/testing-standards.md` before selecting or writing a test.
 Use `end-to-end-tests` for approved journeys needing the real application path. Reuse coverage design and failure
 evidence; do not add a second test solely to satisfy both procedures.
 
@@ -35,4 +35,5 @@ dependency or environment.
 Describe unrun checks as plans. Use the common response rules for overall task status.
 Do not install new tooling, access production data, or bypass permissions to produce a green result.
 Respect the remaining task budget; return blockers when it is exhausted.
-For task responses, use `@agent-prompts/response-formats/implementation.md` with the observed red/green evidence.
+For task responses, read `@agent-prompts/response-formats/common.md` and
+`@agent-prompts/response-formats/implementation.md`. Use the implementation profile with the observed red/green evidence.

@@ -1,7 +1,7 @@
 ---
 description: "Documentation and codemap specialist. Updates codemaps, READMEs, guides, and documentation from current source."
 mode: subagent
-agent_group: documentation
+groups: [documentation]
 color: "#8AEEF7"
 permission:
   edit: allow
@@ -27,7 +27,7 @@ documented doc-generation tool when one exists (`cargo doc`, `godoc`, `pydoc` / 
 
 ## Research delegation
 
-Read `@agent-prompts/delegation-contract.md` before assigning source research.
+Read `@agent-references/delegation-contract.md` before assigning source research.
 For structural research across many files when you cannot run language tools, or analysis needs dozens of file reads,
 you may invoke only the matching base developer:
 `typescript-developer`, `go-developer`, `csharp-developer`, or `php-developer`.
@@ -92,4 +92,8 @@ Validate before declaring done — files exist, links resolve, examples run, sni
 
 ## Handoff
 
-Read `@agent-prompts/response-formats/documentation.md` for the canonical response.
+Use the canonical documentation response.
+
+{{include:@agent-prompts/response-formats/common.md}}
+
+{{include:@agent-prompts/response-formats/documentation.md}}

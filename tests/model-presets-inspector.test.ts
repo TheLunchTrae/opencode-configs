@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { Agent, Config } from '@opencode-ai/sdk/v2';
 import { configFacts } from '../extensions/session-tools/model.ts';
+import { readSettings } from '../extensions/config-composer/settings.ts';
 
 const agent = {
   name: 'worker',
@@ -12,7 +13,7 @@ const agent = {
 const config = (options: Record<string, unknown>): Config => ({
   model: 'fixture/workspace',
   small_model: 'fixture/workspace-small',
-  plugin: [['/config/extensions/agent-groups/server.ts', options]],
+  plugin: [['/config/extensions/config-composer/server.ts', options]],
 });
 
 test('inspector resolves preset defaults without claiming an explicit agent pin inherited them', () => {
@@ -72,4 +73,53 @@ test('inspector distinguishes invalid references from an intentional native fall
   );
   assert.equal(fallback.find((fact) => fact.label === 'Group model source')?.value, 'OpenCode fallback');
   assert.equal(fallback.find((fact) => fact.label === 'Configured group default')?.value, 'No group model');
+});
+
+test('inspector reports saved dedicated ordered groups without exposing prompt text or claiming effective inheritance', () => {
+  const configured = {
+    ...agent,
+    options: { groups: ['developers', 'reviewers'], apiKey: 'DO_NOT_DISPLAY' },
+  } as unknown as Agent;
+  const input: Config = {
+    model: 'fixture/workspace',
+    plugin: [['/config/extensions/config-composer/server.ts', { configFile: 'config-composer.jsonc' }]],
+  };
+  const settings = readSettings({
+    agent: {
+      groups: {
+        developers: { model: 'fixture/development', prompt: { prepend: ['PRIVATE_PROMPT_TEXT'] } },
+        reviewers: { modelRef: 'preset:review', prompt: { append: ['PRIVATE_REVIEW_TEXT'] } },
+      },
+      modelPresets: { review: { model: 'fixture/review', variant: 'high' } },
+      prompts: {
+        defaults: { append: ['PRIVATE_GLOBAL_TEXT'] },
+        overrides: { worker: { inheritDefaults: false, append: ['PRIVATE_AGENT_TEXT'] } },
+      },
+    },
+    command: {},
+    skill: {},
+  });
+  const before = JSON.stringify(settings);
+  const facts = configFacts(configured, input, undefined, [], { settings, source: '/config/config-composer.jsonc' });
+  const value = (label: string) => facts.find((fact) => fact.label === label)?.value;
+  assert.equal(value('Agent groups (ordered)'), 'developers → reviewers');
+  assert.equal(value('Config Composer settings file'), '/config/config-composer.jsonc');
+  assert.equal(value('Saved group developers default'), 'fixture/development');
+  assert.equal(value('Saved group reviewers default'), 'fixture/review');
+  assert.equal(value('Saved group reviewers source'), 'preset:review');
+  assert.equal(value('Saved group reviewers variant'), 'high');
+  assert.equal(value('Agent default (server-resolved)'), 'fixture/pinned');
+  assert.ok(!JSON.stringify(facts).includes('PRIVATE_'));
+  assert.ok(!JSON.stringify(facts).includes('DO_NOT_DISPLAY'));
+  assert.match(value('Saved Config Composer settings') ?? '', /saved|effective|running/i);
+  assert.equal(JSON.stringify(settings), before, 'inspection must remain read-only');
+});
+
+test('inspector reports unavailable dedicated settings without silently trusting inline options', () => {
+  const input: Config = {
+    plugin: [['/config/extensions/config-composer/server.ts', { configFile: 'config-composer.jsonc' }]],
+  };
+  const facts = configFacts(agent, input, undefined, [], { unavailable: 'Remote server settings are unavailable.' });
+  assert.match(facts.find((fact) => fact.label === 'Saved Config Composer settings')?.value ?? '', /Remote server/);
+  assert.ok(!facts.some((fact) => fact.label === 'Configured group default'));
 });

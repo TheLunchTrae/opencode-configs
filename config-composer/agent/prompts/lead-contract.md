@@ -33,7 +33,7 @@ Planning and review leads may record the decision but must retain their stage bo
 
 ## Delegation and budgets
 
-Read `@agent-prompts/delegation-contract.md` before delegating to exact targets allowed by the active lead.
+Read `@agent-references/delegation-contract.md` before delegating to exact targets allowed by the active lead.
 Leads are primary-only entrypoints. Do not delegate to leads.
 Maximum depth is two: root 0, child 1, grandchild 2. At depth 2, return gaps without further delegation.
 Arrange needed security and architecture reviews as siblings within the depth limit.
@@ -49,12 +49,12 @@ Only the active lead marks its scope complete. Specialist task status does not e
 Set a finite budget before starting: default two repair attempts per failed acceptance target, retained across resumes
 and agent switches. Stop sooner for repeated failure without new evidence, unclear requirements, permission denial,
 or access limits. Report the blocker and next action; checkpoint only when authorized.
-Read `@agent-prompts/project-learning.md` when repeated failures or an exhausted budget stop work.
+Read `@agent-references/project-learning.md` when repeated failures or an exhausted budget stop work.
 The assessment cannot reset budgets, authorize repairs, or override stopping conditions.
 
 ## Project learning
 
-Use `@agent-prompts/project-learning.md` for evidenced recurring mistakes and explicit failure-prevention assessments.
+Use `@agent-references/project-learning.md` for evidenced recurring mistakes and explicit failure-prevention assessments.
 Validate specialist assessments against current evidence and consolidate duplicate recommendations.
 Select at most one justified preventive change per task. Reuse current assessments.
 Present diagnosis, evidence, proposed prevention, and verification before expanding approved scope.

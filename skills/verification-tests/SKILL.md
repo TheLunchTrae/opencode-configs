@@ -7,10 +7,10 @@ description: Design and generate reusable verification tests for existing reposi
 
 Apply only the assigned portion within scope, authorization, review requirements, and budget.
 This skill does not expand roles, permissions, or read-only assignments.
-Read `@agent-prompts/verification-scope.md` before discovery. Apply its limits separately to coverage design,
+Read `@agent-references/verification-scope.md` before discovery. Apply its limits separately to coverage design,
 test generation, execution, and infrastructure changes throughout this procedure.
 Before writing tests, read `@agent-prompts/implementation-standards.md` and applicable project and language guidance.
-Read `@agent-prompts/testing-standards.md` for coverage design and authoring decisions.
+Read `@agent-references/testing-standards.md` for coverage design and authoring decisions.
 
 Build executable coverage for established behavior. Use `test-first` when implementing a new behavior or fixing a bug.
 A verification suite can combine unit, integration, contract, CLI, API, or end-to-end tests as the scope requires.
@@ -96,9 +96,11 @@ Resolve assigned findings within approved scope and budget.
 
 ## Hand off and reuse
 
-Use `@agent-prompts/response-formats/plan.md` for design-only task responses and
-`@agent-prompts/response-formats/implementation.md` after test implementation. Use the research profile for inspection
-or check execution without edits. Include the coverage map under the profile's acceptance or coverage section.
+Read `@agent-prompts/response-formats/common.md` for the task response envelope.
+For design-only task responses, read and use `@agent-prompts/response-formats/plan.md`.
+After test implementation, read and use `@agent-prompts/response-formats/implementation.md`.
+For inspection or check execution without edits, read and use `@agent-prompts/response-formats/research.md`.
+Include the coverage map under the profile's acceptance or coverage section.
 
 Update existing test documentation with prerequisites, setup, commands, cleanup, covered contracts, and known limits.
 Keep it concise and colocated with project guidance. Keep plans and execution logs in conversation or the authorized

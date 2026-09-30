@@ -11,17 +11,18 @@ import type {
   TuiDialogSelectProps,
   TuiPluginApi,
 } from '@opencode-ai/plugin/tui';
-import { registerSettings } from '../extensions/agent-groups/tui.ts';
+import { registerSettings } from '../extensions/config-composer/tui.ts';
 import { applyEdits, modify } from 'jsonc-parser';
 import {
   type AgentSettings,
+  agentGroups,
   applyDefaults,
   catalogModels,
   readGroups,
   resolveChoice,
   validateChoice,
-} from '../extensions/agent-groups/settings.ts';
-import { AgentGroupsPlugin } from '../extensions/agent-groups/server.ts';
+} from '../extensions/config-composer/settings.ts';
+import { ConfigComposerPlugin } from '../extensions/config-composer/server.ts';
 import {
   groupNames,
   loadSnapshot,
@@ -29,12 +30,12 @@ import {
   planChange,
   reloadConfiguration,
   savePlan,
-} from '../extensions/agent-groups/storage.ts';
+} from '../extensions/config-composer/storage.ts';
 
 const groups = { developers: { model: 'example/fast', variant: 'medium' }, reviewers: { model: 'example/deep' } };
 const config = `{
   // Keep this comment and trailing comma.
-  "plugin": [["./extensions/agent-groups/server.ts", {"groups": ${JSON.stringify(groups)}}]],
+  "plugin": [["./extensions/config-composer/server.ts", {"groups": ${JSON.stringify(groups)}}]],
   "model": "example/global",
   "small_model": "example/small",
   "permission": {"edit": "ask"},
@@ -56,7 +57,7 @@ permission:
 ${prompt}`;
 
 export async function fixture(t: TestContext): Promise<string> {
-  const root = await mkdtemp(join(tmpdir(), 'agent-groups-'));
+  const root = await mkdtemp(join(tmpdir(), 'config-composer-'));
   t.after(() => rm(root, { recursive: true, force: true }));
   await mkdir(join(root, 'agents', 'nested'), { recursive: true });
   await writeFile(join(root, 'opencode.jsonc'), config);
@@ -64,6 +65,151 @@ export async function fixture(t: TestContext): Promise<string> {
   await writeFile(join(root, 'agents', 'new.md'), `---\nagent_group: custom-team\n${prompt}`);
   return root;
 }
+
+async function dedicatedFixture(t: TestContext): Promise<string> {
+  const root = await fixture(t);
+  await mkdir(join(root, 'references'));
+  const native = parseConfig(config);
+  native.plugin = [['./extensions/config-composer/server.ts', { configFile: './config-composer.jsonc' }]];
+  await writeFile(join(root, 'opencode.jsonc'), `// Native settings stay here.\n${JSON.stringify(native, null, 2)}\n`);
+  await writeFile(
+    join(root, 'config-composer.jsonc'),
+    '// Preserve dedicated comments.\n' +
+      JSON.stringify(
+        {
+          sourceDirectories: { shared: './references' },
+          agent: {
+            modelPresets: { shared: { model: 'example/fast', variant: 'medium' } },
+            groups: {
+              developers: { modelRef: 'preset:shared', prompt: { append: ['DEVELOPMENT_GUIDANCE'] } },
+              reviewers: { model: 'example/deep', variant: 'high' },
+              'custom-team': {},
+              'instructions-only': { prompt: { prepend: ['COMMON_GUIDANCE'] } },
+            },
+            prompts: {
+              defaults: { append: ['GLOBAL_GUIDANCE'] },
+              overrides: { 'nested/pinned': { inheritDefaults: false, append: ['PINNED_GUIDANCE'] } },
+            },
+          },
+          skill: {},
+          command: {},
+        },
+        null,
+        2,
+      ).replace(
+        '"prompt": {',
+        '// Keep prompt boundary.\n        "prompt": {\n          // Keep fragment operations.',
+      ) +
+      '\n',
+  );
+  return root;
+}
+
+test('dedicated model edits preserve prompt composition, typed namespaces, comments, and native settings', async (t) => {
+  const root = await dedicatedFixture(t);
+  const originalNative = await readFile(join(root, 'opencode.jsonc'), 'utf8');
+  const originalAgent = await readFile(join(root, 'agents/nested/pinned.md'), 'utf8');
+  const before = parseConfig(await readFile(join(root, 'config-composer.jsonc'), 'utf8'));
+  const snapshot = await loadSnapshot(root);
+  assert.equal(snapshot.settingsFile?.path, join(root, 'config-composer.jsonc'));
+  await savePlan(planChange(snapshot, { kind: 'group', name: 'developers', choice: { model: 'other/new' } }));
+  const after = parseConfig(await readFile(join(root, 'config-composer.jsonc'), 'utf8'));
+  assert.deepEqual(after.skill, before.skill);
+  assert.deepEqual(after.command, before.command);
+  assert.deepEqual(after.sourceDirectories, before.sourceDirectories);
+  assert.deepEqual((after.agent as Record<string, unknown>).prompts, (before.agent as Record<string, unknown>).prompts);
+  assert.equal(after.groups, undefined, 'editor must not create a flat group section');
+  assert.equal(after.modelPresets, undefined, 'editor must not create a flat preset section');
+  assert.deepEqual((await loadSnapshot(root)).groups.developers, {
+    model: 'other/new',
+    prompt: { append: ['DEVELOPMENT_GUIDANCE'] },
+  });
+  assert.match(await readFile(join(root, 'config-composer.jsonc'), 'utf8'), /Preserve dedicated comments/);
+  assert.match(await readFile(join(root, 'config-composer.jsonc'), 'utf8'), /Keep fragment operations/);
+  assert.match(await readFile(join(root, 'config-composer.jsonc'), 'utf8'), /Keep prompt boundary/);
+  assert.equal(await readFile(join(root, 'opencode.jsonc'), 'utf8'), originalNative);
+  assert.equal(await readFile(join(root, 'agents/nested/pinned.md'), 'utf8'), originalAgent);
+});
+
+test('membership edits store ordered arrays, preserve pins and prompts, and remove legacy membership', async (t) => {
+  const root = await dedicatedFixture(t);
+  await savePlan(
+    planChange(await loadSnapshot(root), {
+      kind: 'membership',
+      agent: 'nested/pinned',
+      groups: ['developers', 'instructions-only', 'reviewers'],
+    }),
+  );
+  let snapshot = await loadSnapshot(root);
+  let agent = snapshot.agents.find((agent) => agent.name === 'nested/pinned')!;
+  assert.deepEqual(agentGroups(agent.settings), ['developers', 'instructions-only', 'reviewers']);
+  assert.equal(agent.settings.agent_group, undefined);
+  assert.equal(agent.settings.model, 'example/exception');
+  assert.ok((await readFile(join(root, 'agents/nested/pinned.md'), 'utf8')).endsWith(prompt));
+  await savePlan(planChange(snapshot, { kind: 'override', agent: 'nested/pinned', choice: {} }));
+  snapshot = await loadSnapshot(root);
+  agent = snapshot.agents.find((agent) => agent.name === 'nested/pinned')!;
+  assert.equal(
+    resolveChoice(agent.settings, snapshot.groups, { modelPresets: snapshot.modelPresets }).model,
+    'example/deep',
+  );
+  assert.equal(resolveChoice(agent.settings, snapshot.groups, { modelPresets: snapshot.modelPresets }).variant, 'high');
+  await savePlan(
+    planChange(snapshot, {
+      kind: 'membership',
+      agent: 'nested/pinned',
+      groups: ['reviewers', 'developers', 'instructions-only'],
+    }),
+  );
+  snapshot = await loadSnapshot(root);
+  agent = snapshot.agents.find((agent) => agent.name === 'nested/pinned')!;
+  const effective = resolveChoice(agent.settings, snapshot.groups, { modelPresets: snapshot.modelPresets });
+  assert.equal(effective.model, 'example/fast', 'later model groups override earlier groups');
+  assert.equal(effective.variant, 'medium', 'prompt-only groups do not erase model defaults');
+  await savePlan(planChange(snapshot, { kind: 'membership', agent: 'nested/pinned', groups: [] }));
+  assert.deepEqual(
+    agentGroups((await loadSnapshot(root)).agents.find((agent) => agent.name === 'nested/pinned')!.settings),
+    [],
+  );
+});
+
+test('dedicated settings edits reject stale files and reload preserves concurrent dedicated comments', async (t) => {
+  const root = await dedicatedFixture(t);
+  const path = join(root, 'config-composer.jsonc');
+  const snapshot = await loadSnapshot(root);
+  const plan = planChange(snapshot, { kind: 'preset', name: 'shared', choice: { model: 'other/new' } });
+  await writeFile(path, (await readFile(path, 'utf8')) + '\n// External dedicated edit\n');
+  await assert.rejects(savePlan(plan), /Settings changed/);
+  assert.match(await readFile(path, 'utf8'), /External dedicated edit/);
+  await assert.rejects(
+    reloadConfiguration(await loadSnapshot(root), async (plugin) => {
+      const nativePath = join(root, 'opencode.jsonc');
+      const native = await readFile(nativePath, 'utf8');
+      await writeFile(nativePath, applyEdits(native, modify(native, ['plugin'], plugin, {})));
+      await writeFile(path, (await readFile(path, 'utf8')) + '\n// Concurrent reload edit\n');
+    }),
+    /Settings changed during reload/,
+  );
+  assert.match(await readFile(path, 'utf8'), /Concurrent reload edit/);
+});
+
+test('removing a sole model reference preserves adjacent comments and accepts its trailing comma', async (t) => {
+  const root = await dedicatedFixture(t);
+  const path = join(root, 'config-composer.jsonc');
+  const before = await readFile(path, 'utf8');
+  await writeFile(
+    path,
+    before.replace(
+      '"reviewers": {',
+      '"sole": {\n        // Keep the leading comment.\n        "modelRef": "preset:shared",\n        // Keep the trailing comment.\n      },\n      "reviewers": {',
+    ),
+  );
+  await savePlan(planChange(await loadSnapshot(root), { kind: 'group', name: 'sole', choice: {} }));
+  assert.deepEqual((await loadSnapshot(root)).groups.sole, {});
+  const after = await readFile(path, 'utf8');
+  assert.match(after, /Keep the leading comment/);
+  assert.match(after, /Keep the trailing comment/);
+});
 
 test('defaults honor pins, variant overrides, unknown groups, and disabled agents', () => {
   const agents: Record<string, AgentSettings> = {
@@ -120,11 +266,15 @@ test('provider catalog exposes configured models and supported variants', () => 
 });
 
 test('server hook strips group metadata and aligns built-in variant fallbacks', async () => {
-  const hooks = await AgentGroupsPlugin({} as PluginInput, { groups });
+  const hooks = await ConfigComposerPlugin({} as PluginInput, { groups });
   const config = {
     agent: {
       title: { options: { agent_group: 'developers', reasoningEffort: 'old' } },
-      compaction: { options: { agent_group: 'developers', reasoningEffort: 'old' } },
+      compaction: {
+        model: 'example/fast',
+        variant: 'medium',
+        options: { agent_group: 'developers', reasoningEffort: 'old' },
+      },
     },
   };
   await hooks.config!(config);
@@ -147,8 +297,16 @@ test('server hook strips group metadata and aligns built-in variant fallbacks', 
     assert.equal(output.options.reasoningEffort, agent === 'worker' ? 'old' : 'medium');
     if (agent !== 'worker') {
       model.variants = {};
-      await hook(input, output);
-      assert.equal(output.options.reasoningEffort, undefined, 'remove stale fallback on models without that variant');
+      if (agent === 'title') {
+        await assert.rejects(hook(input, output), /does not support/, 'reject unsupported inherited group variants');
+      } else {
+        await hook(input, output);
+        assert.equal(
+          output.options.reasoningEffort,
+          undefined,
+          'remove stale pinned fallback on models without that variant',
+        );
+      }
     }
   }
   assert.equal(config.agent.title.options.agent_group, 'developers');
@@ -232,7 +390,7 @@ test('stale snapshots and locked files cannot overwrite other edits', async (t) 
   const fresh = planChange(await loadSnapshot(root), { kind: 'group', name: 'developers', choice: {} });
   await writeFile(join(root, 'agents/extra.md'), `---\nagent_group: developers\n${prompt}`);
   await assert.rejects(savePlan(fresh), /agent list changed/);
-  await writeFile(join(root, '.agent-groups.lock'), '');
+  await writeFile(join(root, '.config-composer.lock'), '');
   await assert.rejects(savePlan(fresh), /Another settings edit/);
   assert.ok(!(await readdir(root)).some((name) => name.endsWith('.tmp')));
 });
@@ -266,7 +424,7 @@ test('a later file failure rolls back earlier edits and removes temporary files'
   await assert.rejects(savePlan(plan), /ENOENT/);
   assert.equal(await readFile(join(root, 'agents/nested/pinned.md'), 'utf8'), pinned);
   assert.equal(await readFile(join(root, 'opencode.jsonc'), 'utf8'), config);
-  assert.ok(!(await readdir(root)).some((name) => name === '.agent-groups.lock' || name.endsWith('.tmp')));
+  assert.ok(!(await readdir(root)).some((name) => name === '.config-composer.lock' || name.endsWith('.tmp')));
 });
 
 test('reload does not overwrite a concurrent comment edit', async (t) => {
@@ -363,8 +521,9 @@ for (const modelRef of [
     applyDefaults(agents, snapshot.groups, context);
     let inherited = 0;
     for (const agent of snapshot.agents) {
-      const group = agent.settings.agent_group ?? agent.settings.options?.agent_group;
-      assert.ok(typeof group === 'string', `${agent.name}: missing group`);
+      const memberships = agentGroups(agent.settings);
+      assert.equal(memberships.length, 1, `${agent.name}: migration must preserve the original group membership`);
+      const group = memberships[0];
       const defaults = snapshot.groups[group];
       assert.notEqual(defaults, undefined, `${agent.name}: unknown group`);
       const preset =
@@ -381,6 +540,7 @@ for (const modelRef of [
       const variant = pinned ? agent.settings.variant : (agent.settings.variant ?? defaults.variant ?? preset?.variant);
       const expected = {
         group,
+        groups: memberships,
         model,
         variant,
         source: pinned ? 'agent' : 'group',
@@ -488,7 +648,20 @@ function uiHarness(root: string, globalDirectory = root, serverDirectory = root)
         providers: async () =>
           providerError
             ? { error: {} }
-            : { data: { providers: [{ id: 'example', models: { next: { name: 'Next', variants: { low: {} } } } }] } },
+            : {
+                data: {
+                  providers: [
+                    {
+                      id: 'example',
+                      models: {
+                        next: { name: 'Next', variants: { low: {} } },
+                        fast: { name: 'Fast', variants: { low: {}, medium: {} } },
+                        deep: { name: 'Deep', variants: { high: {} } },
+                      },
+                    },
+                  ],
+                },
+              },
       },
       session: { status: async () => ({ data: active ? { session: { type: 'busy' } } : {} }) },
       global: {
@@ -529,7 +702,7 @@ function uiHarness(root: string, globalDirectory = root, serverDirectory = root)
     setActive(value: boolean) {
       active = value;
     },
-    async command(name = 'agent-groups.models') {
+    async command(name = 'config-composer.models') {
       await commands.find((c) => c.name === name)!.run();
     },
     async select(value: string) {
@@ -635,7 +808,7 @@ test('TUI opens and saves the selected custom directory when the server reports 
   });
   process.env.OPENCODE_CONFIG_DIR = root;
   const ui = uiHarness(root, globalDirectory, globalDirectory);
-  await ui.command('agent-groups.membership');
+  await ui.command('config-composer.membership');
   assert.equal(ui.dialog?.title, 'Agent groups');
   await ui.select('+');
   await ui.enter('custom-install-group');
@@ -662,7 +835,7 @@ test('TUI rejects an installation that is neither the server config nor the sele
 test('TUI Back and Escape preserve parents and cancel changes without saving', async (t) => {
   const root = await fixture(t);
   const ui = uiHarness(root);
-  await ui.command('agent-groups.membership');
+  await ui.command('config-composer.membership');
   await ui.select('developers');
   await ui.select('+model');
   await ui.select('example/next');
@@ -696,22 +869,122 @@ test('TUI Back and Escape preserve parents and cancel changes without saving', a
 test('TUI can create a group by reassigning an agent and return it to inherited defaults', async (t) => {
   const root = await fixture(t);
   const ui = uiHarness(root);
-  await ui.command('agent-groups.membership');
-  await ui.select('+agents');
-  await ui.select('nested/pinned');
-  await ui.select('group');
+  await ui.command('config-composer.membership');
   await ui.select('+');
   await ui.enter('new-team');
   await ui.confirm();
   await ui.select('later');
-  await ui.command('agent-groups.membership');
+  await ui.command('config-composer.membership');
+  await ui.select('+agents');
+  await ui.select('nested/pinned');
+  await ui.select('group');
+  await ui.select('+clear');
+  await ui.select('+add');
+  await ui.select('new-team');
+  await ui.select('+save');
+  await ui.confirm();
+  await ui.select('later');
+  await ui.command('config-composer.membership');
   await ui.select('new-team');
   await ui.select('nested/pinned');
   await ui.select('inherit');
   await ui.confirm();
   const snapshot = await loadSnapshot(root);
   const agent = snapshot.agents.find((agent) => agent.name === 'nested/pinned')!;
-  assert.equal(agent.settings.agent_group, 'new-team');
+  assert.deepEqual(agent.settings.groups, ['new-team']);
+  assert.equal(agent.settings.agent_group, undefined);
   assert.equal(agent.settings.model, undefined);
   assert.equal(resolveChoice(agent.settings, snapshot.groups).source, 'native');
+});
+
+test('TUI adds, reorders, and removes memberships with a resolved preview and preserves prompt settings', async (t) => {
+  const root = await dedicatedFixture(t);
+  await writeFile(join(root, 'agents/new.md'), `---\ngroups: [developers]\n${prompt}`);
+  const original = parseConfig(await readFile(join(root, 'config-composer.jsonc'), 'utf8'));
+  const ui = uiHarness(root);
+  await ui.command('config-composer.membership');
+  await ui.select('+agents');
+  await ui.select('new');
+  await ui.select('group');
+  await ui.select('+add');
+  await ui.select('reviewers');
+  assert.ok(ui.dialog !== undefined && 'options' in ui.dialog);
+  assert.match(ui.dialog.options.find((option) => option.value === '+save')!.description!, /example\/deep/);
+  await ui.select('reviewers');
+  await ui.select('earlier');
+  assert.match(ui.dialog.options.find((option) => option.value === '+save')!.description!, /example\/fast/);
+  await ui.select('developers');
+  await ui.select('remove');
+  await ui.select('+save');
+  await ui.confirm();
+  const current = await loadSnapshot(root);
+  assert.deepEqual(current.agents.find((agent) => agent.name === 'new')!.settings.groups, ['reviewers']);
+  assert.deepEqual(parseConfig(await readFile(join(root, 'config-composer.jsonc'), 'utf8')), original);
+  assert.ok((await readFile(join(root, 'agents/new.md'), 'utf8')).endsWith(prompt));
+});
+
+test('TUI model edits save to the dedicated file while retaining shared prompt operations', async (t) => {
+  const root = await dedicatedFixture(t);
+  const originalNative = await readFile(join(root, 'opencode.jsonc'), 'utf8');
+  const original = parseConfig(await readFile(join(root, 'config-composer.jsonc'), 'utf8'));
+  const ui = uiHarness(root);
+  await ui.command();
+  await ui.select('developers');
+  await ui.select('example/next');
+  await ui.select('low');
+  assert.equal(await readFile(join(root, 'opencode.jsonc'), 'utf8'), originalNative);
+  await ui.confirm();
+  const snapshot = await loadSnapshot(root);
+  assert.deepEqual(snapshot.groups.developers, {
+    model: 'example/next',
+    variant: 'low',
+    prompt: { append: ['DEVELOPMENT_GUIDANCE'] },
+  });
+  const saved = parseConfig(await readFile(join(root, 'config-composer.jsonc'), 'utf8'));
+  assert.deepEqual(
+    (saved.agent as Record<string, unknown>).prompts,
+    (original.agent as Record<string, unknown>).prompts,
+  );
+  assert.deepEqual(saved.sourceDirectories, original.sourceDirectories);
+  assert.match(await readFile(join(root, 'config-composer.jsonc'), 'utf8'), /Keep fragment operations/);
+  assert.equal(await readFile(join(root, 'opencode.jsonc'), 'utf8'), originalNative);
+});
+
+test('TUI membership mutations keep Back and Escape on live parent menus without saving cancelled edits', async (t) => {
+  const root = await dedicatedFixture(t);
+  const path = join(root, 'agents/new.md');
+  const original = `---\ngroups: [developers]\n${prompt}`;
+  await writeFile(path, original);
+  const ui = uiHarness(root);
+  await ui.command('config-composer.membership');
+  await ui.select('+agents');
+  await ui.select('new');
+  await ui.select('group');
+  await ui.select('+add');
+  await ui.select('reviewers');
+  await ui.escape();
+  assert.equal(ui.dialog?.title, 'new · developers', 'adding a group must not push a stale membership menu');
+  await ui.select('group');
+  await ui.select('+add');
+  await ui.select('reviewers');
+  await ui.select('reviewers');
+  await ui.select('earlier');
+  assert.ok('options' in ui.dialog);
+  assert.deepEqual(
+    ui.dialog.options
+      .filter((option) => ['developers', 'reviewers'].includes(option.value))
+      .map((option) => option.value),
+    ['reviewers', 'developers'],
+  );
+  await ui.select('reviewers');
+  await ui.select('remove');
+  await ui.select('+add');
+  assert.ok(!ui.dialog.options.some((option) => option.value === 'developers'));
+  assert.ok(ui.dialog.options.some((option) => option.value === 'reviewers'));
+  await ui.select('\u0000back');
+  await ui.select('+clear');
+  await ui.escape();
+  assert.equal(ui.dialog.title, 'new · developers', 'clearing groups must not leave a second membership menu');
+  assert.equal(await readFile(path, 'utf8'), original);
+  assert.equal(ui.toasts.length, 0);
 });

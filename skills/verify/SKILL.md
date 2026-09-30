@@ -7,7 +7,7 @@ description: Run configured checks and report source-linked PASS, FAIL, BLOCKED,
 
 Verify evidence within assigned scope and permissions. Do not expand roles, edit application code, or apply fixes.
 Commands may produce normal build artifacts; inspect side effects and retain permission checks.
-Read `@agent-prompts/verification-scope.md` before discovery or execution. Apply explicit limits to every step below.
+Read `@agent-references/verification-scope.md` before discovery or execution. Apply explicit limits to every step below.
 When all agent verification is excluded, report the limitation without inspecting capabilities or running checks.
 
 1. Inspect project instructions, manifests, and configured scripts. Confirm the installed toolchain when available.
@@ -50,5 +50,6 @@ Zero exit status with no expected tests collected does not prove acceptance.
 Do not invent a runner or install packages to hide missing configuration.
 Do not suppress warnings or weaken assertions. Record warnings against the project's policy.
 Report action items for the implementer. A verification report does not authorize edits or remote actions.
-For delegated verification, use `@agent-prompts/response-formats/research.md`; include these check statuses in evidence.
+For delegated verification, read `@agent-prompts/response-formats/common.md` and
+`@agent-prompts/response-formats/research.md`. Use the research profile and include these check statuses in evidence.
 Task status describes assignment completion, not passing checks.

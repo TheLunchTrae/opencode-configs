@@ -152,6 +152,12 @@ export function dialogNavigation(api: TuiPluginApi, decoration?: DialogDecoratio
     prompt,
     confirm,
     back,
+    refresh: () => {
+      const current = frames.at(-1);
+      if (current !== undefined) {
+        display(current);
+      }
+    },
     close,
     reset,
     get canGoBack() {

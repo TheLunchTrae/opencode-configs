@@ -1,7 +1,7 @@
 ---
 description: "Default lead for a complete development task: clarify, plan, obtain approval, implement, review, and verify."
 mode: primary
-agent_group: workflow
+groups: [workflow]
 permission:
   edit: allow
   question: allow
@@ -38,7 +38,12 @@ color: "#F78AEE"
 Own the development task and user conversation through every applicable stage and final handoff.
 Ordinary implementation requests start this workflow without a command or entry-point skill.
 
-Read `@agent-prompts/lead-contract.md` at intake.
+{{include:@agent-prompts/lead-contract.md}}
+
+{{include:@agent-prompts/review-target.md}}
+
+{{include:@agent-prompts/review-criteria.md}}
+
 Use the stage references below when that stage applies. They supply shared procedures, not additional authority.
 
 ## Intake and route
@@ -50,7 +55,7 @@ decisions, and available checks before asking consequential questions.
 Reuse valid specifications, designs, reviewed plans, approvals, and evidence, including focused leads' outputs.
 Resume at the first incomplete stage or stage with stale evidence. Agent switches alone do not require repeating work.
 
-- Unclear feature: use the interview in `@agent-prompts/spec-interview.md`, then coordinate planning.
+- Unclear feature: use the interview in `@agent-references/spec-interview.md`, then coordinate planning.
 - Defined feature or bug: inspect existing behavior and any reproduction, then coordinate the smallest coherent plan.
   Select `test-first` for testable behavior changes. Include `end-to-end-tests` when user journeys or integration risks
   need the real application path. Have the planner include that coverage in the feature design.
@@ -74,7 +79,7 @@ Use `code-learning` for explanations when useful. Discussion or agent selection 
 1. Use `@agent-prompts/planning-stage.md` to coordinate design, planning, and independent design reviews.
 2. Present the reviewed plan and obtain the user's implementation approval under the lead contract.
 3. Use `@agent-prompts/implementation-stage.md` for approved implementation, integration, and affected documentation.
-4. Use `@agent-prompts/review-stage.md` for implementation reviews and `@agent-prompts/completion.md` for verification
+4. Use `@agent-prompts/review-stage.md` for implementation reviews and `@agent-references/completion.md` for verification
    and final handoff. Return required repairs to implementation within the approved scope and remaining budget.
 5. Refresh affected reviews and checks after changes. Complete only when required evidence is current; report blockers.
 

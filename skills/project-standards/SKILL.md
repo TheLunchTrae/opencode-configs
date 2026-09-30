@@ -82,5 +82,5 @@ required by the approved plan.
 
 ## Documentation Standard
 
-Read `@agent-prompts/asd-ste100.md` for documentation authority, literal preservation, and compliance verification
+Read `@agent-references/asd-ste100.md` for documentation authority, literal preservation, and compliance verification
 requirements.

@@ -1,0 +1,33 @@
+{
+  "$schema": "./extensions/config-composer/schema.json",
+  "sourceDirectories": {
+    "agent-prompts": "./config-composer/agent/prompts"
+  },
+  "agent": {
+    "modelPresets": {
+      "balanced": { "model": "openai/gpt-5.6-sol", "variant": "medium" },
+      "lightweight": { "model": "openai/gpt-5.6-terra", "variant": "medium" }
+    },
+    "groups": {
+      "workflow": { "modelRef": "opencode:model", "variant": "high" },
+      "planning": { "modelRef": "opencode:model", "variant": "high" },
+      "developers": { "modelRef": "preset:balanced" },
+      "reviewers": { "modelRef": "opencode:model", "variant": "high" },
+      "refactoring": { "modelRef": "preset:balanced" },
+      "documentation": { "modelRef": "preset:lightweight" },
+      "research": { "modelRef": "preset:lightweight" },
+      "system": { "modelRef": "preset:lightweight" }
+    },
+    "prompts": {
+      "defaults": {},
+      "overrides": {
+        "workflow-lead": { "inheritDefaults": false, "inheritGroups": false },
+        "planning-lead": { "inheritDefaults": false, "inheritGroups": false },
+        "implementation-lead": { "inheritDefaults": false, "inheritGroups": false },
+        "review-lead": { "inheritDefaults": false, "inheritGroups": false }
+      }
+    }
+  },
+  "command": {},
+  "skill": {}
+}
