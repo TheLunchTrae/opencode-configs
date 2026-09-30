@@ -1,7 +1,7 @@
 import type { TuiDialogSelectOption, TuiPluginApi } from '@opencode-ai/plugin/tui';
 import type { Session } from '@opencode-ai/sdk/v2';
 import { type Entry, PanelError, clean, hasResponseData, historyLimit } from './model.ts';
-import { dialogNavigation } from '../tui/navigation.ts';
+import { type DialogDecoration, dialogNavigation } from '../tui/navigation.ts';
 
 export type Action = TuiDialogSelectOption<string> & { run?: () => void | Promise<void> };
 export interface Snapshot {
@@ -33,8 +33,8 @@ export async function snapshot(api: TuiPluginApi, sessionID: string, signal = ap
   return { session: session.data, entries: messages.data, limited: messages.data.length >= historyLimit };
 }
 
-export function ui(api: TuiPluginApi) {
-  const navigation = dialogNavigation(api);
+export function ui(api: TuiPluginApi, decoration?: DialogDecoration) {
+  const navigation = dialogNavigation(api, decoration);
   const run = (action: () => void | Promise<void>) => {
     const client = api.client;
     return Promise.resolve()
