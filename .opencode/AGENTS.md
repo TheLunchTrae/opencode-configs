@@ -248,7 +248,7 @@ To validate this draft, pack the actual extraction commit, then test a disposabl
 
 ```sh
 git clone https://github.com/lunchbox-labs/opencode-config-composer.git /tmp/composer-extraction
-git -C /tmp/composer-extraction checkout daaf4a1b8d6809bdee8d1f82620ef180579e1ddb
+git -C /tmp/composer-extraction checkout ab766ab17f4e164ce5cf428611b583732c9fd116
 (
   cd /tmp/composer-extraction &&
   npm ci &&
