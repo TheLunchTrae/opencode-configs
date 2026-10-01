@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { cp, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { cp, mkdtemp, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { basename, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -35,9 +35,22 @@ try {
   );
   assert.equal(installed.name, 'opencode-config-composer-name-tbd');
   assert.equal(installed.version, '0.0.0');
-  run('npm', ['run', 'check']);
+  const packageDirectory = join(consumer, 'node_modules', installed.name);
+  const unavailablePackage = join(root, 'unavailable-package');
+  await rename(packageDirectory, unavailablePackage);
+  try {
+    run('npm', ['run', 'check']);
+    run(process.env.BUN_BIN ?? 'bun', [
+      'test',
+      '--preload',
+      '@opentui/solid/preload',
+      './tests/workflow-view.native.ts',
+    ]);
+  } finally {
+    await rename(unavailablePackage, packageDirectory);
+  }
+  console.log('Local extensions and their complete checks passed with Composer unavailable to module resolution.');
   run('npm', ['run', 'test:native']);
-  run(process.env.BUN_BIN ?? 'bun', ['test', '--preload', '@opentui/solid/preload', './tests/workflow-view.native.ts']);
   console.log('Packed consumer checks passed in an isolated fixture. Registry installation was not tested.');
 } finally {
   await rm(root, { recursive: true, force: true });

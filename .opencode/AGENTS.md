@@ -259,11 +259,13 @@ The package repository requires GitHub access. This procedure does not publish o
 
 `test:package` copies the consumer into a temporary directory without Git metadata or existing dependencies.
 Only that fixture receives a `file:` tarball dependency and a generated fixture lockfile.
-It runs installation, a clean install, the complete consumer checks, native server tests, and rendered workflow checks.
+It runs installation and a clean install, then removes Composer from module resolution while running all local checks
+and the rendered workflow test. It restores the package for native server tests through OpenCode's plugin loader.
 Native fixtures register the installed package directory to avoid a registry lookup for the unpublished name.
 Committed configuration retains the provisional npm specifiers; passing fixtures do not prove registry installation.
 Composer implementation, storage, and native reload tests now belong to the extracted package.
-Consumer inventory tests exercise its public server and skill hooks without importing storage or prompt internals.
+Consumer inventory tests check authored metadata and source references without loading or reimplementing Composer.
+Native fixtures check plugin composition through OpenCode's API. Local extensions and tests must not import Composer APIs.
 
 ## Markdown and documentation
 

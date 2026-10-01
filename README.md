@@ -44,7 +44,7 @@ Do not install this branch into a live configuration yet. See [package validatio
 
 The global configuration directory is `~/.config/opencode` or `%USERPROFILE%\.config\opencode` on Windows.
 After publication, install the pinned dependencies in this directory with `npm ci`.
-Session-tools imports Composer from this installation, and the settings schema uses its `node_modules` copy.
+The settings schema uses this installation's `node_modules` copy. Local extensions do not import Composer.
 OpenCode also resolves the matching npm specifier registered in both plugin lists.
 Until naming and publication are complete, `npm ci` and OpenCode's registry installation are expected to fail.
 
@@ -96,6 +96,12 @@ Install the Composer package, `config-composer.jsonc`, `config-composer/`, and `
 Shared source directories are configured at the top level.
 Agent groups, models, and prompt settings belong under `agent`.
 The `$schema` field points to `node_modules/opencode-config-composer-name-tbd/schema.json` (provisional package name).
+
+The `config-composer/` directory contains personal prompt fragments, not the plugin implementation.
+The npm package supplies composition, settings editing, the Composer TUI, and the schema.
+Session-tools uses native OpenCode APIs in `/inspect-config`; it does not read or interpret Composer settings.
+Use the package's `/agent-models` and `/agent-groups` controls for saved model and group choices.
+The shared `extensions/tui/` directory supports the remaining session-tools panels.
 
 The shipped agent bodies declare shared fragments with explicit include directives at their intended positions.
 These directives require Config Composer, which resolves them when configuration loads.

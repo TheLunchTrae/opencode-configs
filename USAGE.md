@@ -409,16 +409,11 @@ Missing history can leave phase membership, prompts, or model details unavailabl
 
 Choose an agent to compare its server-resolved model and variant, merged workspace default, global file default,
 and last recorded model for that agent in the current session.
-Ordered group membership comes from merged workspace settings.
-When the TUI and server share their configuration filesystem, the inspector also reads saved Config Composer settings.
-It labels saved group choices, source paths, prompt fragment counts, and inheritance opt-outs separately from runtime facts.
-Saved settings can need reload. Their presence does not prove that their prompt layers are active.
-Unavailable saved settings do not block runtime inspection.
-The inspector resolves saved group references and shows their source and variant separately from the agent's model.
-For native references, it also compares the referenced workspace and global slots.
-Invalid references display a resolution error rather than a native fallback label.
+The inspector uses native OpenCode APIs only. It does not read plugin configuration files or interpret plugin options.
+Saved Composer group choices, source paths, prompt fragment counts, and inheritance opt-outs are not shown here.
 A matching model does not establish whether an agent inherited a group default or has an explicit pin.
-Use [agent groups and models](#agent-groups-and-models) to change those settings.
+Use the standalone package's [agent groups and models](#agent-groups-and-models) controls for group and model settings.
+Edit prompt settings in `config-composer.jsonc`; session-tools does not supply a separate Composer settings viewer.
 
 V1 exposes merged settings without exact file provenance. The inspector identifies that limit instead of naming
 an unverified source file. Recorded models describe past turns; they do not predict the next request's model.
@@ -465,8 +460,8 @@ See [continue a long task](#continue-a-long-task) for the lead's checkpoint and 
 ### Enable or disable panels
 
 Install `extensions/session-tools/` and the shared `extensions/tui/` directory.
-Keep the Composer npm dependency installed, even with the group editor disabled.
-The inspector uses its configuration loader and model-resolution helpers.
+Session-tools has no Composer API dependency and works independently of its plugin registration.
+Keep Composer installed when using prompt composition or its model and group controls.
 The four TUI entries are independent:
 
 | Entry in `tui.jsonc` | Plugin |

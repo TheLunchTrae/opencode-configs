@@ -1,51 +1,6 @@
-import { realpath } from 'node:fs/promises';
-import { homedir } from 'node:os';
-import { isAbsolute, join } from 'node:path';
-import type { TuiPluginApi, TuiPluginModule } from '@opencode-ai/plugin/tui';
-import type { Config } from '@opencode-ai/sdk/v2';
-import { configurationDirectory, loadConfiguration } from 'opencode-config-composer-name-tbd/configuration';
-import { isConfigComposer } from './composer.ts';
-import { type SavedConfigComposerConfiguration, clean, configFacts, hasResponseData, record } from './model.ts';
+import type { TuiPluginModule } from '@opencode-ai/plugin/tui';
+import { clean, configFacts, hasResponseData } from './model.ts';
 import { currentSession, snapshot, ui } from './client.ts';
-
-export async function savedConfigComposerConfiguration(
-  api: TuiPluginApi,
-  config: Config,
-): Promise<SavedConfigComposerConfiguration | undefined> {
-  const plugins = (config.plugin ?? []).filter((plugin) => Array.isArray(plugin) && isConfigComposer(plugin[0]));
-  if (!plugins.some((plugin) => Array.isArray(plugin) && record(plugin[1]) && Object.hasOwn(plugin[1], 'configFile'))) {
-    return undefined;
-  }
-  if (plugins.length !== 1 || !Array.isArray(plugins[0])) {
-    return { unavailable: 'Saved settings unavailable; configure exactly one Config Composer server entry' };
-  }
-  try {
-    const directory = configurationDirectory();
-    const root = await realpath(directory);
-    const reported = api.state.path.config;
-    const serverDirectory = reported === '' ? undefined : await realpath(reported).catch(() => undefined);
-    if (root !== serverDirectory) {
-      // V1 can report the global path even when the server loads OPENCODE_CONFIG_DIR.
-      const custom = process.env.OPENCODE_CONFIG_DIR;
-      const xdg = process.env.XDG_CONFIG_HOME;
-      const globalDirectory = join(
-        xdg !== undefined && xdg !== '' && isAbsolute(xdg) ? xdg : join(homedir(), '.config'),
-        'opencode',
-      );
-      const localGlobal = await realpath(globalDirectory).catch(() => undefined);
-      if (custom === undefined || custom === '' || serverDirectory === undefined || serverDirectory !== localGlobal) {
-        return { unavailable: 'Saved settings unavailable; the TUI and server configuration filesystems do not match' };
-      }
-    }
-    const loaded = await loadConfiguration(plugins[0][1], directory);
-    return { settings: loaded.settings, source: loaded.file?.path };
-  } catch {
-    return {
-      unavailable:
-        'Saved Config Composer settings unavailable; check the settings file and server filesystem, then refresh',
-    };
-  }
-}
 
 export default {
   id: 'effective-config',
@@ -66,7 +21,6 @@ export default {
         throw new Error('Configuration unavailable');
       }
       const effectiveConfig = config.data;
-      const savedConfigComposer = await savedConfigComposerConfiguration(api, effectiveConfig);
       let entries: Awaited<ReturnType<typeof snapshot>>['entries'] = [];
       if (sessionID !== undefined && sessionID !== '') {
         entries = (await snapshot(api, sessionID)).entries;
@@ -83,7 +37,7 @@ export default {
           description: clean(agent.description),
           category: agent.mode,
           run: () => {
-            const facts = configFacts(agent, effectiveConfig, global.data, entries, savedConfigComposer);
+            const facts = configFacts(agent, effectiveConfig, global.data, entries);
             view.menu(`Config: ${clean(agent.name)}`, [
               ...facts.map((fact, index) => ({
                 title: fact.label,
