@@ -16,7 +16,7 @@
   "dependencies": {
     "@opencode-ai/plugin": "1.18.29",
     "jsonc-parser": "3.3.1",
-    "opencode-config-composer-name-tbd": "0.0.0",
+    "opencode-config-composer": "0.0.0",
     "yaml": "2.9.1"
   },
   "devDependencies": {

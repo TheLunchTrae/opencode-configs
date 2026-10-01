@@ -517,12 +517,10 @@ test('composition sources are private to Composer while real references remain a
 });
 
 test('Config Composer owns shared settings in a dedicated typed configuration', () => {
-  const entry = config.plugin.find(
-    (plugin) => Array.isArray(plugin) && plugin[0] === 'opencode-config-composer-name-tbd@0.0.0',
-  );
+  const entry = config.plugin.find((plugin) => Array.isArray(plugin) && plugin[0] === 'opencode-config-composer@0.0.0');
   assert.deepEqual(entry?.[1], { configFile: 'config-composer.jsonc' });
   assert.equal(parse(read('tui.jsonc')).plugin.filter((plugin) => plugin === entry[0]).length, 1);
-  assert.equal(composer.$schema, './node_modules/opencode-config-composer-name-tbd/schema.json');
+  assert.equal(composer.$schema, './node_modules/opencode-config-composer/schema.json');
   assert.ok(!existsSync(new URL('extensions/config-composer/', root)), 'implementation belongs to the package');
   assert.deepEqual(Object.keys(composer.agent), ['modelPresets', 'groups', 'prompts']);
   assert.deepEqual(composer.command, {});

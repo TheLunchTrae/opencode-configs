@@ -134,7 +134,7 @@ Configure groups and presets in `config-composer.jsonc`. The model IDs below are
 
 ```jsonc
 {
-  "$schema": "./node_modules/opencode-config-composer-name-tbd/schema.json",
+  "$schema": "./node_modules/opencode-config-composer/schema.json",
   "sourceDirectories": {},
   "agent": {
     "modelPresets": {
@@ -158,12 +158,13 @@ Register Config Composer in `opencode.jsonc`, preserving your other plugin entri
 
 ```jsonc
 "plugin": [
-  ["opencode-config-composer-name-tbd@0.0.0", { "configFile": "config-composer.jsonc" }]
+  ["opencode-config-composer@0.0.0", { "configFile": "config-composer.jsonc" }]
 ]
 ```
 
-Register the same `opencode-config-composer-name-tbd@0.0.0` specifier in the `plugin` array of `tui.jsonc`.
-These package references are provisional. Registry installation is blocked until naming and publication are complete.
+Register the same `opencode-config-composer@0.0.0` specifier in the `plugin` array of `tui.jsonc`.
+The npm name is selected. Version `0.0.0` is an unpublished development version.
+Registry installation requires publication and registry lockfile regeneration.
 Config Composer settings belong in the dedicated file.
 Native settings and built-in agent overrides stay in `opencode.jsonc`.
 The top-level `agent` object owns agent groups, model presets, and prompt settings.

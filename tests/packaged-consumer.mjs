@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { basename, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-// Only the disposable fixture receives a tarball dependency. Production references stay provisional.
+// Only the disposable fixture receives a tarball dependency. Production references use the selected npm name.
 const tarball = process.env.COMPOSER_TARBALL;
 assert.ok(tarball, 'Set COMPOSER_TARBALL to the absolute path of the packed extraction artifact.');
 assert.ok(tarball.endsWith('.tgz'), 'COMPOSER_TARBALL must name an npm tarball.');
@@ -26,14 +26,14 @@ try {
   await cp(resolve(tarball), artifact);
   const manifestPath = join(consumer, 'package.json');
   const manifest = JSON.parse(await readFile(manifestPath, 'utf8'));
-  manifest.dependencies['opencode-config-composer-name-tbd'] = `file:${artifact}`;
+  manifest.dependencies['opencode-config-composer'] = `file:${artifact}`;
   await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
   run('npm', ['install', '--ignore-scripts', '--no-audit', '--no-fund']);
   run('npm', ['ci', '--ignore-scripts', '--no-audit', '--no-fund']);
   const installed = JSON.parse(
-    await readFile(join(consumer, 'node_modules/opencode-config-composer-name-tbd/package.json'), 'utf8'),
+    await readFile(join(consumer, 'node_modules/opencode-config-composer/package.json'), 'utf8'),
   );
-  assert.equal(installed.name, 'opencode-config-composer-name-tbd');
+  assert.equal(installed.name, 'opencode-config-composer');
   assert.equal(installed.version, '0.0.0');
   const packageDirectory = join(consumer, 'node_modules', installed.name);
   const unavailablePackage = join(root, 'unavailable-package');

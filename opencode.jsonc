@@ -3,7 +3,7 @@
   "plugin": [
     "@slkiser/opencode-quota@4.9.0",
     "./extensions/session-tools/server.ts",
-    ["opencode-config-composer-name-tbd@0.0.0", { "configFile": "config-composer.jsonc" }]
+    ["opencode-config-composer@0.0.0", { "configFile": "config-composer.jsonc" }]
   ],
   "shell": "C:/Program Files/Git/bin/bash.exe",
   "disabled_providers": ["opencode"],

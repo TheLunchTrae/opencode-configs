@@ -235,21 +235,27 @@ npm run test:native
 
 ### Package validation
 
-The Composer dependency, imports, schema path, and both registrations use the provisional name
-`opencode-config-composer-name-tbd` and version `0.0.0`. The package is private and unpublished.
+The Composer dependency, schema path, and both registrations use the selected npm name
+`opencode-config-composer` and development version `0.0.0`. The package is private and unpublished.
 Do not treat the draft lock entry as a released artifact: it deliberately has no registry URL or integrity claim.
-After the final name and version are approved and published, update these references and regenerate the lockfile
+After a release version is approved and published, update these references and regenerate the lockfile
 from the registry. Run all checks again before installing into a live configuration.
+The standalone extraction is in [PR #1](https://github.com/lunchbox-labs/opencode-config-composer/pull/1).
+The [publishing setup PR #2](https://github.com/lunchbox-labs/opencode-config-composer/pull/2)
+is stacked on the extraction. Both prerequisite PRs remain draft and unmerged.
 
 To validate this draft, pack the actual extraction commit, then test a disposable consumer installation:
 
 ```sh
 git clone https://github.com/lunchbox-labs/opencode-config-composer.git /tmp/composer-extraction
-git -C /tmp/composer-extraction checkout 44dd8d69a202fedeb8942abe514528083f1914a2
-npm --prefix /tmp/composer-extraction ci
-npm --prefix /tmp/composer-extraction run check
-npm --prefix /tmp/composer-extraction pack --pack-destination /tmp
-COMPOSER_TARBALL=/tmp/opencode-config-composer-name-tbd-0.0.0.tgz npm run test:package
+git -C /tmp/composer-extraction checkout daaf4a1b8d6809bdee8d1f82620ef180579e1ddb
+(
+  cd /tmp/composer-extraction &&
+  npm ci &&
+  npm run check &&
+  npm pack --pack-destination /tmp
+)
+COMPOSER_TARBALL=/tmp/opencode-config-composer-0.0.0.tgz npm run test:package
 ```
 
 Use Node 22.18 or newer, OpenCode 1.18.29, and Bun for the rendered workflow test.
@@ -261,8 +267,9 @@ The package repository requires GitHub access. This procedure does not publish o
 Only that fixture receives a `file:` tarball dependency and a generated fixture lockfile.
 It runs installation and a clean install, then removes Composer from module resolution while running all local checks
 and the rendered workflow test. It restores the package for native server tests through OpenCode's plugin loader.
-Native fixtures register the installed package directory to avoid a registry lookup for the unpublished name.
-Committed configuration retains the provisional npm specifiers; passing fixtures do not prove registry installation.
+Native fixtures register the installed package directory to avoid a registry lookup for the unpublished
+development version. Committed configuration uses the selected npm name and development version.
+Passing fixtures do not prove registry installation.
 Composer implementation, storage, and native reload tests now belong to the extracted package.
 Consumer inventory tests check authored metadata and source references without loading or reimplementing Composer.
 Native fixtures check plugin composition through OpenCode's API. Local extensions and tests must not import Composer APIs.
