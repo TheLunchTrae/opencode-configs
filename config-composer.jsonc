@@ -1,5 +1,5 @@
 {
-  "$schema": "./extensions/config-composer/schema.json",
+  "$schema": "./node_modules/opencode-config-composer-name-tbd/schema.json",
   "sourceDirectories": {
     "agent-prompts": "./config-composer/agent/prompts"
   },

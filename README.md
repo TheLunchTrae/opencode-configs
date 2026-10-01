@@ -5,6 +5,10 @@ shared prompt composition, agent group and model controls, workflow panels, sess
 The default agent is `workflow-lead`. It coordinates complete development tasks.
 Select a focused lead when you want only planning, approved implementation, or assessment of existing work.
 
+**Draft migration: installation is blocked until Config Composer has an approved npm name and published version.**
+`opencode-config-composer-name-tbd@0.0.0` is a provisional reference, not a published package.
+Do not install this branch into a live configuration yet. See [package validation](.opencode/AGENTS.md#package-validation).
+
 ## Contents
 
 | Path | Purpose |
@@ -17,7 +21,7 @@ Select a focused lead when you want only planning, approved implementation, or a
 | [`references/agent/`](references/agent/) | Conditional guidance that agents read when needed. |
 | [`config-composer/agent/prompts/`](config-composer/agent/prompts/) | Shared fragments for agent and skill bodies. |
 | [`plugins/`](plugins/) | Local plugins, including secret-path checks. |
-| [`extensions/config-composer/`](extensions/config-composer/) | Config Composer: shared prompts and group settings. |
+| `opencode-config-composer-name-tbd` (provisional npm dependency) | Config Composer: shared prompts and group settings. |
 | [`extensions/session-tools/`](extensions/session-tools/) | Workflow, config, context, bookmarks, and handoff panels. |
 | [`package.json`](package.json) | Pinned plugin dependencies and maintenance commands. |
 | [`opencode.jsonc`](opencode.jsonc) | Global models, permissions, MCP servers, shell, and plugin settings. |
@@ -39,7 +43,10 @@ Select a focused lead when you want only planning, approved implementation, or a
    Preserve the layout and merge your existing settings.
 
 The global configuration directory is `~/.config/opencode` or `%USERPROFILE%\.config\opencode` on Windows.
-No `npm install` step is required for normal setup. OpenCode installs configured npm plugins and local dependencies.
+After publication, install the pinned dependencies in this directory with `npm ci`.
+Session-tools imports Composer from this installation, and the settings schema uses its `node_modules` copy.
+OpenCode also resolves the matching npm specifier registered in both plugin lists.
+Until naming and publication are complete, `npm ci` and OpenCode's registry installation are expected to fail.
 
 Do not copy credentials, tokens, `node_modules`, `.idea`, or work-project checkpoints.
 The repository's `.opencode/` directory contains maintenance guidance and is not needed for global installation.
@@ -85,10 +92,10 @@ with editable handoff drafts. Open them through the command palette or `/workflo
 Config Composer assembles shared guidance into custom agent prompts when configuration loads.
 It also resolves inline includes in skill bodies when OpenCode loads a skill through its native loader.
 
-Install `config-composer.jsonc`, `config-composer/`, `extensions/config-composer/`, and `references/` together.
+Install the Composer package, `config-composer.jsonc`, `config-composer/`, and `references/` together.
 Shared source directories are configured at the top level.
 Agent groups, models, and prompt settings belong under `agent`.
-The `$schema` field points to `extensions/config-composer/schema.json`, installed with the extension.
+The `$schema` field points to `node_modules/opencode-config-composer-name-tbd/schema.json` (provisional package name).
 
 The shipped agent bodies declare shared fragments with explicit include directives at their intended positions.
 These directives require Config Composer, which resolves them when configuration loads.
@@ -187,10 +194,10 @@ together, preserving local overrides and license notices.
 Install `extensions/`, `package.json`, and `package-lock.json` with the configuration files when adding Config Composer.
 Merge existing dependencies if your installation already has a package manifest.
 Preserve a customized `config-composer.jsonc` and merge the new fields instead of overwriting it.
-Keep the server registration `["./extensions/config-composer/server.ts", { "configFile": "config-composer.jsonc" }]`
-in `opencode.jsonc` and the `./extensions/config-composer/tui.ts` entry in `tui.jsonc`.
-Copy the complete `extensions/config-composer/` directory, including `schema.json`, and its shared
-`extensions/tui/` dependencies.
+Use the same published `PACKAGE_NAME@VERSION` in both plugin lists, retaining the server's `configFile` option.
+This draft uses `opencode-config-composer-name-tbd@0.0.0` in both files until those release values are approved.
+Install the matching package dependency before removing the obsolete `extensions/config-composer/` directory.
+Keep `extensions/tui/`; session-tools still uses it. Preserve unrelated extensions and dependencies.
 Custom agents with explicit model pins keep those models. Use **Use group defaults** to opt an agent into inheritance.
 Removing the server plugin also removes group inheritance and prompt composition.
 Resolve include directives, restore shared guidance, and restore explicit models before disabling it.
@@ -216,7 +223,7 @@ When upgrading an earlier Config Composer settings file, move its fields into th
 | Empty `groups.commands` and `groups.skills` | Empty top-level `command` and `skill` objects |
 
 Earlier flat settings files are rejected. Remove the old keys after moving their values.
-Keep `$schema` pointing to `./extensions/config-composer/schema.json`.
+Point `$schema` to the installed package's `schema.json`, as shown in `config-composer.jsonc`.
 Preserve customized source mappings and prompt fragments instead of overwriting them.
 
 After installing the updated agent bodies, remove matching shared fragments from their configured prompt layers.

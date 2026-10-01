@@ -179,11 +179,11 @@ The current plugin uses the V1 `@opencode-ai/plugin` hook API. A V2 port is a se
 V2 also ignores top-level `subagent_depth`; its supported setting is `experimental.subagent_depth`.
 Consult the [migration guide](https://opencode.ai/v2/docs/migrate-v1/) and verify behavior before claiming V2 support.
 
-Config Composer entrypoints are in `extensions/config-composer/`, outside auto-discovery, and explicitly registered in
-the server and TUI configuration files. Keep their runtime metadata out of provider request options.
+Config Composer entrypoints come from its npm package and are explicitly registered in the server and TUI configuration
+files with the same package specifier. Keep their runtime metadata out of provider request options.
 Register the server with `configFile: "config-composer.jsonc"`.
 Relative `sourceDirectories` paths resolve from that file's directory.
-Keep `schema.json` in `extensions/config-composer/` and point the dedicated configuration's `$schema` field to it.
+Point the dedicated configuration's `$schema` field to the installed package's `schema.json` under `node_modules/`.
 Keep the schema, dedicated configuration, extension, sources, references, and templated prompts compatible
 during upgrades.
 Preserve customized Config Composer files.
@@ -232,6 +232,38 @@ npm run test:native
   when the native runtime is available. A harmless approval check must not use real secrets.
 - Distinguish source checks, mocked tests, native loading, and model-assisted execution in the pull request.
   Do not claim an independent review for a self-review.
+
+### Package validation
+
+The Composer dependency, imports, schema path, and both registrations use the provisional name
+`opencode-config-composer-name-tbd` and version `0.0.0`. The package is private and unpublished.
+Do not treat the draft lock entry as a released artifact: it deliberately has no registry URL or integrity claim.
+After the final name and version are approved and published, update these references and regenerate the lockfile
+from the registry. Run all checks again before installing into a live configuration.
+
+To validate this draft, pack the actual extraction commit, then test a disposable consumer installation:
+
+```sh
+git clone https://github.com/lunchbox-labs/opencode-config-composer.git /tmp/composer-extraction
+git -C /tmp/composer-extraction checkout 4ca8de47e2f33e245f0f32513399582c67a2803c
+npm --prefix /tmp/composer-extraction ci
+npm --prefix /tmp/composer-extraction run check
+npm --prefix /tmp/composer-extraction pack --pack-destination /tmp
+COMPOSER_TARBALL=/tmp/opencode-config-composer-name-tbd-0.0.0.tgz npm run test:package
+```
+
+Use Node 22.18 or newer, OpenCode 1.18.29, and Bun for the rendered workflow test.
+Set `OPENCODE_BIN` and `BUN_BIN` if these binaries are not on PATH.
+Set `npm_config_cache` to a writable directory if the default cache is unavailable.
+The package repository requires GitHub access. This procedure does not publish or install anything into live settings.
+
+`test:package` copies the consumer into a temporary directory without Git metadata or existing dependencies.
+Only that fixture receives a `file:` tarball dependency and a generated fixture lockfile.
+It runs installation, a clean install, the complete consumer checks, native server tests, and rendered workflow checks.
+Native fixtures register the installed package directory to avoid a registry lookup for the unpublished name.
+Committed configuration retains the provisional npm specifiers; passing fixtures do not prove registry installation.
+Composer implementation, storage, and native reload tests now belong to the extracted package.
+Consumer inventory tests exercise its public server and skill hooks without importing storage or prompt internals.
 
 ## Markdown and documentation
 

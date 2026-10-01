@@ -5,6 +5,7 @@
   "scripts": {
     "test": "node --experimental-strip-types --test tests/*.test.mjs tests/*.test.ts",
     "test:native": "node --experimental-strip-types --test tests/*.native.ts",
+    "test:package": "node tests/packaged-consumer.mjs",
     "typecheck": "tsc --project tsconfig.json",
     "lint": "eslint . --max-warnings 0",
     "lint:fix": "npm run lint -- --fix",
@@ -15,6 +16,7 @@
   "dependencies": {
     "@opencode-ai/plugin": "1.18.29",
     "jsonc-parser": "3.3.1",
+    "opencode-config-composer-name-tbd": "0.0.0",
     "yaml": "2.9.1"
   },
   "devDependencies": {

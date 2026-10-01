@@ -3,7 +3,8 @@ import { homedir } from 'node:os';
 import { isAbsolute, join } from 'node:path';
 import type { TuiPluginApi, TuiPluginModule } from '@opencode-ai/plugin/tui';
 import type { Config } from '@opencode-ai/sdk/v2';
-import { configurationDirectory, loadConfiguration } from '../config-composer/configuration.ts';
+import { configurationDirectory, loadConfiguration } from 'opencode-config-composer-name-tbd/configuration';
+import { isConfigComposer } from './composer.ts';
 import { type SavedConfigComposerConfiguration, clean, configFacts, hasResponseData, record } from './model.ts';
 import { currentSession, snapshot, ui } from './client.ts';
 
@@ -11,12 +12,7 @@ export async function savedConfigComposerConfiguration(
   api: TuiPluginApi,
   config: Config,
 ): Promise<SavedConfigComposerConfiguration | undefined> {
-  const plugins = (config.plugin ?? []).filter(
-    (plugin) =>
-      Array.isArray(plugin) &&
-      typeof plugin[0] === 'string' &&
-      /[/\\]config-composer[/\\]server\.(?:ts|js)$/.test(plugin[0]),
-  );
+  const plugins = (config.plugin ?? []).filter((plugin) => Array.isArray(plugin) && isConfigComposer(plugin[0]));
   if (!plugins.some((plugin) => Array.isArray(plugin) && record(plugin[1]) && Object.hasOwn(plugin[1], 'configFile'))) {
     return undefined;
   }

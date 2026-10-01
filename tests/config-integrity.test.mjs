@@ -4,26 +4,30 @@ import { test } from 'node:test';
 import { parseDocument } from 'yaml';
 import { parse } from 'jsonc-parser';
 import { fileURLToPath } from 'node:url';
-import { loadSnapshot } from '../extensions/config-composer/storage.ts';
-import { composePrompts, expandIncludes } from '../extensions/config-composer/prompts.ts';
+import { ConfigComposerPlugin } from 'opencode-config-composer-name-tbd/server';
 
 const root = new URL('../', import.meta.url);
 const read = (path) => readFileSync(new URL(path, root), 'utf8');
 const config = JSON.parse(read('opencode.jsonc'));
 const composer = parse(read('config-composer.jsonc'));
-const snapshot = await loadSnapshot(fileURLToPath(root));
 const authoredAgents = Object.fromEntries(
-  snapshot.agents.map((agent) => [
-    agent.name,
-    {
-      ...agent.settings,
-      ...(agent.markdown === undefined
-        ? {}
-        : { prompt: agent.markdown.file.text.replace(/^---\r?\n[\s\S]*?\r?\n---(?:\r?\n|$)/, '') }),
-    },
-  ]),
+  readdirSync(new URL('agents/', root))
+    .filter((name) => name.endsWith('.md'))
+    .map((name) => {
+      const text = read(`agents/${name}`);
+      const header = text.match(/^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/);
+      assert.ok(header, `${name}: missing frontmatter`);
+      const document = parseDocument(header[1], { uniqueKeys: true });
+      assert.equal(document.errors.length, 0);
+      return [name.slice(0, -3), { ...document.toJS(), prompt: text.slice(header[0].length) }];
+    }),
 );
-const effectivePrompts = await composePrompts(authoredAgents, snapshot.settings);
+const hooks = await ConfigComposerPlugin({}, { configFile: fileURLToPath(new URL('config-composer.jsonc', root)) });
+const effectiveConfig = { ...config, agent: structuredClone(authoredAgents) };
+await hooks.config(effectiveConfig);
+const effectivePrompts = Object.fromEntries(
+  Object.entries(effectiveConfig.agent).map(([name, agent]) => [name, agent.prompt]),
+);
 
 // Check this configuration's literal and * patterns, with V1 slash normalization and last-match order.
 // These policy examples do not launch OpenCode or model its full permission system.
@@ -114,10 +118,11 @@ const includeReferences = (text) => [...text.matchAll(/\{\{include:@([a-z][a-z0-
 const sourceDirectory = (alias) => composer.sourceDirectories[alias] ?? config.references[alias]?.path;
 const compiledSkills = Object.fromEntries(
   await Promise.all(
-    skills.map(async (name) => [
-      name,
-      await expandIncludes(read(`skills/${name}/SKILL.md`), snapshot.settings.promptSources),
-    ]),
+    skills.map(async (name) => {
+      const output = { output: read(`skills/${name}/SKILL.md`), metadata: {} };
+      await hooks['tool.execute.after']({ tool: 'skill' }, output);
+      return [name, output.output];
+    }),
   ),
 );
 const configuredFragments = (name) => {
@@ -530,9 +535,12 @@ test('composition sources are private to Composer while real references remain a
 
 test('Config Composer owns shared settings in a dedicated typed configuration', () => {
   const entry = config.plugin.find(
-    (plugin) => Array.isArray(plugin) && plugin[0] === './extensions/config-composer/server.ts',
+    (plugin) => Array.isArray(plugin) && plugin[0] === 'opencode-config-composer-name-tbd@0.0.0',
   );
   assert.deepEqual(entry?.[1], { configFile: 'config-composer.jsonc' });
+  assert.equal(parse(read('tui.jsonc')).plugin.filter((plugin) => plugin === entry[0]).length, 1);
+  assert.equal(composer.$schema, './node_modules/opencode-config-composer-name-tbd/schema.json');
+  assert.ok(existsSync(new URL(composer.$schema, root)));
   assert.deepEqual(Object.keys(composer.agent), ['modelPresets', 'groups', 'prompts']);
   assert.deepEqual(composer.command, {});
   assert.deepEqual(composer.skill, {});

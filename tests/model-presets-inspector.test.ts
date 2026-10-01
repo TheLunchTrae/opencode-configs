@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { Agent, Config } from '@opencode-ai/sdk/v2';
 import { configFacts } from '../extensions/session-tools/model.ts';
-import { readSettings } from '../extensions/config-composer/settings.ts';
+import { readSettings } from 'opencode-config-composer-name-tbd/settings';
 
 const agent = {
   name: 'worker',
@@ -13,7 +13,7 @@ const agent = {
 const config = (options: Record<string, unknown>): Config => ({
   model: 'fixture/workspace',
   small_model: 'fixture/workspace-small',
-  plugin: [['/config/extensions/config-composer/server.ts', options]],
+  plugin: [['opencode-config-composer-name-tbd@0.0.0', options]],
 });
 
 test('inspector resolves preset defaults without claiming an explicit agent pin inherited them', () => {

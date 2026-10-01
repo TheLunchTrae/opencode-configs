@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import type { Agent, Config, Session } from '@opencode-ai/sdk/v2';
 import type { PluginInput } from '@opencode-ai/plugin';
 import type { ToolContext } from '@opencode-ai/plugin/tool';
@@ -26,6 +26,33 @@ import { loadWorkflow } from '../extensions/session-tools/workflow-data.ts';
 import { WorkflowStatusPlugin } from '../extensions/session-tools/server.ts';
 import configPlugin, { savedConfigComposerConfiguration } from '../extensions/session-tools/config.ts';
 import contextPlugin from '../extensions/session-tools/context.ts';
+import { isConfigComposer } from '../extensions/session-tools/composer.ts';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+
+test('Composer detection accepts package names, versions, installed directories, and legacy entries only', () => {
+  const installed = dirname(fileURLToPath(import.meta.resolve('opencode-config-composer-name-tbd/package.json')));
+  for (const spec of [
+    'opencode-config-composer-name-tbd',
+    'opencode-config-composer-name-tbd@0.0.0',
+    installed,
+    pathToFileURL(installed).href,
+    './extensions/config-composer/server.ts',
+    'C:\\config\\extensions\\agent-groups\\server.js',
+  ]) {
+    assert.equal(isConfigComposer(spec), true, spec);
+  }
+  for (const spec of [
+    undefined,
+    '',
+    'other-plugin',
+    'opencode-config-composer-name-tbd-extra',
+    'opencode-config-composer-name-tbd@',
+    'opencode-config-composer-name-tbd@1/path',
+    'file:%%%',
+  ]) {
+    assert.equal(isConfigComposer(spec), false, String(spec));
+  }
+});
 
 test('saved Config Composer inspection reads matching local settings and rejects remote filesystem mismatches', async (t) => {
   const root = await mkdtemp(join(tmpdir(), 'config-composer-inspector-'));
@@ -44,7 +71,7 @@ test('saved Config Composer inspection reads matching local settings and rejects
   });
   process.env.OPENCODE_CONFIG_DIR = local;
   const config: Config = {
-    plugin: [['./extensions/config-composer/server.ts', { configFile: './config-composer.jsonc' }]],
+    plugin: [['opencode-config-composer-name-tbd@0.0.0', { configFile: './config-composer.jsonc' }]],
   };
   const api = (directory: string) => ({ state: { path: { config: directory } } }) as unknown as TuiPluginApi;
   await writeFile(

@@ -134,7 +134,7 @@ Configure groups and presets in `config-composer.jsonc`. The model IDs below are
 
 ```jsonc
 {
-  "$schema": "./extensions/config-composer/schema.json",
+  "$schema": "./node_modules/opencode-config-composer-name-tbd/schema.json",
   "sourceDirectories": {},
   "agent": {
     "modelPresets": {
@@ -158,17 +158,18 @@ Register Config Composer in `opencode.jsonc`, preserving your other plugin entri
 
 ```jsonc
 "plugin": [
-  ["./extensions/config-composer/server.ts", { "configFile": "config-composer.jsonc" }]
+  ["opencode-config-composer-name-tbd@0.0.0", { "configFile": "config-composer.jsonc" }]
 ]
 ```
 
-Register `./extensions/config-composer/tui.ts` in the `plugin` array of `tui.jsonc`.
+Register the same `opencode-config-composer-name-tbd@0.0.0` specifier in the `plugin` array of `tui.jsonc`.
+These package references are provisional. Registry installation is blocked until naming and publication are complete.
 Config Composer settings belong in the dedicated file.
 Native settings and built-in agent overrides stay in `opencode.jsonc`.
 The top-level `agent` object owns agent groups, model presets, and prompt settings.
 Shared source directories remain at the top level. The `command` and `skill` objects are reserved. Leave them empty.
 This version composes agent prompts and agent model defaults, and resolves inline includes during native skill loading.
-The `$schema` field points to the schema installed in `extensions/config-composer/`.
+The `$schema` field points to the installed package schema under the configuration directory's `node_modules/`.
 Group and preset names use lowercase kebab-case, start with a letter, and contain at most 64 characters.
 Use a model and variant supported by your provider. Set the referenced native slots before assigning their references.
 Presets are optional. Updating the plugin alone does not convert existing concrete models into references.
@@ -222,9 +223,8 @@ Models that the native provider cannot resolve remain errors. These checks do no
 
 ### Editing and compatibility
 
-Install `extensions/config-composer/`, `config-composer.jsonc`, and their source files with the server and
-TUI registrations.
-The extension includes `schema.json`. The configuration's `$schema` field uses its relative path.
+Install the Composer package, `config-composer.jsonc`, and its source files with the server and TUI registrations.
+The package includes `schema.json`. The configuration's `$schema` field uses the installed file's relative path.
 Older plugin versions cannot resolve the shipped prompt directives. Do not update agent prompts or configuration alone.
 Preserve customized Config Composer settings when upgrading. Legacy inline options remain supported for migration.
 
@@ -239,9 +239,8 @@ JSONC comments, YAML comments, prompt bodies, and unrelated settings are preserv
 An interrupted write can leave `.config-composer.lock`. Remove that lock only after confirming no editor is saving.
 
 The server and TUI entrypoints target OpenCode V1 1.18.29.
-V2 needs a separate port. Install `extensions/config-composer/`, the shared `extensions/tui/` directory,
-and the package manifest.
-Keep these entrypoints outside the automatically discovered `plugins/` directory to avoid loading them twice.
+V2 needs a separate port. Install the Composer package, the shared `extensions/tui/` directory, and the package manifest.
+Register Composer once in each plugin list. Do not add wrapper files in the automatically discovered `plugins/` directory.
 Live reload records an internal `reloadToken` in the server plugin options so OpenCode invalidates its global cache.
 You do not need to edit that value.
 
@@ -466,7 +465,7 @@ See [continue a long task](#continue-a-long-task) for the lead's checkpoint and 
 ### Enable or disable panels
 
 Install `extensions/session-tools/` and the shared `extensions/tui/` directory.
-Keep the complete `extensions/config-composer/` directory installed, even with the group editor disabled.
+Keep the Composer npm dependency installed, even with the group editor disabled.
 The inspector uses its configuration loader and model-resolution helpers.
 The four TUI entries are independent:
 

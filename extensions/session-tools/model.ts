@@ -6,7 +6,8 @@ import {
   agentGroups,
   readOptions,
   resolveGroup,
-} from '../config-composer/settings.ts';
+} from 'opencode-config-composer-name-tbd/settings';
+import { isConfigComposer } from './composer.ts';
 
 export interface Entry {
   info: Message;
@@ -391,11 +392,7 @@ export function configFacts(
     facts.push(...savedConfigComposerFacts(agent.name, memberships, savedConfigComposer, config, global));
   } else if (memberships.length > 0) {
     for (const plugin of config.plugin ?? []) {
-      if (
-        !Array.isArray(plugin) ||
-        typeof plugin[0] !== 'string' ||
-        !/[/\\](?:config-composer|agent-groups)[/\\]server\.(?:ts|js)$/.test(plugin[0])
-      ) {
+      if (!Array.isArray(plugin) || !isConfigComposer(plugin[0])) {
         continue;
       }
       const options: unknown = plugin[1];
