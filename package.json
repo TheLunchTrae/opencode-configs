@@ -5,6 +5,7 @@
   "scripts": {
     "test": "node --experimental-strip-types --test tests/*.test.mjs tests/*.test.ts",
     "test:native": "node --experimental-strip-types --test tests/*.native.ts",
+    "test:package": "node tests/packaged-consumer.mjs",
     "typecheck": "tsc --project tsconfig.json",
     "lint": "eslint . --max-warnings 0",
     "lint:fix": "npm run lint -- --fix",
@@ -13,14 +14,15 @@
     "check": "npm run typecheck && npm run lint && npm run format:check && npm test"
   },
   "dependencies": {
-    "@opencode-ai/plugin": "1.18.29",
+    "@lunchbox-labs/opencode-config-composer": "0.0.2",
+    "@opencode-ai/plugin": "1.18.34",
     "jsonc-parser": "3.3.1",
     "yaml": "2.9.1"
   },
   "devDependencies": {
     "@eslint-community/eslint-plugin-eslint-comments": "4.7.2",
     "@eslint/js": "10.0.1",
-    "@opencode-ai/sdk": "1.18.29",
+    "@opencode-ai/sdk": "1.18.34",
     "@opentui/core": "0.4.5",
     "@opentui/keymap": "0.4.5",
     "@opentui/solid": "0.4.5",

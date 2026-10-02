@@ -189,7 +189,7 @@ test(
       projectID: 'project',
       directory: '/project',
       title: id,
-      version: '1.18.29',
+      version: '1.18.34',
       time: { created: 1, updated: 2 },
     });
     const entry = (id: string, parts: unknown[]): Entry =>

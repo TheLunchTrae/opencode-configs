@@ -17,7 +17,7 @@ Select a focused lead when you want only planning, approved implementation, or a
 | [`references/agent/`](references/agent/) | Conditional guidance that agents read when needed. |
 | [`config-composer/agent/prompts/`](config-composer/agent/prompts/) | Shared fragments for agent and skill bodies. |
 | [`plugins/`](plugins/) | Local plugins, including secret-path checks. |
-| [`extensions/config-composer/`](extensions/config-composer/) | Config Composer: shared prompts and group settings. |
+| `@lunchbox-labs/opencode-config-composer` | Config Composer: shared prompts and group settings. |
 | [`extensions/session-tools/`](extensions/session-tools/) | Workflow, config, context, bookmarks, and handoff panels. |
 | [`package.json`](package.json) | Pinned plugin dependencies and maintenance commands. |
 | [`opencode.jsonc`](opencode.jsonc) | Global models, permissions, MCP servers, shell, and plugin settings. |
@@ -28,7 +28,7 @@ Select a focused lead when you want only planning, approved implementation, or a
 
 ## Setup
 
-1. Install OpenCode V1 1.18.29 or a compatible version with the TUI plugin API. See <https://opencode.ai/docs/>.
+1. Install OpenCode V1 1.18.34 or a compatible version with the TUI plugin API. See <https://opencode.ai/docs/>.
 2. Authenticate your provider through `/connect` when supported.
 3. Back up your existing global configuration directory.
 4. Obtain a checkout or download of this repository.
@@ -39,7 +39,9 @@ Select a focused lead when you want only planning, approved implementation, or a
    Preserve the layout and merge your existing settings.
 
 The global configuration directory is `~/.config/opencode` or `%USERPROFILE%\.config\opencode` on Windows.
-No `npm install` step is required for normal setup. OpenCode installs configured npm plugins and local dependencies.
+Install the pinned dependencies in this directory with `npm ci`.
+The settings schema uses the package repository's raw GitHub URL. Local extensions do not import Composer.
+OpenCode also resolves the matching npm specifier registered in both plugin lists.
 
 Do not copy credentials, tokens, `node_modules`, `.idea`, or work-project checkpoints.
 The repository's `.opencode/` directory contains maintenance guidance and is not needed for global installation.
@@ -85,10 +87,18 @@ with editable handoff drafts. Open them through the command palette or `/workflo
 Config Composer assembles shared guidance into custom agent prompts when configuration loads.
 It also resolves inline includes in skill bodies when OpenCode loads a skill through its native loader.
 
-Install `config-composer.jsonc`, `config-composer/`, `extensions/config-composer/`, and `references/` together.
+Install the Composer package, `config-composer.jsonc`, `config-composer/`, and `references/` together.
 Shared source directories are configured at the top level.
 Agent groups, models, and prompt settings belong under `agent`.
-The `$schema` field points to `extensions/config-composer/schema.json`, installed with the extension.
+The `$schema` field points to `https://raw.githubusercontent.com/lunchbox-labs/opencode-config-composer/main/schema.json`.
+This URL tracks `main`. To use the installed package version instead, set `$schema` to
+`./node_modules/@lunchbox-labs/opencode-config-composer/schema.json`, relative to the settings file.
+
+The `config-composer/` directory contains personal prompt fragments, not the plugin implementation.
+The npm package supplies composition, settings editing, the Composer TUI, and the schema.
+Session-tools uses native OpenCode APIs in `/inspect-config`; it does not read or interpret Composer settings.
+Use the package's `/agent-models` and `/agent-groups` controls for saved model and group choices.
+The shared `extensions/tui/` directory supports the remaining session-tools panels.
 
 The shipped agent bodies declare shared fragments with explicit include directives at their intended positions.
 These directives require Config Composer, which resolves them when configuration loads.
@@ -187,36 +197,16 @@ together, preserving local overrides and license notices.
 Install `extensions/`, `package.json`, and `package-lock.json` with the configuration files when adding Config Composer.
 Merge existing dependencies if your installation already has a package manifest.
 Preserve a customized `config-composer.jsonc` and merge the new fields instead of overwriting it.
-Keep the server registration `["./extensions/config-composer/server.ts", { "configFile": "config-composer.jsonc" }]`
-in `opencode.jsonc` and the `./extensions/config-composer/tui.ts` entry in `tui.jsonc`.
-Copy the complete `extensions/config-composer/` directory, including `schema.json`, and its shared
-`extensions/tui/` dependencies.
+Use the same published `@lunchbox-labs/opencode-config-composer@VERSION` in both plugin lists.
+The server reads `config-composer.jsonc` by default. Preserve any explicit `configFile` override for a custom filename.
+Keep `extensions/tui/`; session-tools still uses it. Preserve unrelated extensions and dependencies.
 Custom agents with explicit model pins keep those models. Use **Use group defaults** to opt an agent into inheritance.
 Removing the server plugin also removes group inheritance and prompt composition.
 Resolve include directives, restore shared guidance, and restore explicit models before disabling it.
 
-When upgrading from `extensions/agent-groups/`, replace its server and TUI registrations
-with the Config Composer entries.
-Remove only the obsolete `extensions/agent-groups/` directory after installing its replacement.
-Preserve unrelated extensions. Register only one Config Composer server entry and one Config Composer TUI entry
-to prevent duplicate loads.
-Move inline `modelPresets` into `agent.modelPresets` in `config-composer.jsonc` and old `groups` into `agent.groups`.
-Legacy inline options and `agent_group` metadata remain supported, but the shipped setup uses the dedicated file
-and `groups` arrays. Do not keep both inline settings and a `configFile` setting in one server registration.
-
-When upgrading an earlier Config Composer settings file, move its fields into the structured layout:
-
-| Earlier field | Current field |
-| --- | --- |
-| `modelPresets` | `agent.modelPresets` |
-| `groups.agents` | `agent.groups` |
-| `promptSources` | `sourceDirectories` |
-| `promptDefaults` | `agent.prompts.defaults` |
-| `agentPrompts` | `agent.prompts.overrides` |
-| Empty `groups.commands` and `groups.skills` | Empty top-level `command` and `skill` objects |
-
-Earlier flat settings files are rejected. Remove the old keys after moving their values.
-Keep `$schema` pointing to `./extensions/config-composer/schema.json`.
+Register one Config Composer server entry and one TUI entry. Keep composition settings in
+`config-composer.jsonc` and agent memberships in ordered `groups` arrays.
+Use the raw GitHub `$schema` URL shown in `config-composer.jsonc`, or the installed package schema path above.
 Preserve customized source mappings and prompt fragments instead of overwriting them.
 
 After installing the updated agent bodies, remove matching shared fragments from their configured prompt layers.

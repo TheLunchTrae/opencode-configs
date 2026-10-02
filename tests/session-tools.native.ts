@@ -38,7 +38,19 @@ for (const custom of [false, true]) {
       await cp(join(dirname(dependencies), 'package-lock.json'), join(configRoot, 'package-lock.json'));
       const tui = JSON.parse(await readFile(join(repo, 'tui.jsonc'), 'utf8')) as { plugin: string[] };
       tui.plugin = tui.plugin.filter((item: string) => item.startsWith('./extensions/'));
+      const composerDirectory = join(configRoot, 'node_modules', '@lunchbox-labs/opencode-config-composer');
+      tui.plugin.push(composerDirectory);
       await writeFile(join(configRoot, 'tui.jsonc'), JSON.stringify(tui));
+      await writeFile(join(configRoot, 'guidance.md'), 'Report review using workflow_status, then answer briefly.');
+      await writeFile(
+        join(configRoot, 'config-composer.jsonc'),
+        JSON.stringify({
+          sourceDirectories: { fixture: '.' },
+          agent: { groups: { workflow: { model: 'fixture/model' } } },
+          command: {},
+          skill: {},
+        }),
+      );
       const bodies: FixtureRequest[] = [];
       const respond = async (request: IncomingMessage, response: ServerResponse) => {
         const chunks: Buffer[] = [];
@@ -114,10 +126,7 @@ for (const custom of [false, true]) {
       await writeFile(
         join(configRoot, 'opencode.jsonc'),
         JSON.stringify({
-          plugin: [
-            './extensions/session-tools/server.ts',
-            ['./extensions/config-composer/server.ts', { groups: { workflow: { model: 'fixture/model' } } }],
-          ],
+          plugin: ['./extensions/session-tools/server.ts', composerDirectory],
           model: 'fixture/model',
           small_model: 'fixture/model',
           default_agent: 'lead',
@@ -135,8 +144,8 @@ for (const custom of [false, true]) {
           agent: {
             lead: {
               mode: 'primary',
-              agent_group: 'workflow',
-              prompt: 'Report review using workflow_status, then answer briefly.',
+              groups: ['workflow'],
+              prompt: '{{include:@fixture/guidance.md}}',
             },
           },
         }),
@@ -231,6 +240,11 @@ for (const custom of [false, true]) {
         return (await response.json()) as T;
       };
       assert.equal((await api<{ config: string }>('/path')).config, join(root, 'config', 'opencode'));
+      const agents =
+        await api<{ name: string; prompt?: string; model?: { providerID: string; modelID: string } }[]>('/agent');
+      const lead = agents.find((agent) => agent.name === 'lead');
+      assert.equal(lead?.prompt, 'Report review using workflow_status, then answer briefly.');
+      assert.deepEqual(lead.model, { providerID: 'fixture', modelID: 'model' });
       const created = await api<{ id: string }>('/session', { title: 'Session tools native fixture' });
       const response = await api<{ info: { error?: unknown } }>(`/session/${created.id}/message`, {
         agent: 'lead',

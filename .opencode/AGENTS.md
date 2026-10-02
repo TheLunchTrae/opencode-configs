@@ -179,15 +179,16 @@ The current plugin uses the V1 `@opencode-ai/plugin` hook API. A V2 port is a se
 V2 also ignores top-level `subagent_depth`; its supported setting is `experimental.subagent_depth`.
 Consult the [migration guide](https://opencode.ai/v2/docs/migrate-v1/) and verify behavior before claiming V2 support.
 
-Config Composer entrypoints are in `extensions/config-composer/`, outside auto-discovery, and explicitly registered in
-the server and TUI configuration files. Keep their runtime metadata out of provider request options.
-Register the server with `configFile: "config-composer.jsonc"`.
+Config Composer entrypoints come from its npm package and are explicitly registered in the server and TUI configuration
+files with the same package specifier. Keep their runtime metadata out of provider request options.
+The server reads `config-composer.jsonc` by default. Preserve explicit `configFile` overrides for custom filenames.
 Relative `sourceDirectories` paths resolve from that file's directory.
-Keep `schema.json` in `extensions/config-composer/` and point the dedicated configuration's `$schema` field to it.
+Use `https://raw.githubusercontent.com/lunchbox-labs/opencode-config-composer/main/schema.json` for `$schema`.
+The URL tracks `main`. The installed package also supplies the `@lunchbox-labs/opencode-config-composer/schema.json` export.
 Keep the schema, dedicated configuration, extension, sources, references, and templated prompts compatible
 during upgrades.
 Preserve customized Config Composer files.
-Legacy inline options remain an upgrade route, not a second registered instance.
+Plugin options accept only `configFile` and the editor's `reloadToken`; composition settings belong in the file.
 Dedicated files use the structured shape.
 Keep agent settings under `agent` and shared source mappings at the top level.
 Reject mixed old and structured file layouts.
@@ -220,7 +221,7 @@ npm run test:native
   It does not validate Markdown, JSONC, or `.opencode/` code.
 - Root dependency manifests are shipped with the local extension. Keep runtime and development dependencies pinned.
   `.opencode/` dependency manifests remain local editor support. The checks require Node 22.18 or newer.
-- Native tests require OpenCode V1 1.18.29 on PATH, or its executable path in `OPENCODE_BIN`.
+- Native tests require OpenCode V1 1.18.34 on PATH, or its executable path in `OPENCODE_BIN`.
   They use temporary configuration and a synthetic local provider, with no real credentials or paid model calls.
   They verify inheritance, provider dispatch, live reload, workflow tool loading, and report persistence after restart.
   They do not render terminal dialogs. Use a native TUI check for JSX loading, command discovery,
@@ -232,6 +233,32 @@ npm run test:native
   when the native runtime is available. A harmless approval check must not use real secrets.
 - Distinguish source checks, mocked tests, native loading, and model-assisted execution in the pull request.
   Do not claim an independent review for a self-review.
+
+### Package validation
+
+Keep the `@lunchbox-labs/opencode-config-composer` dependency and both registrations on the same version.
+Registry installation requires a published version and a lockfile generated from the registry artifact.
+To validate a local package build, pack the intended Composer checkout, then test a disposable consumer installation:
+
+```sh
+COMPOSER_TARBALL=/absolute/path/to/package.tgz npm run test:package
+```
+
+Use Node 22.18 or newer, OpenCode 1.18.34, and Bun for the rendered workflow test.
+Set `OPENCODE_BIN` and `BUN_BIN` if these binaries are not on PATH.
+Set `npm_config_cache` to a writable directory if the default cache is unavailable.
+This procedure does not publish or install anything into live settings.
+
+`test:package` copies the consumer into a temporary directory without Git metadata or existing dependencies.
+Only that fixture receives a `file:` tarball dependency and a generated fixture lockfile.
+It runs installation and a clean install, then removes Composer from module resolution while running all local checks
+and the rendered workflow test. It restores the package for native server tests through OpenCode's plugin loader.
+Native fixtures register the installed package directory to test local builds without a registry lookup.
+Committed configuration uses the selected npm name and pinned version.
+Passing fixtures do not prove registry installation.
+Composer implementation, storage, and native reload tests now belong to the extracted package.
+Consumer inventory tests check authored metadata and source references without loading or reimplementing Composer.
+Native fixtures check plugin composition through OpenCode's API. Local extensions and tests must not import Composer APIs.
 
 ## Markdown and documentation
 

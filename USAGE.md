@@ -134,7 +134,7 @@ Configure groups and presets in `config-composer.jsonc`. The model IDs below are
 
 ```jsonc
 {
-  "$schema": "./extensions/config-composer/schema.json",
+  "$schema": "https://raw.githubusercontent.com/lunchbox-labs/opencode-config-composer/main/schema.json",
   "sourceDirectories": {},
   "agent": {
     "modelPresets": {
@@ -158,17 +158,26 @@ Register Config Composer in `opencode.jsonc`, preserving your other plugin entri
 
 ```jsonc
 "plugin": [
-  ["./extensions/config-composer/server.ts", { "configFile": "config-composer.jsonc" }]
+  "@lunchbox-labs/opencode-config-composer@VERSION"
 ]
 ```
 
-Register `./extensions/config-composer/tui.ts` in the `plugin` array of `tui.jsonc`.
+Replace `VERSION` with the installed package version.
+Register the same `@lunchbox-labs/opencode-config-composer@VERSION` specifier in the `plugin` array of `tui.jsonc`.
 Config Composer settings belong in the dedicated file.
 Native settings and built-in agent overrides stay in `opencode.jsonc`.
 The top-level `agent` object owns agent groups, model presets, and prompt settings.
 Shared source directories remain at the top level. The `command` and `skill` objects are reserved. Leave them empty.
 This version composes agent prompts and agent model defaults, and resolves inline includes during native skill loading.
-The `$schema` field points to the schema installed in `extensions/config-composer/`.
+The default settings filename is `config-composer.jsonc` in the OpenCode configuration directory.
+To select a custom file, replace the server entry with this tuple:
+
+```jsonc
+["@lunchbox-labs/opencode-config-composer@VERSION", { "configFile": "settings/custom.jsonc" }]
+```
+
+Relative `configFile` paths resolve from `OPENCODE_CONFIG_DIR` when set, otherwise the global configuration directory.
+Relative source directories resolve from the selected settings file's directory.
 Group and preset names use lowercase kebab-case, start with a letter, and contain at most 64 characters.
 Use a model and variant supported by your provider. Set the referenced native slots before assigning their references.
 Presets are optional. Updating the plugin alone does not convert existing concrete models into references.
@@ -203,8 +212,6 @@ For a built-in agent, add `"groups": ["reviewers"]` to its entry under `agent` i
 Membership is configuration metadata.
 Config Composer consumes it and removes it from request options before provider dispatch.
 Model references and preset definitions remain Config Composer configuration.
-The legacy `agent_group: reviewers` form remains supported for existing installations.
-Use either `groups` or `agent_group`, not both, for an agent.
 
 With several groups, later entries override earlier model and variant settings. Explicit agent settings apply last.
 An explicit agent `model` takes precedence over the group model and prevents inheritance of the group's variant.
@@ -222,11 +229,13 @@ Models that the native provider cannot resolve remain errors. These checks do no
 
 ### Editing and compatibility
 
-Install `extensions/config-composer/`, `config-composer.jsonc`, and their source files with the server and
-TUI registrations.
-The extension includes `schema.json`. The configuration's `$schema` field uses its relative path.
+Install the Composer package, `config-composer.jsonc`, and its source files with the server and TUI registrations.
+The configuration's `$schema` URL tracks `main` in the package repository.
+To use the installed package version instead, set `$schema` to
+`./node_modules/@lunchbox-labs/opencode-config-composer/schema.json`, relative to the settings file.
+The package also exports `@lunchbox-labs/opencode-config-composer/schema.json` for JavaScript consumers.
 Older plugin versions cannot resolve the shipped prompt directives. Do not update agent prompts or configuration alone.
-Preserve customized Config Composer settings when upgrading. Legacy inline options remain supported for migration.
+Preserve customized Config Composer settings when upgrading. Keep settings in the structured configuration file.
 
 The editor manages this installation's global `opencode.jsonc` or `opencode.json`, its Config Composer settings file,
 and its `agents/` or `agent/` files.
@@ -238,10 +247,9 @@ An installation in a separate `OPENCODE_CONFIG_DIR` can save edits, but needs a 
 JSONC comments, YAML comments, prompt bodies, and unrelated settings are preserved; edited fields can be reformatted.
 An interrupted write can leave `.config-composer.lock`. Remove that lock only after confirming no editor is saving.
 
-The server and TUI entrypoints target OpenCode V1 1.18.29.
-V2 needs a separate port. Install `extensions/config-composer/`, the shared `extensions/tui/` directory,
-and the package manifest.
-Keep these entrypoints outside the automatically discovered `plugins/` directory to avoid loading them twice.
+The server and TUI entrypoints target OpenCode V1 1.18.34.
+V2 needs a separate port. Install the Composer package, the shared `extensions/tui/` directory, and the package manifest.
+Register Composer once in each plugin list. Do not add wrapper files in the automatically discovered `plugins/` directory.
 Live reload records an internal `reloadToken` in the server plugin options so OpenCode invalidates its global cache.
 You do not need to edit that value.
 
@@ -410,16 +418,11 @@ Missing history can leave phase membership, prompts, or model details unavailabl
 
 Choose an agent to compare its server-resolved model and variant, merged workspace default, global file default,
 and last recorded model for that agent in the current session.
-Ordered group membership comes from merged workspace settings.
-When the TUI and server share their configuration filesystem, the inspector also reads saved Config Composer settings.
-It labels saved group choices, source paths, prompt fragment counts, and inheritance opt-outs separately from runtime facts.
-Saved settings can need reload. Their presence does not prove that their prompt layers are active.
-Unavailable saved settings do not block runtime inspection.
-The inspector resolves saved group references and shows their source and variant separately from the agent's model.
-For native references, it also compares the referenced workspace and global slots.
-Invalid references display a resolution error rather than a native fallback label.
+The inspector uses native OpenCode APIs only. It does not read plugin configuration files or interpret plugin options.
+Saved Composer group choices, source paths, prompt fragment counts, and inheritance opt-outs are not shown here.
 A matching model does not establish whether an agent inherited a group default or has an explicit pin.
-Use [agent groups and models](#agent-groups-and-models) to change those settings.
+Use the standalone package's [agent groups and models](#agent-groups-and-models) controls for group and model settings.
+Edit prompt settings in `config-composer.jsonc`; session-tools does not supply a separate Composer settings viewer.
 
 V1 exposes merged settings without exact file provenance. The inspector identifies that limit instead of naming
 an unverified source file. Recorded models describe past turns; they do not predict the next request's model.
@@ -466,8 +469,8 @@ See [continue a long task](#continue-a-long-task) for the lead's checkpoint and 
 ### Enable or disable panels
 
 Install `extensions/session-tools/` and the shared `extensions/tui/` directory.
-Keep the complete `extensions/config-composer/` directory installed, even with the group editor disabled.
-The inspector uses its configuration loader and model-resolution helpers.
+Session-tools has no Composer API dependency and works independently of its plugin registration.
+Keep Composer installed when using prompt composition or its model and group controls.
 The four TUI entries are independent:
 
 | Entry in `tui.jsonc` | Plugin |
@@ -479,7 +482,7 @@ The four TUI entries are independent:
 
 Remove an entry to disable that panel, then restart OpenCode. Keep other plugin entries and the shared helper files.
 `./extensions/session-tools/server.ts` in `opencode.jsonc` supplies `workflow_status` for primary leads.
-Removing it stops new stage reports; the other views remain usable. These plugins target OpenCode V1 1.18.29.
+Removing it stops new stage reports; the other views remain usable. These plugins target OpenCode V1 1.18.34.
 V2 requires a separate port.
 
 ## Run a complete workflow

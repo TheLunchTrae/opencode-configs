@@ -13,7 +13,7 @@ const session = (id: string, parentID?: string): Session => ({
   projectID: 'project',
   directory: '/project',
   title: id,
-  version: '1.18.29',
+  version: '1.18.34',
   time: { created: 0, updated: 100 },
 });
 const row = (id: string, depth = 1): WorkflowRow => ({

@@ -1,8 +1,5 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
 import type { Agent, Config, Session } from '@opencode-ai/sdk/v2';
 import type { PluginInput } from '@opencode-ai/plugin';
 import type { ToolContext } from '@opencode-ai/plugin/tool';
@@ -24,53 +21,8 @@ import {
 import { bookmarkStore } from '../extensions/session-tools/storage.ts';
 import { loadWorkflow } from '../extensions/session-tools/workflow-data.ts';
 import { WorkflowStatusPlugin } from '../extensions/session-tools/server.ts';
-import configPlugin, { savedConfigComposerConfiguration } from '../extensions/session-tools/config.ts';
+import configPlugin from '../extensions/session-tools/config.ts';
 import contextPlugin from '../extensions/session-tools/context.ts';
-
-test('saved Config Composer inspection reads matching local settings and rejects remote filesystem mismatches', async (t) => {
-  const root = await mkdtemp(join(tmpdir(), 'config-composer-inspector-'));
-  t.after(() => rm(root, { recursive: true, force: true }));
-  const local = join(root, 'local');
-  const remote = join(root, 'remote');
-  await mkdir(local);
-  await mkdir(remote);
-  const previous = process.env.OPENCODE_CONFIG_DIR;
-  t.after(() => {
-    if (previous === undefined) {
-      delete process.env.OPENCODE_CONFIG_DIR;
-    } else {
-      process.env.OPENCODE_CONFIG_DIR = previous;
-    }
-  });
-  process.env.OPENCODE_CONFIG_DIR = local;
-  const config: Config = {
-    plugin: [['./extensions/config-composer/server.ts', { configFile: './config-composer.jsonc' }]],
-  };
-  const api = (directory: string) => ({ state: { path: { config: directory } } }) as unknown as TuiPluginApi;
-  await writeFile(
-    join(local, 'config-composer.jsonc'),
-    JSON.stringify({ agent: { groups: { developers: { model: 'fixture/local' } } }, skill: {}, command: {} }),
-  );
-  const saved = await savedConfigComposerConfiguration(api(local), config);
-  assert.equal(saved?.source, join(local, 'config-composer.jsonc'));
-  assert.equal(saved.settings?.groups.developers.model, 'fixture/local');
-  const mismatch = await savedConfigComposerConfiguration(api(remote), config);
-  assert.equal(mismatch?.settings, undefined);
-  assert.equal(mismatch?.source, undefined);
-  assert.match(mismatch?.unavailable ?? '', /filesystems do not match/);
-  await writeFile(join(local, 'config-composer.jsonc'), '{broken');
-  const invalid = await savedConfigComposerConfiguration(api(local), config);
-  assert.equal(invalid?.settings, undefined);
-  assert.match(invalid?.unavailable ?? '', /unavailable/);
-  assert.equal(
-    await savedConfigComposerConfiguration(api(local), {
-      plugin: [['./extensions/config-composer/server.ts', { groups: { developers: { model: 'fixture/legacy' } } }]],
-    }),
-    undefined,
-    'inline settings keep the legacy inspector path',
-  );
-});
-
 const session = (id = 'session-a', parentID?: string): Session => ({
   id,
   parentID,
@@ -78,7 +30,7 @@ const session = (id = 'session-a', parentID?: string): Session => ({
   projectID: 'project-a',
   directory: '/project',
   title: 'Add structured output',
-  version: '1.18.29',
+  version: '1.18.34',
   time: { created: 1, updated: 2 },
 });
 const entry = (time: number, parts: unknown[] = [], info: Record<string, unknown> = {}): Entry =>
@@ -185,7 +137,7 @@ test('context records require actual attachments and completed tool evidence', (
   assert.match(records.find((item) => item.label === 'Automatic compaction requested')!.evidence, /Request recorded/);
 });
 
-test('config inspection separates global, merged, agent, group, and observed settings without exposing secrets', () => {
+test('config inspection separates global, merged, agent, and observed settings without exposing secrets', () => {
   const agent = {
     name: 'reviewer',
     model: { providerID: 'fixture', modelID: 'pinned' },
@@ -195,7 +147,7 @@ test('config inspection separates global, merged, agent, group, and observed set
   const config = {
     model: 'fixture/project',
     provider: { private: { options: { apiKey: 'DO_NOT_DISPLAY' } } },
-    plugin: [['/config/extensions/config-composer/server.ts', { groups: { reviewers: { model: 'fixture/group' } } }]],
+    plugin: [['unrelated-plugin', { configFile: 'unread-private-settings.json', apiKey: 'DO_NOT_DISPLAY' }]],
   } as Config;
   const facts = configFacts(agent, config, { model: 'fixture/global' }, [
     entry(1, [], { agent: 'reviewer', modelID: 'older' }),
@@ -207,9 +159,10 @@ test('config inspection separates global, merged, agent, group, and observed set
   assert.equal(value('Workspace default (merged)'), 'fixture/project');
   assert.equal(value('Global file default'), 'fixture/global');
   assert.equal(value('Last recorded model for this agent'), 'fixture/observed');
-  assert.equal(value('Configured group default'), 'fixture/group');
+  assert.equal(value('Configured group default'), undefined);
+  assert.equal(value('Agent group'), undefined);
   assert.ok(!JSON.stringify(facts).includes('DO_NOT_DISPLAY'));
-  assert.match(facts.find((item) => item.label === 'Group inheritance')!.value, /does not prove/);
+
   assert.match(facts.find((item) => item.label === 'Origin file')!.value, /not exposed/);
   assert.equal(lastAssistant([entry(2), entry(1)])?.id, 'message-2');
 });

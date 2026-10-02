@@ -1,5 +1,5 @@
 {
-  "$schema": "./extensions/config-composer/schema.json",
+  "$schema": "https://raw.githubusercontent.com/lunchbox-labs/opencode-config-composer/main/schema.json",
   "sourceDirectories": {
     "agent-prompts": "./config-composer/agent/prompts"
   },
