@@ -212,8 +212,6 @@ For a built-in agent, add `"groups": ["reviewers"]` to its entry under `agent` i
 Membership is configuration metadata.
 Config Composer consumes it and removes it from request options before provider dispatch.
 Model references and preset definitions remain Config Composer configuration.
-The legacy `agent_group: reviewers` form remains supported for existing installations.
-Use either `groups` or `agent_group`, not both, for an agent.
 
 With several groups, later entries override earlier model and variant settings. Explicit agent settings apply last.
 An explicit agent `model` takes precedence over the group model and prevents inheritance of the group's variant.
@@ -237,7 +235,7 @@ To use the installed package version instead, set `$schema` to
 `./node_modules/@lunchbox/opencode-config-composer/schema.json`, relative to the settings file.
 The package also exports `@lunchbox/opencode-config-composer/schema.json` for JavaScript consumers.
 Older plugin versions cannot resolve the shipped prompt directives. Do not update agent prompts or configuration alone.
-Preserve customized Config Composer settings when upgrading. Legacy inline options remain supported for migration.
+Preserve customized Config Composer settings when upgrading. Keep settings in the structured configuration file.
 
 The editor manages this installation's global `opencode.jsonc` or `opencode.json`, its Config Composer settings file,
 and its `agents/` or `agent/` files.

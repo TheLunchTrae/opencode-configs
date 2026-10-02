@@ -188,7 +188,7 @@ The URL tracks `main`. The installed package also supplies the `@lunchbox/openco
 Keep the schema, dedicated configuration, extension, sources, references, and templated prompts compatible
 during upgrades.
 Preserve customized Config Composer files.
-Legacy inline options remain an upgrade route, not a second registered instance.
+Plugin options accept only `configFile` and the editor's `reloadToken`; composition settings belong in the file.
 Dedicated files use the structured shape.
 Keep agent settings under `agent` and shared source mappings at the top level.
 Reject mixed old and structured file layouts.

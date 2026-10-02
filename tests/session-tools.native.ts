@@ -144,7 +144,7 @@ for (const custom of [false, true]) {
           agent: {
             lead: {
               mode: 'primary',
-              agent_group: 'workflow',
+              groups: ['workflow'],
               prompt: '{{include:@fixture/guidance.md}}',
             },
           },

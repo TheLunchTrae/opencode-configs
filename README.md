@@ -199,33 +199,13 @@ Merge existing dependencies if your installation already has a package manifest.
 Preserve a customized `config-composer.jsonc` and merge the new fields instead of overwriting it.
 Use the same published `@lunchbox/opencode-config-composer@VERSION` in both plugin lists.
 The server reads `config-composer.jsonc` by default. Preserve any explicit `configFile` override for a custom filename.
-Install the matching package dependency before removing the obsolete `extensions/config-composer/` directory.
 Keep `extensions/tui/`; session-tools still uses it. Preserve unrelated extensions and dependencies.
 Custom agents with explicit model pins keep those models. Use **Use group defaults** to opt an agent into inheritance.
 Removing the server plugin also removes group inheritance and prompt composition.
 Resolve include directives, restore shared guidance, and restore explicit models before disabling it.
 
-When upgrading from `extensions/agent-groups/`, replace its server and TUI registrations
-with the Config Composer entries.
-Remove only the obsolete `extensions/agent-groups/` directory after installing its replacement.
-Preserve unrelated extensions. Register only one Config Composer server entry and one Config Composer TUI entry
-to prevent duplicate loads.
-Move inline `modelPresets` into `agent.modelPresets` in `config-composer.jsonc` and old `groups` into `agent.groups`.
-Legacy inline options and `agent_group` metadata remain supported, but the shipped setup uses the dedicated file
-and `groups` arrays. Do not keep both inline settings and a `configFile` setting in one server registration.
-
-When upgrading an earlier Config Composer settings file, move its fields into the structured layout:
-
-| Earlier field | Current field |
-| --- | --- |
-| `modelPresets` | `agent.modelPresets` |
-| `groups.agents` | `agent.groups` |
-| `promptSources` | `sourceDirectories` |
-| `promptDefaults` | `agent.prompts.defaults` |
-| `agentPrompts` | `agent.prompts.overrides` |
-| Empty `groups.commands` and `groups.skills` | Empty top-level `command` and `skill` objects |
-
-Earlier flat settings files are rejected. Remove the old keys after moving their values.
+Register one Config Composer server entry and one TUI entry. Keep composition settings in
+`config-composer.jsonc` and agent memberships in ordered `groups` arrays.
 Use the raw GitHub `$schema` URL shown in `config-composer.jsonc`, or the installed package schema path above.
 Preserve customized source mappings and prompt fragments instead of overwriting them.
 
