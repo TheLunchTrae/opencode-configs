@@ -221,7 +221,7 @@ npm run test:native
   It does not validate Markdown, JSONC, or `.opencode/` code.
 - Root dependency manifests are shipped with the local extension. Keep runtime and development dependencies pinned.
   `.opencode/` dependency manifests remain local editor support. The checks require Node 22.18 or newer.
-- Native tests require OpenCode V1 1.18.29 on PATH, or its executable path in `OPENCODE_BIN`.
+- Native tests require OpenCode V1 1.18.34 on PATH, or its executable path in `OPENCODE_BIN`.
   They use temporary configuration and a synthetic local provider, with no real credentials or paid model calls.
   They verify inheritance, provider dispatch, live reload, workflow tool loading, and report persistence after restart.
   They do not render terminal dialogs. Use a native TUI check for JSX loading, command discovery,
@@ -244,7 +244,7 @@ To validate a local package build, pack the intended Composer checkout, then tes
 COMPOSER_TARBALL=/absolute/path/to/package.tgz npm run test:package
 ```
 
-Use Node 22.18 or newer, OpenCode 1.18.29, and Bun for the rendered workflow test.
+Use Node 22.18 or newer, OpenCode 1.18.34, and Bun for the rendered workflow test.
 Set `OPENCODE_BIN` and `BUN_BIN` if these binaries are not on PATH.
 Set `npm_config_cache` to a writable directory if the default cache is unavailable.
 The package repository requires GitHub access. This procedure does not publish or install anything into live settings.

@@ -15,14 +15,14 @@
   },
   "dependencies": {
     "@lunchbox/opencode-config-composer": "0.0.0",
-    "@opencode-ai/plugin": "1.18.29",
+    "@opencode-ai/plugin": "1.18.34",
     "jsonc-parser": "3.3.1",
     "yaml": "2.9.1"
   },
   "devDependencies": {
     "@eslint-community/eslint-plugin-eslint-comments": "4.7.2",
     "@eslint/js": "10.0.1",
-    "@opencode-ai/sdk": "1.18.29",
+    "@opencode-ai/sdk": "1.18.34",
     "@opentui/core": "0.4.5",
     "@opentui/keymap": "0.4.5",
     "@opentui/solid": "0.4.5",

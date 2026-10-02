@@ -28,7 +28,7 @@ Select a focused lead when you want only planning, approved implementation, or a
 
 ## Setup
 
-1. Install OpenCode V1 1.18.29 or a compatible version with the TUI plugin API. See <https://opencode.ai/docs/>.
+1. Install OpenCode V1 1.18.34 or a compatible version with the TUI plugin API. See <https://opencode.ai/docs/>.
 2. Authenticate your provider through `/connect` when supported.
 3. Back up your existing global configuration directory.
 4. Obtain a checkout or download of this repository.

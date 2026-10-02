@@ -30,7 +30,7 @@ const session = (id = 'session-a', parentID?: string): Session => ({
   projectID: 'project-a',
   directory: '/project',
   title: 'Add structured output',
-  version: '1.18.29',
+  version: '1.18.34',
   time: { created: 1, updated: 2 },
 });
 const entry = (time: number, parts: unknown[] = [], info: Record<string, unknown> = {}): Entry =>

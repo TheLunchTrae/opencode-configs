@@ -37,7 +37,29 @@ try {
   );
   assert.equal(installed.name, '@lunchbox/opencode-config-composer');
   assert.equal(installed.version, '0.0.0');
+  assert.equal(installed.license, 'MIT');
+  assert.match(
+    await readFile(join(consumer, 'node_modules/@lunchbox/opencode-config-composer/LICENSE'), 'utf8'),
+    /^MIT License\n\nCopyright \(c\) 2026 Lunchbox Labs\n/,
+  );
   assert.deepEqual(Object.keys(installed.exports), ['.', './server', './tui']);
+  const cli = spawnSync(process.env.OPENCODE_BIN ?? 'opencode', ['--version'], {
+    encoding: 'utf8',
+    timeout: 30_000,
+    env: {
+      ...process.env,
+      XDG_CONFIG_HOME: join(root, 'config'),
+      XDG_DATA_HOME: join(root, 'data'),
+      XDG_STATE_HOME: join(root, 'state'),
+      XDG_CACHE_HOME: join(root, 'cache'),
+      OPENCODE_TEST_HOME: root,
+      OPENCODE_DB: join(root, 'db.sqlite'),
+      OPENCODE_DISABLE_AUTOUPDATE: '1',
+    },
+  });
+  assert.ifError(cli.error);
+  assert.equal(cli.status, 0, cli.stderr);
+  assert.equal(cli.stdout.trim(), installed.engines.opencode, 'native CLI must match the package host baseline');
   const packageDirectory = join(consumer, 'node_modules', installed.name);
   const unavailablePackage = join(root, 'unavailable-package');
   await rename(packageDirectory, unavailablePackage);

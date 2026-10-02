@@ -249,7 +249,7 @@ An installation in a separate `OPENCODE_CONFIG_DIR` can save edits, but needs a 
 JSONC comments, YAML comments, prompt bodies, and unrelated settings are preserved; edited fields can be reformatted.
 An interrupted write can leave `.config-composer.lock`. Remove that lock only after confirming no editor is saving.
 
-The server and TUI entrypoints target OpenCode V1 1.18.29.
+The server and TUI entrypoints target OpenCode V1 1.18.34.
 V2 needs a separate port. Install the Composer package, the shared `extensions/tui/` directory, and the package manifest.
 Register Composer once in each plugin list. Do not add wrapper files in the automatically discovered `plugins/` directory.
 Live reload records an internal `reloadToken` in the server plugin options so OpenCode invalidates its global cache.
@@ -484,7 +484,7 @@ The four TUI entries are independent:
 
 Remove an entry to disable that panel, then restart OpenCode. Keep other plugin entries and the shared helper files.
 `./extensions/session-tools/server.ts` in `opencode.jsonc` supplies `workflow_status` for primary leads.
-Removing it stops new stage reports; the other views remain usable. These plugins target OpenCode V1 1.18.29.
+Removing it stops new stage reports; the other views remain usable. These plugins target OpenCode V1 1.18.34.
 V2 requires a separate port.
 
 ## Run a complete workflow
