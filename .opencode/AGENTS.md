@@ -181,9 +181,10 @@ Consult the [migration guide](https://opencode.ai/v2/docs/migrate-v1/) and verif
 
 Config Composer entrypoints come from its npm package and are explicitly registered in the server and TUI configuration
 files with the same package specifier. Keep their runtime metadata out of provider request options.
-Register the server with `configFile: "config-composer.jsonc"`.
+The server reads `config-composer.jsonc` by default. Preserve explicit `configFile` overrides for custom filenames.
 Relative `sourceDirectories` paths resolve from that file's directory.
-Point the dedicated configuration's `$schema` field to the installed package's `schema.json` under `node_modules/`.
+Use `https://raw.githubusercontent.com/lunchbox-labs/opencode-config-composer/main/schema.json` for `$schema`.
+The URL tracks `main` and returns 404 until the schema merges. Private repository access can block editor fetching.
 Keep the schema, dedicated configuration, extension, sources, references, and templated prompts compatible
 during upgrades.
 Preserve customized Config Composer files.
@@ -235,27 +236,15 @@ npm run test:native
 
 ### Package validation
 
-The Composer dependency, schema path, and both registrations use the selected npm name
-`opencode-config-composer` and development version `0.0.0`. The package is private and unpublished.
+The Composer dependency and both registrations use the selected npm name
+`@lunchbox/opencode-config-composer` and development version `0.0.0`. The package is unpublished.
 Do not treat the draft lock entry as a released artifact: it deliberately has no registry URL or integrity claim.
 After a release version is approved and published, update these references and regenerate the lockfile
 from the registry. Run all checks again before installing into a live configuration.
-The standalone extraction is in [PR #1](https://github.com/lunchbox-labs/opencode-config-composer/pull/1).
-The [publishing setup PR #2](https://github.com/lunchbox-labs/opencode-config-composer/pull/2)
-is stacked on the extraction. Both prerequisite PRs remain draft and unmerged.
-
-To validate this draft, pack the actual extraction commit, then test a disposable consumer installation:
+To validate this draft, pack the intended Composer checkout, then test a disposable consumer installation:
 
 ```sh
-git clone https://github.com/lunchbox-labs/opencode-config-composer.git /tmp/composer-extraction
-git -C /tmp/composer-extraction checkout ab766ab17f4e164ce5cf428611b583732c9fd116
-(
-  cd /tmp/composer-extraction &&
-  npm ci &&
-  npm run check &&
-  npm pack --pack-destination /tmp
-)
-COMPOSER_TARBALL=/tmp/opencode-config-composer-0.0.0.tgz npm run test:package
+COMPOSER_TARBALL=/absolute/path/to/lunchbox-opencode-config-composer-0.0.0.tgz npm run test:package
 ```
 
 Use Node 22.18 or newer, OpenCode 1.18.29, and Bun for the rendered workflow test.

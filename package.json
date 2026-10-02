@@ -14,9 +14,9 @@
     "check": "npm run typecheck && npm run lint && npm run format:check && npm test"
   },
   "dependencies": {
+    "@lunchbox/opencode-config-composer": "0.0.0",
     "@opencode-ai/plugin": "1.18.29",
     "jsonc-parser": "3.3.1",
-    "opencode-config-composer": "0.0.0",
     "yaml": "2.9.1"
   },
   "devDependencies": {

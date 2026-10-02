@@ -26,15 +26,18 @@ try {
   await cp(resolve(tarball), artifact);
   const manifestPath = join(consumer, 'package.json');
   const manifest = JSON.parse(await readFile(manifestPath, 'utf8'));
-  manifest.dependencies['opencode-config-composer'] = `file:${artifact}`;
+  assert.equal(manifest.dependencies['@lunchbox/opencode-config-composer'], '0.0.0');
+  assert.equal(manifest.dependencies['opencode-config-composer'], undefined);
+  manifest.dependencies['@lunchbox/opencode-config-composer'] = `file:${artifact}`;
   await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
   run('npm', ['install', '--ignore-scripts', '--no-audit', '--no-fund']);
   run('npm', ['ci', '--ignore-scripts', '--no-audit', '--no-fund']);
   const installed = JSON.parse(
-    await readFile(join(consumer, 'node_modules/opencode-config-composer/package.json'), 'utf8'),
+    await readFile(join(consumer, 'node_modules/@lunchbox/opencode-config-composer/package.json'), 'utf8'),
   );
-  assert.equal(installed.name, 'opencode-config-composer');
+  assert.equal(installed.name, '@lunchbox/opencode-config-composer');
   assert.equal(installed.version, '0.0.0');
+  assert.deepEqual(Object.keys(installed.exports), ['.', './server', './tui']);
   const packageDirectory = join(consumer, 'node_modules', installed.name);
   const unavailablePackage = join(root, 'unavailable-package');
   await rename(packageDirectory, unavailablePackage);

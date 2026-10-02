@@ -134,7 +134,7 @@ Configure groups and presets in `config-composer.jsonc`. The model IDs below are
 
 ```jsonc
 {
-  "$schema": "./node_modules/opencode-config-composer/schema.json",
+  "$schema": "https://raw.githubusercontent.com/lunchbox-labs/opencode-config-composer/main/schema.json",
   "sourceDirectories": {},
   "agent": {
     "modelPresets": {
@@ -158,11 +158,11 @@ Register Config Composer in `opencode.jsonc`, preserving your other plugin entri
 
 ```jsonc
 "plugin": [
-  ["opencode-config-composer@0.0.0", { "configFile": "config-composer.jsonc" }]
+  "@lunchbox/opencode-config-composer@0.0.0"
 ]
 ```
 
-Register the same `opencode-config-composer@0.0.0` specifier in the `plugin` array of `tui.jsonc`.
+Register the same `@lunchbox/opencode-config-composer@0.0.0` specifier in the `plugin` array of `tui.jsonc`.
 The npm name is selected. Version `0.0.0` is an unpublished development version.
 Registry installation requires publication and registry lockfile regeneration.
 Config Composer settings belong in the dedicated file.
@@ -170,7 +170,15 @@ Native settings and built-in agent overrides stay in `opencode.jsonc`.
 The top-level `agent` object owns agent groups, model presets, and prompt settings.
 Shared source directories remain at the top level. The `command` and `skill` objects are reserved. Leave them empty.
 This version composes agent prompts and agent model defaults, and resolves inline includes during native skill loading.
-The `$schema` field points to the installed package schema under the configuration directory's `node_modules/`.
+The default settings filename is `config-composer.jsonc` in the OpenCode configuration directory.
+To select a custom file, replace the server entry with this tuple:
+
+```jsonc
+["@lunchbox/opencode-config-composer@0.0.0", { "configFile": "settings/custom.jsonc" }]
+```
+
+Relative `configFile` paths resolve from `OPENCODE_CONFIG_DIR` when set, otherwise the global configuration directory.
+Relative source directories resolve from the selected settings file's directory.
 Group and preset names use lowercase kebab-case, start with a letter, and contain at most 64 characters.
 Use a model and variant supported by your provider. Set the referenced native slots before assigning their references.
 Presets are optional. Updating the plugin alone does not convert existing concrete models into references.
@@ -225,7 +233,10 @@ Models that the native provider cannot resolve remain errors. These checks do no
 ### Editing and compatibility
 
 Install the Composer package, `config-composer.jsonc`, and its source files with the server and TUI registrations.
-The package includes `schema.json`. The configuration's `$schema` field uses the installed file's relative path.
+The configuration's `$schema` URL tracks `main` in the package repository.
+It returns 404 until the schema merges there. The repository is private, so your editor needs authorized access.
+If it cannot fetch the schema, save an authorized copy beside your settings and use `"$schema": "./schema.json"`.
+Browser authentication does not necessarily authorize an editor's schema loader. Schema imports are not package APIs.
 Older plugin versions cannot resolve the shipped prompt directives. Do not update agent prompts or configuration alone.
 Preserve customized Config Composer settings when upgrading. Legacy inline options remain supported for migration.
 
