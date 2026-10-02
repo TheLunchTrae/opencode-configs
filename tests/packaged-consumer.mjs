@@ -26,7 +26,7 @@ try {
   await cp(resolve(tarball), artifact);
   const manifestPath = join(consumer, 'package.json');
   const manifest = JSON.parse(await readFile(manifestPath, 'utf8'));
-  assert.equal(manifest.dependencies['@lunchbox-labs/opencode-config-composer'], '0.0.0');
+  assert.equal(manifest.dependencies['@lunchbox-labs/opencode-config-composer'], '0.0.2');
   assert.equal(manifest.dependencies['opencode-config-composer'], undefined);
   manifest.dependencies['@lunchbox-labs/opencode-config-composer'] = `file:${artifact}`;
   await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
@@ -36,7 +36,7 @@ try {
     await readFile(join(consumer, 'node_modules/@lunchbox-labs/opencode-config-composer/package.json'), 'utf8'),
   );
   assert.equal(installed.name, '@lunchbox-labs/opencode-config-composer');
-  assert.equal(installed.version, '0.0.1');
+  assert.equal(installed.version, '0.0.2');
   assert.equal(installed.license, 'MIT');
   assert.match(
     await readFile(join(consumer, 'node_modules/@lunchbox-labs/opencode-config-composer/LICENSE'), 'utf8'),
