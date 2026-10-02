@@ -5,10 +5,6 @@ shared prompt composition, agent group and model controls, workflow panels, sess
 The default agent is `workflow-lead`. It coordinates complete development tasks.
 Select a focused lead when you want only planning, approved implementation, or assessment of existing work.
 
-**Draft migration: installation requires Config Composer publication and a regenerated registry lockfile.**
-`@lunchbox/opencode-config-composer` is the selected npm name. Version `0.0.0` remains an unpublished development version.
-Do not install this branch into a live configuration yet. See [package validation](.opencode/AGENTS.md#package-validation).
-
 ## Contents
 
 | Path | Purpose |
@@ -21,7 +17,7 @@ Do not install this branch into a live configuration yet. See [package validatio
 | [`references/agent/`](references/agent/) | Conditional guidance that agents read when needed. |
 | [`config-composer/agent/prompts/`](config-composer/agent/prompts/) | Shared fragments for agent and skill bodies. |
 | [`plugins/`](plugins/) | Local plugins, including secret-path checks. |
-| `@lunchbox/opencode-config-composer` (unpublished npm dependency) | Config Composer: shared prompts and group settings. |
+| `@lunchbox/opencode-config-composer` | Config Composer: shared prompts and group settings. |
 | [`extensions/session-tools/`](extensions/session-tools/) | Workflow, config, context, bookmarks, and handoff panels. |
 | [`package.json`](package.json) | Pinned plugin dependencies and maintenance commands. |
 | [`opencode.jsonc`](opencode.jsonc) | Global models, permissions, MCP servers, shell, and plugin settings. |
@@ -43,10 +39,9 @@ Do not install this branch into a live configuration yet. See [package validatio
    Preserve the layout and merge your existing settings.
 
 The global configuration directory is `~/.config/opencode` or `%USERPROFILE%\.config\opencode` on Windows.
-After publication and registry lockfile regeneration, install the pinned dependencies in this directory with `npm ci`.
+Install the pinned dependencies in this directory with `npm ci`.
 The settings schema uses the package repository's raw GitHub URL. Local extensions do not import Composer.
 OpenCode also resolves the matching npm specifier registered in both plugin lists.
-Until publication and registry lockfile regeneration are complete, registry installation remains blocked.
 
 Do not copy credentials, tokens, `node_modules`, `.idea`, or work-project checkpoints.
 The repository's `.opencode/` directory contains maintenance guidance and is not needed for global installation.
@@ -96,8 +91,8 @@ Install the Composer package, `config-composer.jsonc`, `config-composer/`, and `
 Shared source directories are configured at the top level.
 Agent groups, models, and prompt settings belong under `agent`.
 The `$schema` field points to `https://raw.githubusercontent.com/lunchbox-labs/opencode-config-composer/main/schema.json`.
-This URL tracks `main` and returns 404 until the schema merges there. The repository is private.
-Your editor needs authorized access. Browser authentication does not necessarily authorize its schema loader.
+This URL tracks `main`. Your editor needs access to fetch it.
+For access-controlled repositories, browser authentication does not necessarily authorize an editor's schema loader.
 If the editor cannot fetch it, save an authorized copy beside your settings and use `"$schema": "./schema.json"`.
 
 The `config-composer/` directory contains personal prompt fragments, not the plugin implementation.
@@ -205,7 +200,6 @@ Merge existing dependencies if your installation already has a package manifest.
 Preserve a customized `config-composer.jsonc` and merge the new fields instead of overwriting it.
 Use the same published `@lunchbox/opencode-config-composer@VERSION` in both plugin lists.
 The server reads `config-composer.jsonc` by default. Preserve any explicit `configFile` override for a custom filename.
-This draft uses `@lunchbox/opencode-config-composer@0.0.0` in both files. Version `0.0.0` is unpublished.
 Install the matching package dependency before removing the obsolete `extensions/config-composer/` directory.
 Keep `extensions/tui/`; session-tools still uses it. Preserve unrelated extensions and dependencies.
 Custom agents with explicit model pins keep those models. Use **Use group defaults** to opt an agent into inheritance.

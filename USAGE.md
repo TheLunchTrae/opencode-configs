@@ -158,13 +158,12 @@ Register Config Composer in `opencode.jsonc`, preserving your other plugin entri
 
 ```jsonc
 "plugin": [
-  "@lunchbox/opencode-config-composer@0.0.0"
+  "@lunchbox/opencode-config-composer@VERSION"
 ]
 ```
 
-Register the same `@lunchbox/opencode-config-composer@0.0.0` specifier in the `plugin` array of `tui.jsonc`.
-The npm name is selected. Version `0.0.0` is an unpublished development version.
-Registry installation requires publication and registry lockfile regeneration.
+Replace `VERSION` with the installed package version.
+Register the same `@lunchbox/opencode-config-composer@VERSION` specifier in the `plugin` array of `tui.jsonc`.
 Config Composer settings belong in the dedicated file.
 Native settings and built-in agent overrides stay in `opencode.jsonc`.
 The top-level `agent` object owns agent groups, model presets, and prompt settings.
@@ -174,7 +173,7 @@ The default settings filename is `config-composer.jsonc` in the OpenCode configu
 To select a custom file, replace the server entry with this tuple:
 
 ```jsonc
-["@lunchbox/opencode-config-composer@0.0.0", { "configFile": "settings/custom.jsonc" }]
+["@lunchbox/opencode-config-composer@VERSION", { "configFile": "settings/custom.jsonc" }]
 ```
 
 Relative `configFile` paths resolve from `OPENCODE_CONFIG_DIR` when set, otherwise the global configuration directory.
@@ -234,7 +233,7 @@ Models that the native provider cannot resolve remain errors. These checks do no
 
 Install the Composer package, `config-composer.jsonc`, and its source files with the server and TUI registrations.
 The configuration's `$schema` URL tracks `main` in the package repository.
-It returns 404 until the schema merges there. The repository is private, so your editor needs authorized access.
+Your editor needs access to fetch it, including authorization for access-controlled repositories.
 If it cannot fetch the schema, save an authorized copy beside your settings and use `"$schema": "./schema.json"`.
 Browser authentication does not necessarily authorize an editor's schema loader. Schema imports are not package APIs.
 Older plugin versions cannot resolve the shipped prompt directives. Do not update agent prompts or configuration alone.
