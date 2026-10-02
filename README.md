@@ -91,9 +91,8 @@ Install the Composer package, `config-composer.jsonc`, `config-composer/`, and `
 Shared source directories are configured at the top level.
 Agent groups, models, and prompt settings belong under `agent`.
 The `$schema` field points to `https://raw.githubusercontent.com/lunchbox-labs/opencode-config-composer/main/schema.json`.
-This URL tracks `main`. Your editor needs access to fetch it.
-For access-controlled repositories, browser authentication does not necessarily authorize an editor's schema loader.
-If the editor cannot fetch it, save an authorized copy beside your settings and use `"$schema": "./schema.json"`.
+This URL tracks `main`. To use the installed package version instead, set `$schema` to
+`./node_modules/@lunchbox/opencode-config-composer/schema.json`, relative to the settings file.
 
 The `config-composer/` directory contains personal prompt fragments, not the plugin implementation.
 The npm package supplies composition, settings editing, the Composer TUI, and the schema.
@@ -227,7 +226,7 @@ When upgrading an earlier Config Composer settings file, move its fields into th
 | Empty `groups.commands` and `groups.skills` | Empty top-level `command` and `skill` objects |
 
 Earlier flat settings files are rejected. Remove the old keys after moving their values.
-Use the raw GitHub `$schema` URL shown in `config-composer.jsonc`, subject to the editor-access limits above.
+Use the raw GitHub `$schema` URL shown in `config-composer.jsonc`, or the installed package schema path above.
 Preserve customized source mappings and prompt fragments instead of overwriting them.
 
 After installing the updated agent bodies, remove matching shared fragments from their configured prompt layers.

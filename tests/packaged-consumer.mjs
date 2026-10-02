@@ -42,7 +42,13 @@ try {
     await readFile(join(consumer, 'node_modules/@lunchbox/opencode-config-composer/LICENSE'), 'utf8'),
     /^MIT License\n\nCopyright \(c\) 2026 Lunchbox Labs\n/,
   );
-  assert.deepEqual(Object.keys(installed.exports), ['.', './server', './tui']);
+  assert.deepEqual(Object.keys(installed.exports), ['.', './server', './tui', './schema.json']);
+  assert.equal(installed.exports['./schema.json'], './schema.json');
+  const schema = JSON.parse(
+    await readFile(join(consumer, 'node_modules/@lunchbox/opencode-config-composer/schema.json'), 'utf8'),
+  );
+  assert.equal(schema.type, 'object');
+  assert.ok(schema.properties.agent);
   const cli = spawnSync(process.env.OPENCODE_BIN ?? 'opencode', ['--version'], {
     encoding: 'utf8',
     timeout: 30_000,

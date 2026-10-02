@@ -233,9 +233,9 @@ Models that the native provider cannot resolve remain errors. These checks do no
 
 Install the Composer package, `config-composer.jsonc`, and its source files with the server and TUI registrations.
 The configuration's `$schema` URL tracks `main` in the package repository.
-Your editor needs access to fetch it, including authorization for access-controlled repositories.
-If it cannot fetch the schema, save an authorized copy beside your settings and use `"$schema": "./schema.json"`.
-Browser authentication does not necessarily authorize an editor's schema loader. Schema imports are not package APIs.
+To use the installed package version instead, set `$schema` to
+`./node_modules/@lunchbox/opencode-config-composer/schema.json`, relative to the settings file.
+The package also exports `@lunchbox/opencode-config-composer/schema.json` for JavaScript consumers.
 Older plugin versions cannot resolve the shipped prompt directives. Do not update agent prompts or configuration alone.
 Preserve customized Config Composer settings when upgrading. Legacy inline options remain supported for migration.
 

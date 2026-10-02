@@ -184,7 +184,7 @@ files with the same package specifier. Keep their runtime metadata out of provid
 The server reads `config-composer.jsonc` by default. Preserve explicit `configFile` overrides for custom filenames.
 Relative `sourceDirectories` paths resolve from that file's directory.
 Use `https://raw.githubusercontent.com/lunchbox-labs/opencode-config-composer/main/schema.json` for `$schema`.
-The URL tracks `main`. Access-controlled repositories require editor authorization to fetch the schema.
+The URL tracks `main`. The installed package also supplies the `@lunchbox/opencode-config-composer/schema.json` export.
 Keep the schema, dedicated configuration, extension, sources, references, and templated prompts compatible
 during upgrades.
 Preserve customized Config Composer files.
@@ -247,7 +247,7 @@ COMPOSER_TARBALL=/absolute/path/to/package.tgz npm run test:package
 Use Node 22.18 or newer, OpenCode 1.18.34, and Bun for the rendered workflow test.
 Set `OPENCODE_BIN` and `BUN_BIN` if these binaries are not on PATH.
 Set `npm_config_cache` to a writable directory if the default cache is unavailable.
-The package repository requires GitHub access. This procedure does not publish or install anything into live settings.
+This procedure does not publish or install anything into live settings.
 
 `test:package` copies the consumer into a temporary directory without Git metadata or existing dependencies.
 Only that fixture receives a `file:` tarball dependency and a generated fixture lockfile.
