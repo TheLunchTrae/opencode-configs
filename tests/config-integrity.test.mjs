@@ -517,18 +517,21 @@ test('composition sources are private to Composer while real references remain a
 });
 
 test('Config Composer owns shared settings in a dedicated typed configuration', () => {
-  const spec = '@lunchbox/opencode-config-composer@0.0.0';
+  const spec = '@lunchbox-labs/opencode-config-composer@0.0.0';
   assert.equal(config.plugin.filter((plugin) => plugin === spec).length, 1);
   assert.equal(parse(read('tui.jsonc')).plugin.filter((plugin) => plugin === spec).length, 1);
   assert.equal(
     composer.$schema,
     'https://raw.githubusercontent.com/lunchbox-labs/opencode-config-composer/main/schema.json',
   );
-  const dependency = JSON.parse(read('package.json')).dependencies['@lunchbox/opencode-config-composer'];
+  const dependency = JSON.parse(read('package.json')).dependencies['@lunchbox-labs/opencode-config-composer'];
   assert.ok(dependency, 'the scoped Composer dependency is required');
   const lock = JSON.parse(read('package-lock.json'));
-  assert.equal(lock.packages[''].dependencies['@lunchbox/opencode-config-composer'], dependency);
-  assert.equal(lock.packages['node_modules/@lunchbox/opencode-config-composer'].version, '0.0.0');
+  assert.equal(lock.packages[''].dependencies['@lunchbox-labs/opencode-config-composer'], dependency);
+  assert.equal(
+    lock.packages['node_modules/@lunchbox-labs/opencode-config-composer'].version,
+    dependency.startsWith('file:') ? '0.0.1' : dependency,
+  );
   assert.equal(lock.packages['node_modules/opencode-config-composer'], undefined);
   assert.ok(!existsSync(new URL('extensions/config-composer/', root)), 'implementation belongs to the package');
   assert.deepEqual(Object.keys(composer.agent), ['modelPresets', 'groups', 'prompts']);

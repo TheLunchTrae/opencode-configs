@@ -17,7 +17,7 @@ Select a focused lead when you want only planning, approved implementation, or a
 | [`references/agent/`](references/agent/) | Conditional guidance that agents read when needed. |
 | [`config-composer/agent/prompts/`](config-composer/agent/prompts/) | Shared fragments for agent and skill bodies. |
 | [`plugins/`](plugins/) | Local plugins, including secret-path checks. |
-| `@lunchbox/opencode-config-composer` | Config Composer: shared prompts and group settings. |
+| `@lunchbox-labs/opencode-config-composer` | Config Composer: shared prompts and group settings. |
 | [`extensions/session-tools/`](extensions/session-tools/) | Workflow, config, context, bookmarks, and handoff panels. |
 | [`package.json`](package.json) | Pinned plugin dependencies and maintenance commands. |
 | [`opencode.jsonc`](opencode.jsonc) | Global models, permissions, MCP servers, shell, and plugin settings. |
@@ -92,7 +92,7 @@ Shared source directories are configured at the top level.
 Agent groups, models, and prompt settings belong under `agent`.
 The `$schema` field points to `https://raw.githubusercontent.com/lunchbox-labs/opencode-config-composer/main/schema.json`.
 This URL tracks `main`. To use the installed package version instead, set `$schema` to
-`./node_modules/@lunchbox/opencode-config-composer/schema.json`, relative to the settings file.
+`./node_modules/@lunchbox-labs/opencode-config-composer/schema.json`, relative to the settings file.
 
 The `config-composer/` directory contains personal prompt fragments, not the plugin implementation.
 The npm package supplies composition, settings editing, the Composer TUI, and the schema.
@@ -197,7 +197,7 @@ together, preserving local overrides and license notices.
 Install `extensions/`, `package.json`, and `package-lock.json` with the configuration files when adding Config Composer.
 Merge existing dependencies if your installation already has a package manifest.
 Preserve a customized `config-composer.jsonc` and merge the new fields instead of overwriting it.
-Use the same published `@lunchbox/opencode-config-composer@VERSION` in both plugin lists.
+Use the same published `@lunchbox-labs/opencode-config-composer@VERSION` in both plugin lists.
 The server reads `config-composer.jsonc` by default. Preserve any explicit `configFile` override for a custom filename.
 Keep `extensions/tui/`; session-tools still uses it. Preserve unrelated extensions and dependencies.
 Custom agents with explicit model pins keep those models. Use **Use group defaults** to opt an agent into inheritance.

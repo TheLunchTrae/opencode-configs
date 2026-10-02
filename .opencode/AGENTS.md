@@ -184,7 +184,7 @@ files with the same package specifier. Keep their runtime metadata out of provid
 The server reads `config-composer.jsonc` by default. Preserve explicit `configFile` overrides for custom filenames.
 Relative `sourceDirectories` paths resolve from that file's directory.
 Use `https://raw.githubusercontent.com/lunchbox-labs/opencode-config-composer/main/schema.json` for `$schema`.
-The URL tracks `main`. The installed package also supplies the `@lunchbox/opencode-config-composer/schema.json` export.
+The URL tracks `main`. The installed package also supplies the `@lunchbox-labs/opencode-config-composer/schema.json` export.
 Keep the schema, dedicated configuration, extension, sources, references, and templated prompts compatible
 during upgrades.
 Preserve customized Config Composer files.
@@ -236,7 +236,7 @@ npm run test:native
 
 ### Package validation
 
-Keep the `@lunchbox/opencode-config-composer` dependency and both registrations on the same version.
+Keep the `@lunchbox-labs/opencode-config-composer` dependency and both registrations on the same version.
 Registry installation requires a published version and a lockfile generated from the registry artifact.
 To validate a local package build, pack the intended Composer checkout, then test a disposable consumer installation:
 

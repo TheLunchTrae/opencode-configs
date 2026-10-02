@@ -158,12 +158,12 @@ Register Config Composer in `opencode.jsonc`, preserving your other plugin entri
 
 ```jsonc
 "plugin": [
-  "@lunchbox/opencode-config-composer@VERSION"
+  "@lunchbox-labs/opencode-config-composer@VERSION"
 ]
 ```
 
 Replace `VERSION` with the installed package version.
-Register the same `@lunchbox/opencode-config-composer@VERSION` specifier in the `plugin` array of `tui.jsonc`.
+Register the same `@lunchbox-labs/opencode-config-composer@VERSION` specifier in the `plugin` array of `tui.jsonc`.
 Config Composer settings belong in the dedicated file.
 Native settings and built-in agent overrides stay in `opencode.jsonc`.
 The top-level `agent` object owns agent groups, model presets, and prompt settings.
@@ -173,7 +173,7 @@ The default settings filename is `config-composer.jsonc` in the OpenCode configu
 To select a custom file, replace the server entry with this tuple:
 
 ```jsonc
-["@lunchbox/opencode-config-composer@VERSION", { "configFile": "settings/custom.jsonc" }]
+["@lunchbox-labs/opencode-config-composer@VERSION", { "configFile": "settings/custom.jsonc" }]
 ```
 
 Relative `configFile` paths resolve from `OPENCODE_CONFIG_DIR` when set, otherwise the global configuration directory.
@@ -232,8 +232,8 @@ Models that the native provider cannot resolve remain errors. These checks do no
 Install the Composer package, `config-composer.jsonc`, and its source files with the server and TUI registrations.
 The configuration's `$schema` URL tracks `main` in the package repository.
 To use the installed package version instead, set `$schema` to
-`./node_modules/@lunchbox/opencode-config-composer/schema.json`, relative to the settings file.
-The package also exports `@lunchbox/opencode-config-composer/schema.json` for JavaScript consumers.
+`./node_modules/@lunchbox-labs/opencode-config-composer/schema.json`, relative to the settings file.
+The package also exports `@lunchbox-labs/opencode-config-composer/schema.json` for JavaScript consumers.
 Older plugin versions cannot resolve the shipped prompt directives. Do not update agent prompts or configuration alone.
 Preserve customized Config Composer settings when upgrading. Keep settings in the structured configuration file.
 

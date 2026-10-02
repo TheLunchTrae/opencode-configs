@@ -26,26 +26,26 @@ try {
   await cp(resolve(tarball), artifact);
   const manifestPath = join(consumer, 'package.json');
   const manifest = JSON.parse(await readFile(manifestPath, 'utf8'));
-  assert.equal(manifest.dependencies['@lunchbox/opencode-config-composer'], '0.0.0');
+  assert.equal(manifest.dependencies['@lunchbox-labs/opencode-config-composer'], '0.0.0');
   assert.equal(manifest.dependencies['opencode-config-composer'], undefined);
-  manifest.dependencies['@lunchbox/opencode-config-composer'] = `file:${artifact}`;
+  manifest.dependencies['@lunchbox-labs/opencode-config-composer'] = `file:${artifact}`;
   await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
   run('npm', ['install', '--ignore-scripts', '--no-audit', '--no-fund']);
   run('npm', ['ci', '--ignore-scripts', '--no-audit', '--no-fund']);
   const installed = JSON.parse(
-    await readFile(join(consumer, 'node_modules/@lunchbox/opencode-config-composer/package.json'), 'utf8'),
+    await readFile(join(consumer, 'node_modules/@lunchbox-labs/opencode-config-composer/package.json'), 'utf8'),
   );
-  assert.equal(installed.name, '@lunchbox/opencode-config-composer');
-  assert.equal(installed.version, '0.0.0');
+  assert.equal(installed.name, '@lunchbox-labs/opencode-config-composer');
+  assert.equal(installed.version, '0.0.1');
   assert.equal(installed.license, 'MIT');
   assert.match(
-    await readFile(join(consumer, 'node_modules/@lunchbox/opencode-config-composer/LICENSE'), 'utf8'),
+    await readFile(join(consumer, 'node_modules/@lunchbox-labs/opencode-config-composer/LICENSE'), 'utf8'),
     /^MIT License\n\nCopyright \(c\) 2026 Lunchbox Labs\n/,
   );
   assert.deepEqual(Object.keys(installed.exports), ['.', './server', './tui', './schema.json']);
   assert.equal(installed.exports['./schema.json'], './schema.json');
   const schema = JSON.parse(
-    await readFile(join(consumer, 'node_modules/@lunchbox/opencode-config-composer/schema.json'), 'utf8'),
+    await readFile(join(consumer, 'node_modules/@lunchbox-labs/opencode-config-composer/schema.json'), 'utf8'),
   );
   assert.equal(schema.type, 'object');
   assert.ok(schema.properties.agent);

@@ -38,7 +38,7 @@ for (const custom of [false, true]) {
       await cp(join(dirname(dependencies), 'package-lock.json'), join(configRoot, 'package-lock.json'));
       const tui = JSON.parse(await readFile(join(repo, 'tui.jsonc'), 'utf8')) as { plugin: string[] };
       tui.plugin = tui.plugin.filter((item: string) => item.startsWith('./extensions/'));
-      const composerDirectory = join(configRoot, 'node_modules', '@lunchbox/opencode-config-composer');
+      const composerDirectory = join(configRoot, 'node_modules', '@lunchbox-labs/opencode-config-composer');
       tui.plugin.push(composerDirectory);
       await writeFile(join(configRoot, 'tui.jsonc'), JSON.stringify(tui));
       await writeFile(join(configRoot, 'guidance.md'), 'Report review using workflow_status, then answer briefly.');

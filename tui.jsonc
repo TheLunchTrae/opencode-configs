@@ -3,7 +3,7 @@
   "theme": "pink",
   "plugin": [
     "@slkiser/opencode-quota@4.9.0",
-    "@lunchbox/opencode-config-composer@0.0.0",
+    "@lunchbox-labs/opencode-config-composer@0.0.0",
     "./extensions/session-tools/workflow.tsx",
     "./extensions/session-tools/config.ts",
     "./extensions/session-tools/context.ts",
