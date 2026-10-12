@@ -60,17 +60,17 @@ Check the installed version against the [V1 documentation](https://opencode.ai/d
 - Apply root `AGENTS.md`'s Instruction Authoring rules to runtime prompts. Compare obligations before and after edits,
   including conditional reads and standalone consumers. Keep behavioral changes explicit and separately reviewable.
 - The active lead owns its stage, coordination, approval handling, and user-visible conclusions.
-  [The lead contract](../config-composer/agent/prompts/lead-contract.md) supplies lead coordination and
+  [The lead contract](../prompts/lead-contract.md) supplies lead coordination and
   approval procedures.
   [Planner](../agents/planner.md) owns planning procedure. Each specialist owns its scope and stopping conditions.
 - Composition fragments belong in `config-composer/agent/prompts/`.
   Map the `agent-prompts` entry in `sourceDirectories` to that directory in `config-composer.jsonc`.
   Keep `agent-prompts` a Composer source alias. Use it in include directives and configured prompt fragments.
   Keep conditional guidance in `references/agent/`, registered as the hidden native `agent-references` reference.
-  Use full include paths such as `{{include:@agent-prompts/reviewer-standards.md}}`.
+  Use full include paths such as `{{include:reviewer-standards.md}}`.
   Verify every included or referenced file exists.
 - Hidden affects interactive visibility. It does not remove agent context or grant tool permissions.
-- Config Composer resolves explicit `{{include:@agent-prompts/reviewer-standards.md}}` directives
+- Config Composer resolves explicit `{{include:reviewer-standards.md}}` directives
   and prepend/append fragments when agent configuration loads. It also expands includes during native skill loading.
   Native `@agent-references` reads remain task-specific instructions. Preserve their conditions.
   Agent group prompt content follows the listed `groups` order. Keep model and prompt precedence deterministic.
