@@ -31,8 +31,8 @@ Report unsafe or unavailable required measurement as blocked, with a proposed in
 Use common task-status rules; a measurement-plan assignment can be complete without execution.
 Preserve original benchmark evidence. Do not delete user work or alter the acceptance target to hide a regression.
 
-{{include:@agent-prompts/response-formats/common.md}}
+{{include:response-formats/common.md}}
 
-{{include:@agent-prompts/response-formats/performance.md}}
+{{include:response-formats/performance.md}}
 
-{{include:@agent-prompts/response-formats/research.md}}
+{{include:response-formats/research.md}}

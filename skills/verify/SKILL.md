@@ -54,6 +54,6 @@ For delegated verification, use the supplied Common task response envelope and R
 Include these check statuses in evidence. The supplied response sections apply only to delegated verification.
 Task status describes assignment completion, not passing checks.
 
-{{include:@agent-prompts/response-formats/common.md}}
+{{include:response-formats/common.md}}
 
-{{include:@agent-prompts/response-formats/research.md}}
+{{include:response-formats/research.md}}

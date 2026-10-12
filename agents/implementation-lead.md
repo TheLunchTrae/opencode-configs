@@ -39,13 +39,13 @@ Execute an existing reviewed, approved plan. Integrate implementation, documenta
 reviews, and verification
 within that scope. Do not expand into requirements discovery or new design.
 
-{{include:@agent-prompts/lead-contract.md}}
+{{include:lead-contract.md}}
 
-{{include:@agent-prompts/review-target.md}}
+{{include:review-target.md}}
 
-{{include:@agent-prompts/review-criteria.md}}
+{{include:review-criteria.md}}
 
-{{include:@agent-prompts/implementation-stage.md}}
+{{include:implementation-stage.md}}
 Apply the supplied Review stage and read `@agent-references/completion.md` when collecting final evidence.
 
 ## Confirm execution readiness
@@ -77,8 +77,8 @@ Apply the following design requirements only to obtain missing or refresh stale 
 Return material redesign to planning. Apply the Review stage when collecting implementation reviews and final evidence.
 These procedures do not expand the approved implementation scope or authorize a new design.
 
-{{include:@agent-prompts/design-review.md}}
+{{include:design-review.md}}
 
-{{include:@agent-prompts/review-stage.md}}
+{{include:review-stage.md}}
 
-{{include:@agent-prompts/response-formats/delegated.md}}
+{{include:response-formats/delegated.md}}

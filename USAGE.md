@@ -7,7 +7,7 @@ The default `workflow-lead` coordinates a complete development task. Focused lea
 
 - [Choose a lead](#choose-a-lead): select the scope and stopping point.
 - [Agent groups and models](#agent-groups-and-models): change models, defaults, and group membership in the TUI.
-- [Shared prompt composition](#shared-prompt-composition): include guidance and apply defaults through Config Composer.
+- [Shared prompt composition](#shared-prompt-composition): include guidance and inspect it through Prompt Composer.
 - [Session tools](#session-tools): inspect workflow, configuration, and context; bookmark decisions and draft handoffs.
 - [Run a complete workflow](#run-a-complete-workflow): start once, resolve questions, and approve the plan.
 - [Move between focused stages](#move-between-focused-stages): reuse reviewed plans, approvals, and evidence.
@@ -42,7 +42,7 @@ The planning lead cannot edit files or run shell commands. The review lead canno
 checks with ordinary tool approvals. Checks can produce normal build artifacts; verification does not apply repairs.
 Neither lead can delegate to writing agents. Configured permissions still apply to every task.
 
-Specialists use [canonical response formats](config-composer/agent/prompts/response-formats/catalog.md)
+Specialists use [canonical response formats](prompts/response-formats/catalog.md)
 for bounded tasks.
 Each response separates task completion, the result, evidence, and unresolved items. A completed task can still report
 failed checks or blocking findings. The selected lead validates the evidence and handles follow-up under its own scope.
@@ -50,320 +50,123 @@ Specialists receive task inputs and constraints without needing the lead's ident
 
 ## Agent groups and models
 
-Open the command palette and look under **Config**, or run `/agent-models` and `/agent-groups`.
-These are local settings controls. They do not send a prompt to an agent.
-Choose **← Back** or press Escape to return one menu. Escape closes the panel at its first menu.
-Canceling a prompt or confirmation returns to its parent without saving.
-The model picker reads the running server's provider catalog, including custom provider models and supported variants.
-Connect providers with `/connect` first. Models and affected variants are checked again before saving.
+Use `/compose-configs` to select profiles, inspect effective settings, and apply saved changes when the instance is idle.
+Use `/agent-models` and `/agent-groups` for focused edits. These controls do not send model requests.
+The editor checks choices against the running provider catalog. Catalog presence does not establish account entitlement.
+Connect an available provider with `/connect`; preserve your existing authentication setup.
 
-| Scope in `/agent-models` | Effect |
-| --- | --- |
-| Global defaults | Change the main or small model, including groups that reference that setting. |
-| Model presets | Create or edit a shared model and variant. Delete a preset only after reassigning its groups. |
-| All defaults | Set main, small, all presets, and group defaults. Preserve references and explicit agent models. |
-| A group name | Choose a concrete model, native reference, preset, or native fallback. |
-| Individual agent overrides | Select an agent to set a model exception, clear its override, or change its groups. |
+### Shipped profiles
 
-Use `/agent-groups` to create groups, select their defaults, and change agent membership.
-The list combines names in `config-composer.jsonc`'s `agent.groups` with `groups` values found in agent files.
-New groups appear without a code change. Empty configured groups remain available.
-Agents without a group appear under **Ungrouped**. Disabled agents are excluded.
-Agents can list several groups in their frontmatter. Their order controls model and prompt precedence.
-Changing membership preserves explicit model and variant settings.
-The membership editor lets you add or remove groups, move them earlier or later, or clear the list.
-Pending changes show the effective model source. Choose **Save** to review and confirm the change.
-Choose **Use group defaults** to clear those overrides and use the listed groups' settings.
-Configured group prompt fragments also apply after membership changes. Review their content before changing membership.
-Grouping does not change permissions, delegation routes, or agent colors.
+The default `current` profile preserves the existing allocation, global models, explicit pins, and permissions.
+The optional profiles change task-agent models only:
 
-Review the scope and retained-override count before saving. Saved changes can be applied with **Reload now**,
-or left until the next restart. Reload affects every workspace on the same OpenCode server.
-Wait for all of their agents to finish first. The editor checks running agents in the current workspace;
-it cannot check activity in every other workspace. An existing session model selection can still take precedence.
-Use OpenCode's `/models` command when you also want to change the current session's selected model.
+| Preset role | `openai-latest` | `anthropic-latest` | Variant |
+| --- | --- | --- | --- |
+| Orchestration, planning, review | `openai/gpt-6-astra` | `anthropic/claude-opus-5-5` | `high` |
+| Development and refactoring | `openai/gpt-6.1-sol` | `anthropic/claude-sonnet-5-5` | `medium` |
+| Documentation and research | `openai/gpt-6-luna` | `anthropic/claude-haiku-5-5` | `medium` |
 
-### Choose a model source
+The four existing stronger-model exceptions use the reasoning preset in each optional profile.
+Their native pins remain intact and return when `current` is selected or profiles are cleared.
+Background agents, `small_model`, and the global `model` remain on their existing OpenAI settings in every shipped profile.
+The Anthropic profile therefore still requires OpenAI access for background calls.
+No profile changes accounts, credentials, permissions, prompt content, or service tier.
 
-A group's model source is separate from its membership. Several groups can share one preset without merging their agents.
+OpenCode supplies each selected variant's provider-specific reasoning options.
+The configuration does not duplicate those transforms or add sampling controls unsupported by these reasoning models.
+See [OpenCode variants](https://opencode.ai/docs/models/#variants),
+[OpenAI models](https://developers.openai.com/api/docs/models), and
+[Anthropic models](https://platform.claude.com/docs/en/models/overview).
 
-| Choice | Stored group setting | Behavior |
-| --- | --- | --- |
-| OpenCode fallback | `{}` | Leave selection to OpenCode's normal global or parent-model fallback. |
-| Main default | `"modelRef": "opencode:model"` | Follow the effective workspace `model` setting. |
-| Small default | `"modelRef": "opencode:small_model"` | Follow the effective workspace `small_model` setting. |
-| Named preset | `"modelRef": "preset:balanced"` | Follow the concrete model and optional variant in that preset. |
-| Specific model | `"model": "provider/model-id"` | Set a concrete model for this group. |
+The preserved allocation still includes `openai/gpt-5.6-sol`, `openai/gpt-5.6-terra`, and `openai/gpt-5.6-luna`.
+Check their availability in your authenticated catalog before use. They are retained deliberately, not silently replaced.
+Select an optional profile only after reviewing availability and cost. It is not made the global default.
 
-The native main and small settings are distinct slots, not an ordered capability hierarchy.
-OpenCode fallback does not specifically select either slot. An explicit reference requires that slot to contain a model.
-An unset referenced slot is an error, not a request to select an arbitrary fallback model.
+### Selection and retention
 
-Native references use the merged workspace configuration, including project overrides.
-They do not always use the literal model in the global file. See [OpenCode configuration](https://opencode.ai/docs/config/).
-Changing a global slot does not affect a group with a concrete model or a preset reference.
-Explicit agent models remain independent of their group's source.
+Select one shipped profile, or use its shortcut. The `roles` profile supplies shared membership for the other profiles;
+it is not a complete model allocation by itself. Multiple selections replay from left to right.
 
-The editor shows the reference and its resolved model, such as `preset:balanced → provider/model-id (medium)`.
-For native references, it labels differences between the running workspace and the saved global file.
-A difference can reflect an override or a saved change awaiting reload; it does not establish exact file provenance.
-References are resolved again when configuration is reloaded or OpenCode restarts, not continuously during a request.
+`selection.defaultProfiles` is `["current"]`, and `selection.retainOnRestart` is `true`.
+Saved selections are independent per project and persist across server restarts.
+Sessions in the same project share the applied configuration.
+Use **Use configured defaults** to remove a saved selection. Use **Select no profiles** for native settings only.
+The latter also removes the shipped group model contributions, including the background group default.
 
-### Shipped model sources
-
-The bundled [Config Composer configuration](config-composer.jsonc) uses main-model references and two presets,
-`balanced` and `lightweight`.
-Its `agent.groups` object defines agent group defaults. Explicit agent exceptions remain in the agent configuration.
-Main-model groups retain their `high` variant. Preset-linked groups inherit the variant stored in their preset.
-
-In `/agent-models`, use **Global defaults → Main model** to change the main slot.
-Use **Model presets → balanced** or **Model presets → lightweight** to change those shared choices.
-Review the affected groups and retained pins before saving. Apply the change through an explicit reload or restart.
-
-The `system` group uses `lightweight`, not the native small-model slot.
-The `title` agent retains its explicit model and `low` variant, independently of both its group and `small_model`.
-Changing the small-model slot alone does not change these defaults.
-
-**Upgrade warning:** Adopting the bundled references makes main-model groups follow effective workspace overrides.
-Their group-level variants still apply and must be supported by the selected model.
-Back up and merge local settings before adopting the shipped configuration. Preserve deliberate agent exceptions.
-
-### Configure group defaults and presets
-
-Configure groups and presets in `config-composer.jsonc`. The model IDs below are placeholders:
+For a work project's default, add `.opencode/config-composer.jsonc`:
 
 ```jsonc
 {
-  "$schema": "https://raw.githubusercontent.com/lunchbox-labs/opencode-config-composer/main/schema.json",
-  "sourceDirectories": {},
-  "agent": {
-    "modelPresets": {
-      "balanced": { "model": "provider/model-id", "variant": "medium" }
-    },
-    "groups": {
-      "developers": { "modelRef": "preset:balanced" },
-      "refactoring": { "modelRef": "preset:balanced" },
-      "reviewers": { "modelRef": "opencode:model", "variant": "high" },
-      "utility": { "modelRef": "opencode:small_model" },
-      "research": { "model": "provider/another-model-id" },
-      "fallback": {}
-    }
-  },
-  "command": {},
-  "skill": {}
-}
-```
-
-Register Config Composer in `opencode.jsonc`, preserving your other plugin entries:
-
-```jsonc
-"plugin": [
-  "@lunchbox-labs/opencode-config-composer@VERSION"
-]
-```
-
-Replace `VERSION` with the installed package version.
-Register the same `@lunchbox-labs/opencode-config-composer@VERSION` specifier in the `plugin` array of `tui.jsonc`.
-Config Composer settings belong in the dedicated file.
-Native settings and built-in agent overrides stay in `opencode.jsonc`.
-The top-level `agent` object owns agent groups, model presets, and prompt settings.
-Shared source directories remain at the top level. The `command` and `skill` objects are reserved. Leave them empty.
-This version composes agent prompts and agent model defaults, and resolves inline includes during native skill loading.
-The default settings filename is `config-composer.jsonc` in the OpenCode configuration directory.
-To select a custom file, replace the server entry with this tuple:
-
-```jsonc
-["@lunchbox-labs/opencode-config-composer@VERSION", { "configFile": "settings/custom.jsonc" }]
-```
-
-Relative `configFile` paths resolve from `OPENCODE_CONFIG_DIR` when set, otherwise the global configuration directory.
-Relative source directories resolve from the selected settings file's directory.
-Group and preset names use lowercase kebab-case, start with a letter, and contain at most 64 characters.
-Use a model and variant supported by your provider. Set the referenced native slots before assigning their references.
-Presets are optional. Updating the plugin alone does not convert existing concrete models into references.
-The bundled configuration already uses references; merge those settings explicitly when upgrading an installation.
-
-A group accepts either `model` or `modelRef`, never both. A preset accepts only a concrete `model` and optional `variant`.
-Presets cannot reference other presets or native defaults. Groups cannot reference other groups.
-Missing presets and invalid references are rejected rather than silently ignored.
-
-Use **Model presets** in `/agent-models` to create a preset or change its model and variant.
-Then select that preset as the model source for each intended group.
-The editor stores each reference, not a copy of the selected model. Editing the preset updates its linked defaults
-at the next reload or restart. Delete a preset only after reassigning every group that references it, including empty groups.
-
-**All defaults** changes the main model, small model, every preset including unused presets, and every group default.
-It retains existing references rather than converting them to concrete models. It replaces group variants with the selected
-variant and preserves explicit agent overrides. Review this broader scope before confirming a bulk change.
-
-Assign a custom agent in its Markdown frontmatter:
-
-```yaml
----
-description: Review implementation changes.
-mode: subagent
-groups:
-  - reviewers
----
-Review the assigned changes.
-```
-
-For a built-in agent, add `"groups": ["reviewers"]` to its entry under `agent` in `opencode.jsonc`.
-Membership is configuration metadata.
-Config Composer consumes it and removes it from request options before provider dispatch.
-Model references and preset definitions remain Config Composer configuration.
-
-With several groups, later entries override earlier model and variant settings. Explicit agent settings apply last.
-An explicit agent `model` takes precedence over the group model and prevents inheritance of the group's variant.
-Without an explicit agent model, variant precedence is the agent's variant, the group's variant, then the preset's variant.
-Omit a group's variant to inherit the preset variant. Native references have no preset variant to inherit.
-With neither an agent model nor a group model source, OpenCode applies its normal global or parent-model fallback.
-Project configuration and session selections retain OpenCode's normal precedence.
-Groups therefore let new agents inherit defaults without adding a model to every file.
-
-Before saving, the editor checks the changed model choices and affected group and unpinned-agent variants against the catalog.
-An incompatible inherited variant blocks the save. Change or clear that override before changing its underlying model.
-A changed effective native default invalidates an open reference preview; reopen the editor to review the new resolution.
-Server dispatch also rejects unsupported variants for referenced defaults when their resolved model is selected.
-Models that the native provider cannot resolve remain errors. These checks do not prove that credentials or model calls work.
-
-### Editing and compatibility
-
-Install the Composer package, `config-composer.jsonc`, and its source files with the server and TUI registrations.
-The configuration's `$schema` URL tracks `main` in the package repository.
-To use the installed package version instead, set `$schema` to
-`./node_modules/@lunchbox-labs/opencode-config-composer/schema.json`, relative to the settings file.
-The package also exports `@lunchbox-labs/opencode-config-composer/schema.json` for JavaScript consumers.
-Older plugin versions cannot resolve the shipped prompt directives. Do not update agent prompts or configuration alone.
-Preserve customized Config Composer settings when upgrading. Keep settings in the structured configuration file.
-
-The editor manages this installation's global `opencode.jsonc` or `opencode.json`, its Config Composer settings file,
-and its `agents/` or `agent/` files.
-Run it where the TUI and server share the same global configuration filesystem. Remote configuration editing and
-project-local agent editing are not supported. The editor rejects ambiguous duplicate files, agent symlinks,
-invalid configuration, and settings that changed after a dialog opened.
-Merge legacy `config.json` settings into `opencode.jsonc` before using the editor.
-An installation in a separate `OPENCODE_CONFIG_DIR` can save edits, but needs a restart to apply them.
-JSONC comments, YAML comments, prompt bodies, and unrelated settings are preserved; edited fields can be reformatted.
-An interrupted write can leave `.config-composer.lock`. Remove that lock only after confirming no editor is saving.
-
-The server and TUI entrypoints target OpenCode V1 1.18.34.
-V2 needs a separate port. Install the Composer package, the shared `extensions/tui/` directory, and the package manifest.
-Register Composer once in each plugin list. Do not add wrapper files in the automatically discovered `plugins/` directory.
-Live reload records an internal `reloadToken` in the server plugin options so OpenCode invalidates its global cache.
-You do not need to edit that value.
-
-## Shared prompt composition
-
-Config Composer supplies always-applicable guidance when configuration loads.
-An agent receives the composed prompt before its first request. It does not need a Read call for that content.
-Native configuration still owns permissions and tools.
-
-Map shared source directories in `config-composer.jsonc`:
-
-```jsonc
-"sourceDirectories": {
-  "agent-prompts": "./config-composer/agent/prompts"
-}
-```
-
-Source directories resolve from the Config Composer settings file,
-independently of the extension's installation directory.
-Source aliases belong to Composer. They identify include inputs without registering an OpenCode reference.
-Composition fragments live in `config-composer/agent/prompts/`.
-Use `agent-prompts` only in include directives or configured prompt fragments.
-Conditional guidance lives in `references/agent/`, registered as the hidden `agent-references` reference.
-
-Declare shared guidance directly in an agent's Markdown body to make its fragments and insertion points visible:
-
-```markdown
-{{include:@agent-prompts/implementation-standards.md}}
-
-Implement the assigned change.
-
-{{include:@agent-prompts/response-formats/common.md}}
-{{include:@agent-prompts/response-formats/implementation.md}}
-```
-
-Only explicit include directives expand.
-A sentence such as `Read @agent-references/testing-standards.md when tests change` remains an instruction for the agent.
-Use `\{{include:@agent-prompts/lead-contract.md}}` to retain a literal directive.
-
-The shipped agents use body includes. Prefer this form when adding shared prompt content.
-Use configuration prepend/append as a last choice for additional layers.
-Optional prepend and append layers remain available for installation-wide defaults, group fragments, and
-individual exceptions. Configure these additional layers in the dedicated file:
-
-```jsonc
-"agent": {
-  "groups": {
-    "developers": {
-      "modelRef": "preset:balanced",
-      "prompt": {
-        "prepend": ["@agent-prompts/implementation-standards.md"],
-        "append": ["@agent-prompts/response-formats/implementation.md"]
-      }
-    }
-  },
-  "prompts": {
-    "defaults": {
-      "append": ["@agent-prompts/response-formats/common.md"]
-    },
-    "overrides": {
-      "react-developer": {
-        "prepend": ["@agent-prompts/typescript-guidance.md"]
-      },
-      "implementation-lead": {
-        "inheritDefaults": false,
-        "inheritGroups": false
-      }
-    }
+  "selection": {
+    "defaultProfiles": ["openai-latest"],
+    "retainOnRestart": false
   }
 }
 ```
 
-Merge these fields with your existing `agent` settings. Each `prepend` and `append` field is an ordered string array.
-A whole string such as `@agent-prompts/reviewer-standards.md` includes that file. Other strings supply literal text with
-explicit include directives. Source files must be regular UTF-8 `.md` or `.txt` files within their mapped directories.
-Missing files, invalid sources, escaping paths, and include cycles fail agent configuration or native skill loading
-instead of omitting guidance.
+This example resets to that project's configured defaults on a new server process.
+It does not erase a previously retained choice; enabling retention again can restore that choice.
+Project and local `.opencode/config-composer.local.jsonc` selection fields override shared fields independently.
+A saved selection overrides configured defaults. Changing defaults alone does not replace a saved selection.
 
-The composed prompt has this order:
+Switching profiles rebuilds configuration from native inputs and removes fields from the previous selection.
+Existing conversations can retain their selected model and variant. After applying a profile, use `/models`,
+then `/variants`, to select the destination settings for that conversation.
+Restart after editing native agent files or `opencode.jsonc`. Applying Composer settings does not reload those files.
 
-1. Default prepend fragments.
-2. Group prepend fragments in the agent's listed group order.
-3. Per-agent prepend fragments.
-4. The authored agent body with explicit includes resolved.
-5. Default append fragments.
-6. Group append fragments in the same group order.
-7. Per-agent append fragments.
+### Configuration ownership
 
-`inheritDefaults: false` skips default prompt fragments. `inheritGroups: false` skips group prompt fragments.
-These opt-outs affect prompt content only. They do not disable model inheritance or explicit includes.
-Fragments are not deduplicated. Avoid repeating guidance already included by an agent body or another inherited layer
-unless repetition is intended.
-Config Composer leaves built-in agents without authored prompts unchanged,
-preserving OpenCode's native prompt selection.
+Native agent files own roles, ordered `groups`, permissions, and explicit model pins.
+`componentGroups` names reusable memberships; profile layers determine settings precedence.
+`configurationPresets` supplies model settings, and `profiles` selects groups before targeting them with presets.
+Explicit profile agent overrides replace the four native task-agent pins only while those profiles are selected.
+The shipped profiles leave all permission rules native to preserve behavior when profiles are cleared.
 
-The shipped agent bodies include specialist conduct, language guidance, and response profiles explicitly.
-The dedicated configuration contains no default or group prompt fragments. Its prompt overrides retain the four
-primary leads' inheritance opt-outs. These leads include their shared lead contract explicitly.
-Leads include their stage guidance in their bodies and apply it when its stated stage or task conditions are met.
-Universal and conditional coding, documentation, and verification reads stay in `AGENTS.md`.
+Use `model` or `modelRef`, never both. A reference can use `opencode:model`, `opencode:small_model`, or `preset:NAME`.
+An explicit native agent pin takes precedence over group and preset defaults; an agent override can replace it.
+Changing a model binding clears inherited Composer variants and parameters before destination settings apply.
+See the [Config Composer reference](https://github.com/lunchbox-labs/opencode-config-composer/blob/v0.0.3/docs/composition-schema.md).
 
-Skill bodies can use the same explicit include directives. Config Composer expands them during native skill loading,
-before OpenCode returns the loaded content to the agent. This expansion does not depend on that agent's prompt or group.
-Truncated native skill content fails loading. Reduce its size before retrying.
-Normal skill permissions and the selected agent's role still apply.
-The top-level `skill` and `command` objects remain empty. Skill body includes do not add group settings for those types.
+The installed package supplies the pinned schema. Both plugin lists register Config Composer 0.0.3 before
+Prompt Composer 0.0.2 and downstream plugins. Use OpenCode V1 1.19.0; V2 requires a separate port.
+The editors need shared filesystem access. Review previews before saving, and apply changes explicitly while idle.
 
-Install skill templates with Config Composer, its settings, and their configured source files.
-Load them through OpenCode's native skill loader. A direct Read or a raw file copy does not resolve include directives.
+## Shared prompt composition
 
-Composed agents receive their configured guidance before the first request. Invalid includes fail configuration loading.
-Task-specific conditional reads still apply when their stated conditions are met.
-Restart or explicitly reload after prompt changes. The [context inspector](#context-evidence) does not show exact assembled
-prompt text or token counts per fragment.
+Prompt Composer discovers shared files under conventional `prompts/` directories. No source aliases or registry are needed.
+Native agents and commands expand includes at configuration load; skills expand when loaded through OpenCode's native loader.
+For example:
+
+```markdown
+{{include:implementation-standards.md}}
+
+Implement the assigned change.
+
+{{include:response-formats/common.md}}
+{{include:response-formats/implementation.md}}
+```
+
+Nested includes use the same discovered filenames. The shared reviewer guidance and research footer use this mechanism.
+Use `\{{include:lead-contract.md}}` for a literal directive.
+Conditional reads such as `Read @agent-references/testing-standards.md when tests change` remain instructions for the agent.
+Their conditions, native permissions, and role boundaries remain in force.
+
+Discovery follows native agent/command directories: global configuration, project `.opencode` directories up to the worktree,
+home `.opencode`, then `OPENCODE_CONFIG_DIR`. Later matching relative filenames win.
+`OPENCODE_DISABLE_PROJECT_CONFIG` disables project discovery. There are no custom source-directory mappings.
+
+The shipped guidance stays in explicit body includes. `prompt-composer.jsonc` only preserves primary-lead default opt-outs.
+Optional `defaults` and named `agents` rules can prepend or append text and includes; there are no group prompt rules.
+Composition order is default prepends, agent prepends, authored body, default appends, then agent appends.
+`inheritDefaults: false` skips both default lists. Built-ins without authored prompts retain their native fallback.
+Avoid including the same guidance twice; fragments are not deduplicated.
+
+Use `/compose-prompts` to inspect composed prompts, edit optional rules, and explicitly apply saved settings while idle.
+Restart after editing native agent or command bodies. Direct reads and raw copies do not expand skill includes.
+Missing, unsafe, or cyclic includes fail composition. Truncated native skill content also fails rather than losing guidance.
+Install skills with Prompt Composer and their supporting `prompts/` files.
+Config Composer is independent and does not select prompts through profiles.
+The [context inspector](#context-evidence) does not show exact assembled prompt text or token counts per fragment.
 
 ## Session tools
 
@@ -422,7 +225,7 @@ The inspector uses native OpenCode APIs only. It does not read plugin configurat
 Saved Composer group choices, source paths, prompt fragment counts, and inheritance opt-outs are not shown here.
 A matching model does not establish whether an agent inherited a group default or has an explicit pin.
 Use the standalone package's [agent groups and models](#agent-groups-and-models) controls for group and model settings.
-Edit prompt settings in `config-composer.jsonc`; session-tools does not supply a separate Composer settings viewer.
+Use `/compose-prompts` for prompt settings; session-tools does not supply a separate Composer settings viewer.
 
 V1 exposes merged settings without exact file provenance. The inspector identifies that limit instead of naming
 an unverified source file. Recorded models describe past turns; they do not predict the next request's model.
@@ -470,7 +273,7 @@ See [continue a long task](#continue-a-long-task) for the lead's checkpoint and 
 
 Install `extensions/session-tools/` and the shared `extensions/tui/` directory.
 Session-tools has no Composer API dependency and works independently of its plugin registration.
-Keep Composer installed when using prompt composition or its model and group controls.
+Keep Prompt Composer for body includes and Config Composer for model and group controls.
 The four TUI entries are independent:
 
 | Entry in `tui.jsonc` | Plugin |
@@ -482,7 +285,7 @@ The four TUI entries are independent:
 
 Remove an entry to disable that panel, then restart OpenCode. Keep other plugin entries and the shared helper files.
 `./extensions/session-tools/server.ts` in `opencode.jsonc` supplies `workflow_status` for primary leads.
-Removing it stops new stage reports; the other views remain usable. These plugins target OpenCode V1 1.18.34.
+Removing it stops new stage reports; the other views remain usable. These plugins target OpenCode V1 1.19.0.
 V2 requires a separate port.
 
 ## Run a complete workflow
@@ -670,8 +473,8 @@ Initialization writes only to the work repository and does not publish the gener
 
 Agents select reusable procedures as needed. You do not need to invoke a skill to start a workflow stage.
 Naming a skill never expands the current agent's role, permissions, or approval scope.
-Skills with include directives use Config Composer during native skill loading. Include the plugin, settings, and
-configured source files when installing them separately.
+Skills with include directives use Prompt Composer during native skill loading. Include the plugin and supporting
+`prompts/` files when installing them separately.
 
 | Skill | Purpose |
 | --- | --- |
@@ -689,7 +492,7 @@ configured source files when installing them separately.
 
 These procedures support more than one lead or specialist. Requirements interviews, phased planning, review routing,
 and completion procedures use internal [agent references](references/agent/) and
-[composition sources](config-composer/agent/prompts/).
+[composition sources](prompts/).
 They are loaded by their owning agents and do not appear as separate skill entrypoints.
 Routine tests, verification, and fixes do not require the `project-standards` skill.
 
@@ -924,4 +727,4 @@ A saved agent name does not change the selected role. A saved approval claim is 
 Do not reset files or change branches to make a handoff match.
 
 For the underlying procedures, see the [workflow lead](agents/workflow-lead.md),
-[lead contract](config-composer/agent/prompts/lead-contract.md), and [agent references](references/agent/).
+[lead contract](prompts/lead-contract.md), and [agent references](references/agent/).

@@ -38,11 +38,11 @@ color: "#F78AEE"
 Own the development task and user conversation through every applicable stage and final handoff.
 Ordinary implementation requests start this workflow without a command or entry-point skill.
 
-{{include:@agent-prompts/lead-contract.md}}
+{{include:lead-contract.md}}
 
-{{include:@agent-prompts/review-target.md}}
+{{include:review-target.md}}
 
-{{include:@agent-prompts/review-criteria.md}}
+{{include:review-criteria.md}}
 
 Apply the supplied stage guidance only when that stage applies. It grants no additional authority.
 
@@ -98,10 +98,10 @@ Apply each following stage only within the task's current scope and stopping poi
 Planning does not authorize implementation. Non-trivial implementation requires the reviewed plan and user approval.
 Review does not authorize repairs outside an approved implementation scope.
 
-{{include:@agent-prompts/planning-stage.md}}
+{{include:planning-stage.md}}
 
-{{include:@agent-prompts/implementation-stage.md}}
+{{include:implementation-stage.md}}
 
-{{include:@agent-prompts/review-stage.md}}
+{{include:review-stage.md}}
 
-{{include:@agent-prompts/response-formats/delegated.md}}
+{{include:response-formats/delegated.md}}

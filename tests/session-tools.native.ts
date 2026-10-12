@@ -12,7 +12,7 @@ import { type Entry, stageReport } from '../extensions/session-tools/model.ts';
 
 type FixtureRequest = Record<string, unknown> & {
   tools?: { function?: { name?: string } }[];
-  messages?: { role?: string }[];
+  messages?: { role?: string; tool_call_id?: string; content?: unknown }[];
   stream?: boolean;
 };
 
@@ -39,16 +39,25 @@ for (const custom of [false, true]) {
       const tui = JSON.parse(await readFile(join(repo, 'tui.jsonc'), 'utf8')) as { plugin: string[] };
       tui.plugin = tui.plugin.filter((item: string) => item.startsWith('./extensions/'));
       const composerDirectory = join(configRoot, 'node_modules', '@lunchbox-labs/opencode-config-composer');
-      tui.plugin.push(composerDirectory);
+      const promptDirectory = join(configRoot, 'node_modules', '@lunchbox-labs/opencode-prompt-composer');
+      tui.plugin.unshift(composerDirectory, promptDirectory);
       await writeFile(join(configRoot, 'tui.jsonc'), JSON.stringify(tui));
-      await writeFile(join(configRoot, 'guidance.md'), 'Report review using workflow_status, then answer briefly.');
+      await mkdir(join(configRoot, 'prompts'));
+      await writeFile(
+        join(configRoot, 'prompts', 'guidance.md'),
+        'Report review using workflow_status, then answer briefly.',
+      );
+      await mkdir(join(configRoot, 'skills', 'composed-fixture'), { recursive: true });
+      await writeFile(
+        join(configRoot, 'skills', 'composed-fixture', 'SKILL.md'),
+        '---\nname: composed-fixture\ndescription: Native prompt composition fixture.\n---\n\n{{include:guidance.md}}\n',
+      );
       await writeFile(
         join(configRoot, 'config-composer.jsonc'),
         JSON.stringify({
-          sourceDirectories: { fixture: '.' },
-          agent: { groups: { workflow: { model: 'fixture/model' } } },
-          command: {},
-          skill: {},
+          componentGroups: { workflow: { configuration: { model: 'fixture/model' } } },
+          profiles: { fixture: { layers: [{ componentGroup: 'workflow' }] } },
+          selection: { defaultProfiles: ['fixture'], retainOnRestart: false },
         }),
       );
       const bodies: FixtureRequest[] = [];
@@ -64,7 +73,8 @@ for (const custom of [false, true]) {
         const hasTool = body.tools?.some(
           (item: { function?: { name?: string } }) => item.function?.name === 'workflow_status',
         );
-        const toolReturned = body.messages?.some((item: { role?: string }) => item.role === 'tool');
+        const skillReturned = body.messages?.some((item) => item.tool_call_id === 'fixture-skill');
+        const toolReturned = body.messages?.some((item) => item.tool_call_id === 'fixture-status');
         const call = hasTool === true && toolReturned !== true;
         const base = { id: 'fixture-response', model: body.model, created: 1 };
         if (body.stream !== true) {
@@ -88,11 +98,15 @@ for (const custom of [false, true]) {
               tool_calls: [
                 {
                   index: 0,
-                  id: 'fixture-status',
+                  id: skillReturned === true ? 'fixture-status' : 'fixture-skill',
                   type: 'function',
                   function: {
-                    name: 'workflow_status',
-                    arguments: JSON.stringify({ stage: 'review', summary: 'Review fixture output' }),
+                    name: skillReturned === true ? 'workflow_status' : 'skill',
+                    arguments: JSON.stringify(
+                      skillReturned === true
+                        ? { stage: 'review', summary: 'Review fixture output' }
+                        : { name: 'composed-fixture' },
+                    ),
                   },
                 },
               ],
@@ -126,7 +140,7 @@ for (const custom of [false, true]) {
       await writeFile(
         join(configRoot, 'opencode.jsonc'),
         JSON.stringify({
-          plugin: ['./extensions/session-tools/server.ts', composerDirectory],
+          plugin: [composerDirectory, promptDirectory, './extensions/session-tools/server.ts'],
           model: 'fixture/model',
           small_model: 'fixture/model',
           default_agent: 'lead',
@@ -145,7 +159,7 @@ for (const custom of [false, true]) {
             lead: {
               mode: 'primary',
               groups: ['workflow'],
-              prompt: '{{include:@fixture/guidance.md}}',
+              prompt: '{{include:guidance.md}}',
             },
           },
         }),
@@ -262,6 +276,18 @@ for (const custom of [false, true]) {
         ),
       );
       await writeFile(join(root, 'session-id.txt'), created.id);
+      assert.ok(
+        bodies.some(
+          (body) =>
+            body.messages?.some(
+              (message) =>
+                message.tool_call_id === 'fixture-skill' &&
+                JSON.stringify(message.content).includes('Report review using workflow_status, then answer briefly.') &&
+                !JSON.stringify(message.content).includes('{{include:'),
+            ) === true,
+        ),
+        'native skill output must expand the snippet',
+      );
       await stop();
       baseURL = await start();
       assert.deepEqual(stageReport(await api<Entry[]>(`/session/${created.id}/message`)), report);

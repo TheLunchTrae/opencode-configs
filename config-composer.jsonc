@@ -1,33 +1,87 @@
 {
-  "$schema": "https://raw.githubusercontent.com/lunchbox-labs/opencode-config-composer/main/schema.json",
-  "sourceDirectories": {
-    "agent-prompts": "./config-composer/agent/prompts"
+  "$schema": "./node_modules/@lunchbox-labs/opencode-config-composer/schema.json",
+  "componentGroups": {
+    "workflow": {},
+    "planning": {},
+    "developers": {},
+    "reviewers": {},
+    "refactoring": {},
+    "documentation": {},
+    "research": {},
+    "system": { "configuration": { "modelRef": "preset:current-lightweight" } }
   },
-  "agent": {
-    "modelPresets": {
-      "balanced": { "model": "openai/gpt-5.6-sol", "variant": "medium" },
-      "lightweight": { "model": "openai/gpt-5.6-terra", "variant": "medium" }
+  "configurationPresets": {
+    "workspace-main": { "modelRef": "opencode:model", "variant": "high" },
+    "current-balanced": { "model": "openai/gpt-5.6-sol", "variant": "medium" },
+    "current-lightweight": { "model": "openai/gpt-5.6-terra", "variant": "medium" },
+    "openai-reasoning": { "model": "openai/gpt-6-astra", "variant": "high" },
+    "openai-development": { "model": "openai/gpt-6.1-sol", "variant": "medium" },
+    "openai-lightweight": { "model": "openai/gpt-6-luna", "variant": "medium" },
+    "anthropic-reasoning": { "model": "anthropic/claude-opus-5-5", "variant": "high" },
+    "anthropic-development": { "model": "anthropic/claude-sonnet-5-5", "variant": "medium" },
+    "anthropic-lightweight": { "model": "anthropic/claude-haiku-5-5", "variant": "medium" }
+  },
+  "profiles": {
+    "roles": {
+      "layers": [
+        { "componentGroup": "workflow" },
+        { "componentGroup": "planning" },
+        { "componentGroup": "developers" },
+        { "componentGroup": "reviewers" },
+        { "componentGroup": "refactoring" },
+        { "componentGroup": "documentation" },
+        { "componentGroup": "research" },
+        { "componentGroup": "system" }
+      ]
     },
-    "groups": {
-      "workflow": { "modelRef": "opencode:model", "variant": "high" },
-      "planning": { "modelRef": "opencode:model", "variant": "high" },
-      "developers": { "modelRef": "preset:balanced" },
-      "reviewers": { "modelRef": "opencode:model", "variant": "high" },
-      "refactoring": { "modelRef": "preset:balanced" },
-      "documentation": { "modelRef": "preset:lightweight" },
-      "research": { "modelRef": "preset:lightweight" },
-      "system": { "modelRef": "preset:lightweight" }
+    "current": {
+      "extends": "roles",
+      "layers": [
+        { "configurationPreset": "workspace-main", "target": { "componentGroups": ["workflow", "planning", "reviewers"] } },
+        { "configurationPreset": "current-balanced", "target": { "componentGroups": ["developers", "refactoring"] } },
+        { "configurationPreset": "current-lightweight", "target": { "componentGroups": ["documentation", "research"] } }
+      ]
     },
-    "prompts": {
-      "defaults": {},
+    "openai-latest": {
+      "extends": "roles",
+      "layers": [
+        { "configurationPreset": "openai-reasoning", "target": { "componentGroups": ["workflow", "planning", "reviewers"] } },
+        { "configurationPreset": "openai-development", "target": { "componentGroups": ["developers", "refactoring"] } },
+        { "configurationPreset": "openai-lightweight", "target": { "componentGroups": ["documentation", "research"] } }
+      ],
       "overrides": {
-        "workflow-lead": { "inheritDefaults": false, "inheritGroups": false },
-        "planning-lead": { "inheritDefaults": false, "inheritGroups": false },
-        "implementation-lead": { "inheritDefaults": false, "inheritGroups": false },
-        "review-lead": { "inheritDefaults": false, "inheritGroups": false }
+        "agents": {
+          "implementation-lead": { "modelRef": "preset:openai-reasoning" },
+          "doctrine-developer": { "modelRef": "preset:openai-reasoning" },
+          "efcore-developer": { "modelRef": "preset:openai-reasoning" },
+          "performance-optimizer": { "modelRef": "preset:openai-reasoning" }
+        }
+      }
+    },
+    "anthropic-latest": {
+      "extends": "roles",
+      "layers": [
+        { "configurationPreset": "anthropic-reasoning", "target": { "componentGroups": ["workflow", "planning", "reviewers"] } },
+        { "configurationPreset": "anthropic-development", "target": { "componentGroups": ["developers", "refactoring"] } },
+        { "configurationPreset": "anthropic-lightweight", "target": { "componentGroups": ["documentation", "research"] } }
+      ],
+      "overrides": {
+        "agents": {
+          "implementation-lead": { "modelRef": "preset:anthropic-reasoning" },
+          "doctrine-developer": { "modelRef": "preset:anthropic-reasoning" },
+          "efcore-developer": { "modelRef": "preset:anthropic-reasoning" },
+          "performance-optimizer": { "modelRef": "preset:anthropic-reasoning" }
+        }
       }
     }
   },
-  "command": {},
-  "skill": {}
+  "profileShortcuts": {
+    "current-models": { "activeProfiles": ["current"], "description": "Restore the existing model allocation." },
+    "openai-latest": { "activeProfiles": ["openai-latest"], "description": "Use current OpenAI models for task agents." },
+    "anthropic-latest": { "activeProfiles": ["anthropic-latest"], "description": "Use current Anthropic models for task agents; keep OpenAI background models." }
+  },
+  "selection": {
+    "defaultProfiles": ["current"],
+    "retainOnRestart": true
+  }
 }

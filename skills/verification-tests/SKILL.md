@@ -12,7 +12,7 @@ test generation, execution, and infrastructure changes throughout this procedure
 Before writing tests, read applicable project and language guidance and apply the implementation guidance below.
 The following implementation guidance applies only when writing tests within approved scope:
 
-{{include:@agent-prompts/implementation-standards.md}}
+{{include:implementation-standards.md}}
 
 The preceding implementation guidance does not authorize edits during design-only or inspection assignments.
 Read `@agent-references/testing-standards.md` for coverage design and authoring decisions.
@@ -118,18 +118,18 @@ Report uncovered changes and stale evidence; do not claim full verification.
 
 ## Task response envelope
 
-{{include:@agent-prompts/response-formats/common.md}}
+{{include:response-formats/common.md}}
 
 ## Task response profiles
 
 For design-only tasks, use this profile under `Result`:
 
-{{include:@agent-prompts/response-formats/plan.md}}
+{{include:response-formats/plan.md}}
 
 After test implementation, use this profile under `Result`:
 
-{{include:@agent-prompts/response-formats/implementation.md}}
+{{include:response-formats/implementation.md}}
 
 For inspection or check execution without edits, use this profile under `Result`:
 
-{{include:@agent-prompts/response-formats/research.md}}
+{{include:response-formats/research.md}}

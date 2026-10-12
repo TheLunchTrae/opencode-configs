@@ -75,10 +75,10 @@ Select the supplied Plan response for design, Implementation response for edits,
 execution-only assignments. Apply only the selected profile's Result sections.
 Do not apply repairs during verification.
 
-{{include:@agent-prompts/response-formats/common.md}}
+{{include:response-formats/common.md}}
 
-{{include:@agent-prompts/response-formats/plan.md}}
+{{include:response-formats/plan.md}}
 
-{{include:@agent-prompts/response-formats/implementation.md}}
+{{include:response-formats/implementation.md}}
 
-{{include:@agent-prompts/response-formats/research.md}}
+{{include:response-formats/research.md}}

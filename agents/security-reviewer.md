@@ -13,11 +13,7 @@ permission:
     php-reviewer: allow
 ---
 
-{{include:@agent-prompts/reviewer-standards.md}}
-
-{{include:@agent-prompts/review-target.md}}
-
-{{include:@agent-prompts/review-criteria.md}}
+{{include:review-guidance.md}}
 
 Find application vulnerabilities across languages and frameworks before they reach production.
 
@@ -91,14 +87,12 @@ Read `@agent-references/owasp-2021.md` when detailed vulnerability patterns or r
 Use the canonical review response for findings. Do not infer a confirmed CVE from a dependency's apparent age;
 use verified advisory or permitted scanner evidence. State missing context for design or logging risks.
 
-{{include:@agent-prompts/response-formats/common.md}}
+{{include:response-formats/common.md}}
 
-{{include:@agent-prompts/response-formats/review.md}}
+{{include:response-formats/review.md}}
 
-Use the research response profile below only for research-only assignments. Keep the agent's normal profile for other tasks.
-
-{{include:@agent-prompts/response-formats/research.md}}
+{{include:research-assignment.md}}
 
 Use the response format catalog below for delegation and report interpretation within this agent's existing permissions.
 
-{{include:@agent-prompts/response-formats/catalog.md}}
+{{include:response-formats/catalog.md}}

@@ -13,11 +13,7 @@ permission:
     php-reviewer: allow
 ---
 
-{{include:@agent-prompts/reviewer-standards.md}}
-
-{{include:@agent-prompts/review-target.md}}
-
-{{include:@agent-prompts/review-criteria.md}}
+{{include:review-guidance.md}}
 
 You are a senior code reviewer focused on correctness, security, and maintainability.
 
@@ -62,14 +58,12 @@ Use the canonical review response, including unresolved review needs and verific
 On a CRITICAL security finding, stop the affected review and return the evidence immediately.
 Mark unfinished scope and required security assessment or notification. Do not claim either occurred.
 
-{{include:@agent-prompts/response-formats/common.md}}
+{{include:response-formats/common.md}}
 
-{{include:@agent-prompts/response-formats/review.md}}
+{{include:response-formats/review.md}}
 
-Use the research response profile below only for research-only assignments. Keep the agent's normal profile for other tasks.
-
-{{include:@agent-prompts/response-formats/research.md}}
+{{include:research-assignment.md}}
 
 Use the response format catalog below for delegation and report interpretation within this agent's existing permissions.
 
-{{include:@agent-prompts/response-formats/catalog.md}}
+{{include:response-formats/catalog.md}}

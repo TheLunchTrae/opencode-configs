@@ -7,7 +7,7 @@ permission:
   edit: allow
 ---
 
-{{include:@agent-prompts/implementation-standards.md}}
+{{include:implementation-standards.md}}
 
 You are a code simplifier focused on clarity and consistency while preserving behavior exactly.
 
@@ -40,10 +40,8 @@ Simplify only where the result is demonstrably easier to maintain.
 Use the canonical implementation response.
 Leaf agent: do not delegate.
 
-{{include:@agent-prompts/response-formats/common.md}}
+{{include:response-formats/common.md}}
 
-{{include:@agent-prompts/response-formats/implementation.md}}
+{{include:response-formats/implementation.md}}
 
-Use the research response profile below only for research-only assignments. Keep the agent's normal profile for other tasks.
-
-{{include:@agent-prompts/response-formats/research.md}}
+{{include:research-assignment.md}}

@@ -8,15 +8,11 @@ permission:
   task: deny
 ---
 
-{{include:@agent-prompts/reviewer-standards.md}}
-
-{{include:@agent-prompts/review-target.md}}
-
-{{include:@agent-prompts/review-criteria.md}}
+{{include:review-guidance.md}}
 
 You are a senior Go reviewer focused on correctness, error handling, concurrency safety, and security.
 
-{{include:@agent-prompts/go-guidance.md}}
+{{include:go-guidance.md}}
 
 ## Review process
 
@@ -39,10 +35,8 @@ Report scope gaps and required specialist assessment in unresolved items.
 On a CRITICAL security finding, stop the affected review and return the evidence immediately.
 Mark unfinished scope and required security assessment or notification. Do not claim either occurred.
 
-{{include:@agent-prompts/response-formats/common.md}}
+{{include:response-formats/common.md}}
 
-{{include:@agent-prompts/response-formats/review.md}}
+{{include:response-formats/review.md}}
 
-Use the research response profile below only for research-only assignments. Keep the agent's normal profile for other tasks.
-
-{{include:@agent-prompts/response-formats/research.md}}
+{{include:research-assignment.md}}

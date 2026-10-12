@@ -6,25 +6,25 @@ They do not prescribe the coordinator's own reply format, change its permissions
 Reviewer conduct and research-only restrictions apply to those specialist assignments, not to unrelated coordinator work.
 The active primary lead retains its own scope, approval requirements, stopping conditions, and authority.
 
-{{include:@agent-prompts/response-formats/catalog.md}}
+{{include:response-formats/catalog.md}}
 
-{{include:@agent-prompts/response-formats/common.md}}
+{{include:response-formats/common.md}}
 
-{{include:@agent-prompts/response-formats/research.md}}
+{{include:response-formats/research.md}}
 
-{{include:@agent-prompts/response-formats/plan.md}}
+{{include:response-formats/plan.md}}
 
-{{include:@agent-prompts/response-formats/design.md}}
+{{include:response-formats/design.md}}
 
-{{include:@agent-prompts/response-formats/implementation.md}}
+{{include:response-formats/implementation.md}}
 
-{{include:@agent-prompts/reviewer-standards.md}}
+{{include:reviewer-standards.md}}
 
-{{include:@agent-prompts/response-formats/review.md}}
+{{include:response-formats/review.md}}
 
-{{include:@agent-prompts/response-formats/documentation.md}}
+{{include:response-formats/documentation.md}}
 
-{{include:@agent-prompts/response-formats/performance.md}}
+{{include:response-formats/performance.md}}
 
 ## End of specialist report contracts
 

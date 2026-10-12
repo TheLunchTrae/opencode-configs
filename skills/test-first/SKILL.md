@@ -42,12 +42,12 @@ Use the common envelope below for task responses. Use the Implementation respons
 observed red/green evidence. Use the Research response only for research-only assignments or explicitly assigned
 check execution without edits.
 
-{{include:@agent-prompts/response-formats/common.md}}
+{{include:response-formats/common.md}}
 
 For assigned implementation, use this profile under `Result`:
 
-{{include:@agent-prompts/response-formats/implementation.md}}
+{{include:response-formats/implementation.md}}
 
 For research-only assignments or explicitly assigned check execution without edits, use this profile under `Result`:
 
-{{include:@agent-prompts/response-formats/research.md}}
+{{include:response-formats/research.md}}

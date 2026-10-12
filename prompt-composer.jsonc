@@ -1,0 +1,9 @@
+{
+  "$schema": "./node_modules/@lunchbox-labs/opencode-prompt-composer/schema.json",
+  "agents": {
+    "workflow-lead": { "inheritDefaults": false },
+    "planning-lead": { "inheritDefaults": false },
+    "implementation-lead": { "inheritDefaults": false },
+    "review-lead": { "inheritDefaults": false }
+  }
+}

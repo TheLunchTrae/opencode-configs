@@ -22,7 +22,7 @@ Use `project-standards` only for deliberate tooling adoption.
 Keep optional improvements separate from blocking prerequisites.
 Missing docs alone require no new file and do not block implementation when verified source supplies context.
 
-{{include:@agent-prompts/design-review.md}}
+{{include:design-review.md}}
 
 Return the reviewed plan and remaining findings. Focused planning ends here; workflow leads obtain implementation
 approval before proceeding. Implementation leads can revalidate existing design reviews but return material redesign

@@ -1,14 +1,11 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { cp, mkdtemp, readFile, rename, rm, writeFile } from 'node:fs/promises';
+import { cp, mkdtemp, readFile, rename, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { basename, join, resolve } from 'node:path';
+import { basename, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-// Only the disposable fixture receives a tarball dependency. Production references use the selected npm name.
-const tarball = process.env.COMPOSER_TARBALL;
-assert.ok(tarball, 'Set COMPOSER_TARBALL to the absolute path of the packed extraction artifact.');
-assert.ok(tarball.endsWith('.tgz'), 'COMPOSER_TARBALL must name an npm tarball.');
+// Install the shipped lockfile from npm in disposable state, without replacing package dependencies.
 const repository = fileURLToPath(new URL('../', import.meta.url));
 const root = await mkdtemp(join(tmpdir(), 'opencode-packaged-consumer-'));
 const consumer = join(root, 'consumer');
@@ -22,21 +19,22 @@ try {
     recursive: true,
     filter: (path) => !['.git', 'node_modules'].includes(basename(path)),
   });
-  const artifact = join(root, 'composer.tgz');
-  await cp(resolve(tarball), artifact);
-  const manifestPath = join(consumer, 'package.json');
-  const manifest = JSON.parse(await readFile(manifestPath, 'utf8'));
-  assert.equal(manifest.dependencies['@lunchbox-labs/opencode-config-composer'], '0.0.2');
+  const manifest = JSON.parse(await readFile(join(consumer, 'package.json'), 'utf8'));
+  assert.equal(manifest.dependencies['@lunchbox-labs/opencode-config-composer'], '0.0.3');
+  assert.equal(manifest.dependencies['@lunchbox-labs/opencode-prompt-composer'], '0.0.2');
   assert.equal(manifest.dependencies['opencode-config-composer'], undefined);
-  manifest.dependencies['@lunchbox-labs/opencode-config-composer'] = `file:${artifact}`;
-  await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
-  run('npm', ['install', '--ignore-scripts', '--no-audit', '--no-fund']);
   run('npm', ['ci', '--ignore-scripts', '--no-audit', '--no-fund']);
   const installed = JSON.parse(
     await readFile(join(consumer, 'node_modules/@lunchbox-labs/opencode-config-composer/package.json'), 'utf8'),
   );
   assert.equal(installed.name, '@lunchbox-labs/opencode-config-composer');
-  assert.equal(installed.version, '0.0.2');
+  assert.equal(installed.version, '0.0.3');
+  const prompt = JSON.parse(
+    await readFile(join(consumer, 'node_modules/@lunchbox-labs/opencode-prompt-composer/package.json'), 'utf8'),
+  );
+  assert.equal(prompt.version, '0.0.2');
+  assert.equal(prompt.dependencies[installed.name], undefined, 'Prompt Composer must remain independent');
+  assert.equal(installed.dependencies[prompt.name], undefined, 'Config Composer must remain independent');
   assert.equal(installed.license, 'MIT');
   assert.match(
     await readFile(join(consumer, 'node_modules/@lunchbox-labs/opencode-config-composer/LICENSE'), 'utf8'),
@@ -48,7 +46,8 @@ try {
     await readFile(join(consumer, 'node_modules/@lunchbox-labs/opencode-config-composer/schema.json'), 'utf8'),
   );
   assert.equal(schema.type, 'object');
-  assert.ok(schema.properties.agent);
+  assert.ok(schema.properties.profiles);
+  assert.equal(schema.properties.agent, undefined);
   const cli = spawnSync(process.env.OPENCODE_BIN ?? 'opencode', ['--version'], {
     encoding: 'utf8',
     timeout: 30_000,
@@ -70,7 +69,15 @@ try {
   const unavailablePackage = join(root, 'unavailable-package');
   await rename(packageDirectory, unavailablePackage);
   try {
-    run('npm', ['run', 'check']);
+    run('npm', ['run', 'typecheck']);
+    run('node', [
+      '--experimental-strip-types',
+      '--test',
+      'tests/block-secrets.test.ts',
+      'tests/session-tools.test.ts',
+      'tests/tui-navigation.test.ts',
+      'tests/workflow-timeline.test.ts',
+    ]);
     run(process.env.BUN_BIN ?? 'bun', [
       'test',
       '--preload',
@@ -80,9 +87,12 @@ try {
   } finally {
     await rename(unavailablePackage, packageDirectory);
   }
-  console.log('Local extensions and their complete checks passed with Composer unavailable to module resolution.');
+  console.log('Local extension type and behavior checks passed with Config Composer unavailable to module resolution.');
+  run('npm', ['run', 'check']);
   run('npm', ['run', 'test:native']);
-  console.log('Packed consumer checks passed in an isolated fixture. Registry installation was not tested.');
+  console.log(
+    'Published Config Composer 0.0.3 and Prompt Composer 0.0.2 passed together in an isolated registry consumer.',
+  );
 } finally {
   await rm(root, { recursive: true, force: true });
 }
