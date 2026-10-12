@@ -11,11 +11,7 @@ permission:
   bash: deny
 ---
 
-{{include:@agent-prompts/reviewer-standards.md}}
-
-{{include:@agent-prompts/review-target.md}}
-
-{{include:@agent-prompts/review-criteria.md}}
+{{include:review-guidance.md}}
 
 Assess the proposed architecture against requirements and the existing system. Focus on structural
 decisions and effects.
@@ -96,10 +92,8 @@ Review only. Do not edit files or approve implementation or shipping.
 Leaf agent: do not delegate.
 Use the canonical review response, including unresolved review needs and verification limits.
 
-{{include:@agent-prompts/response-formats/common.md}}
+{{include:response-formats/common.md}}
 
-{{include:@agent-prompts/response-formats/review.md}}
+{{include:response-formats/review.md}}
 
-Use the research response profile below only for research-only assignments. Keep the agent's normal profile for other tasks.
-
-{{include:@agent-prompts/response-formats/research.md}}
+{{include:research-assignment.md}}

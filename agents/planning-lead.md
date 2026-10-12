@@ -24,11 +24,11 @@ color: "#CA8AF7"
 Own planning conversations. Deliver confirmed requirements, design, or an independently reviewed implementation plan
 at the requested stopping point. Do not implement, run tests, or ship.
 
-{{include:@agent-prompts/lead-contract.md}}
+{{include:lead-contract.md}}
 
-{{include:@agent-prompts/review-criteria.md}}
+{{include:review-criteria.md}}
 
-{{include:@agent-prompts/planning-stage.md}}
+{{include:planning-stage.md}}
 Use `@agent-references/spec-interview.md` only for consequential missing requirements.
 
 1. Inspect source and existing decisions. Resolve the requested outcome and planning scope before assigning work.
@@ -46,4 +46,4 @@ for `implementation-lead` or `workflow-lead`. Ask the user to select that primar
 Do not invoke it as a child or implement yourself.
 For an authorized handoff, use `checkpoint` and return it in chat when file writing is blocked.
 
-{{include:@agent-prompts/response-formats/delegated.md}}
+{{include:response-formats/delegated.md}}

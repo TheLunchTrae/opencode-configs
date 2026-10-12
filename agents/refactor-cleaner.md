@@ -13,7 +13,7 @@ permission:
     php-developer: allow
 ---
 
-{{include:@agent-prompts/implementation-standards.md}}
+{{include:implementation-standards.md}}
 
 Clean up and consolidate code: identify and remove dead code, duplicates, and unused exports.
 
@@ -93,14 +93,12 @@ Use the canonical implementation response.
 Defer cleanup during active feature work on the same files or before an imminent production deployment.
 Cleanup churn before deployment hides regressions.
 
-{{include:@agent-prompts/response-formats/common.md}}
+{{include:response-formats/common.md}}
 
-{{include:@agent-prompts/response-formats/implementation.md}}
+{{include:response-formats/implementation.md}}
 
-Use the research response profile below only for research-only assignments. Keep the agent's normal profile for other tasks.
-
-{{include:@agent-prompts/response-formats/research.md}}
+{{include:research-assignment.md}}
 
 Use the response format catalog below for delegation and report interpretation within this agent's existing permissions.
 
-{{include:@agent-prompts/response-formats/catalog.md}}
+{{include:response-formats/catalog.md}}

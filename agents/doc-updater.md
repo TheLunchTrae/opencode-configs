@@ -94,14 +94,12 @@ Validate before declaring done — files exist, links resolve, examples run, sni
 
 Use the canonical documentation response.
 
-{{include:@agent-prompts/response-formats/common.md}}
+{{include:response-formats/common.md}}
 
-{{include:@agent-prompts/response-formats/documentation.md}}
+{{include:response-formats/documentation.md}}
 
-Use the research response profile below only for research-only assignments. Keep the agent's normal profile for other tasks.
-
-{{include:@agent-prompts/response-formats/research.md}}
+{{include:research-assignment.md}}
 
 Use the response format catalog below for delegation and report interpretation within this agent's existing permissions.
 
-{{include:@agent-prompts/response-formats/catalog.md}}
+{{include:response-formats/catalog.md}}

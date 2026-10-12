@@ -15,38 +15,40 @@ Select a focused lead when you want only planning, approved implementation, or a
 | [`commands/`](commands/) | Utility shortcuts and the focused test-audit entrypoint. |
 | [`skills/`](skills/) | Reusable task procedures. |
 | [`references/agent/`](references/agent/) | Conditional guidance that agents read when needed. |
-| [`config-composer/agent/prompts/`](config-composer/agent/prompts/) | Shared fragments for agent and skill bodies. |
+| [`prompts/`](prompts/) | Shared fragments for native agent and skill bodies. |
 | [`plugins/`](plugins/) | Local plugins, including secret-path checks. |
-| `@lunchbox-labs/opencode-config-composer` | Config Composer: shared prompts and group settings. |
+| `@lunchbox-labs/opencode-config-composer` | Config Composer: model presets, groups, and project profiles. |
+| `@lunchbox-labs/opencode-prompt-composer` | Prompt Composer: shared body includes and prompt editing. |
 | [`extensions/session-tools/`](extensions/session-tools/) | Workflow, config, context, bookmarks, and handoff panels. |
 | [`package.json`](package.json) | Pinned plugin dependencies and maintenance commands. |
 | [`opencode.jsonc`](opencode.jsonc) | Global models, permissions, MCP servers, shell, and plugin settings. |
-| [`config-composer.jsonc`](config-composer.jsonc) | Config Composer groups, models, and prompt settings. |
+| [`config-composer.jsonc`](config-composer.jsonc) | Config Composer groups, presets, profiles, and selection policy. |
+| [`prompt-composer.jsonc`](prompt-composer.jsonc) | Prompt Composer primary-lead inheritance exceptions. |
 | [`tui.jsonc`](tui.jsonc) | TUI theme selection and plugin settings. |
 | [`themes/`](themes/) | Custom TUI themes. |
 | [`opencode-quota/quota-toast.jsonc`](opencode-quota/quota-toast.jsonc) | Quota display preferences. |
 
 ## Setup
 
-1. Install OpenCode V1 1.18.34 or a compatible version with the TUI plugin API. See <https://opencode.ai/docs/>.
+1. Install OpenCode V1 1.19.0 and Node 22.18 or newer. See <https://opencode.ai/docs/>.
 2. Authenticate your provider through `/connect` when supported.
 3. Back up your existing global configuration directory.
 4. Obtain a checkout or download of this repository.
-5. Copy `README.md`, `USAGE.md`, `AGENTS.md`, `opencode.jsonc`, `config-composer.jsonc`, `tui.jsonc`, `themes/`,
-   `agents/`, `commands/`, `skills/`, `references/`, `config-composer/`, `plugins/`, `extensions/`, `package.json`,
+5. Copy `README.md`, `USAGE.md`, `AGENTS.md`, `opencode.jsonc`, `config-composer.jsonc`, `prompt-composer.jsonc`, `tui.jsonc`, `themes/`,
+   `agents/`, `commands/`, `skills/`, `references/`, `prompts/`, `plugins/`, `extensions/`, `package.json`,
    `package-lock.json`, and `opencode-quota/`
    into the global configuration directory.
    Preserve the layout and merge your existing settings.
 
 The global configuration directory is `~/.config/opencode` or `%USERPROFILE%\.config\opencode` on Windows.
 Install the pinned dependencies in this directory with `npm ci`.
-The settings schema uses the package repository's raw GitHub URL. Local extensions do not import Composer.
-OpenCode also resolves the matching npm specifier registered in both plugin lists.
+Each settings schema uses its installed package version. Local extensions do not import either Composer package.
+Both plugin lists pin Config Composer 0.0.3 before Prompt Composer 0.0.2 and downstream plugins.
 
 Do not copy credentials, tokens, `node_modules`, `.idea`, or work-project checkpoints.
 The repository's `.opencode/` directory contains maintenance guidance and is not needed for global installation.
 When copying selected skills, include their supporting files, applicable license notices, references, and
-composition sources. Skills with include directives also require Config Composer and their configured sources.
+composition sources. Skills with include directives also require Prompt Composer and `prompts/`.
 Load these templates through native skill loading under an agent whose role and permissions permit the procedure.
 
 For local editing of `plugins/` and `extensions/`, run `npm ci` from the checkout root.
@@ -84,27 +86,21 @@ The session tools add a live workflow sidebar, read-only configuration and conte
 with editable handoff drafts. Open them through the command palette or `/workflow-panel`, `/inspect-config`,
 `/inspect-context`, and `/bookmarks`. See [session tools](USAGE.md#session-tools) for use and individual opt-outs.
 
-Config Composer assembles shared guidance into custom agent prompts when configuration loads.
-It also resolves inline includes in skill bodies when OpenCode loads a skill through its native loader.
+Config Composer applies shared model settings through `/compose-configs`, `/agent-models`, and `/agent-groups`.
+The default `current` profile preserves the existing model allocation. The `openai-latest` and `anthropic-latest`
+profiles are explicit opt-ins for task agents. They preserve the existing OpenAI background models and global defaults.
+Saved selections persist independently for each project. See [agent groups and models](USAGE.md#agent-groups-and-models).
 
-Install the Composer package, `config-composer.jsonc`, `config-composer/`, and `references/` together.
-Shared source directories are configured at the top level.
-Agent groups, models, and prompt settings belong under `agent`.
-The `$schema` field points to `https://raw.githubusercontent.com/lunchbox-labs/opencode-config-composer/main/schema.json`.
-This URL tracks `main`. To use the installed package version instead, set `$schema` to
-`./node_modules/@lunchbox-labs/opencode-config-composer/schema.json`, relative to the settings file.
+Prompt Composer resolves shared body includes from `prompts/` at configuration load and during native skill loading.
+Use `/compose-prompts` to inspect composed prompts and edit optional prompt rules.
+Neither package requires the other. Profiles do not select prompt content.
+Native agent files retain roles, permissions, and membership. Commands and skills remain native files.
+Conditional reads of `@agent-references` remain agent actions.
+Missing or invalid includes fail composition. A direct Read or raw file copy does not expand skill directives.
+See [shared prompt composition](USAGE.md#shared-prompt-composition).
 
-The `config-composer/` directory contains personal prompt fragments, not the plugin implementation.
-The npm package supplies composition, settings editing, the Composer TUI, and the schema.
-Session-tools uses native OpenCode APIs in `/inspect-config`; it does not read or interpret Composer settings.
-Use the package's `/agent-models` and `/agent-groups` controls for saved model and group choices.
+Session-tools uses native OpenCode APIs in `/inspect-config`; it does not interpret Composer settings.
 The shared `extensions/tui/` directory supports the remaining session-tools panels.
-
-The shipped agent bodies declare shared fragments with explicit include directives at their intended positions.
-These directives require Config Composer, which resolves them when configuration loads.
-Missing or invalid includes fail configuration loading.
-Skill templates require native skill loading. A direct Read or a raw file copy does not resolve their directives.
-Conditional reference reads remain agent actions. See [shared prompt composition](USAGE.md#shared-prompt-composition).
 
 The selected `pink` theme uses pink accents, pastel syntax and status colors, and neutral dark backgrounds.
 It keeps the same dark appearance in both terminal modes. Install `themes/` with `tui.jsonc` so OpenCode can find it.
@@ -154,7 +150,7 @@ Specialists cover TypeScript, JavaScript, Go, C#, PHP, React, EF Core, Doctrine,
 Other agents handle architecture, security, performance, cleanup, and documentation.
 See [agent definitions](agents/) for individual roles and model choices.
 Specialists return canonical Markdown reports defined in the
-[response format catalog](config-composer/agent/prompts/response-formats/catalog.md).
+[response format catalog](prompts/response-formats/catalog.md).
 The reports share task status, result, evidence, and unresolved items, with sections for each kind of task.
 Delegating agents validate the reports and apply their own workflow rules. Specialists need only their assigned task
 and constraints; they do not depend on the invoking lead's identity.
@@ -191,54 +187,28 @@ Check an approval prompt's scope before saving an approval.
 ## Upgrade an existing installation
 
 Back up the configuration first. Update `README.md`, `USAGE.md`, `AGENTS.md`, `agents/`, `commands/`, `skills/`,
-`references/`, `config-composer/`, `plugins/`, `opencode.jsonc`, `config-composer.jsonc`, `tui.jsonc`, and `themes/`
+`references/`, `prompts/`, `plugins/`, `opencode.jsonc`, `config-composer.jsonc`, `prompt-composer.jsonc`, `tui.jsonc`, and `themes/`
 together, preserving local overrides and license notices.
 
-Install `extensions/`, `package.json`, and `package-lock.json` with the configuration files when adding Config Composer.
-Merge existing dependencies if your installation already has a package manifest.
-Preserve a customized `config-composer.jsonc` and merge the new fields instead of overwriting it.
-Use the same published `@lunchbox-labs/opencode-config-composer@VERSION` in both plugin lists.
-The server reads `config-composer.jsonc` by default. Preserve any explicit `configFile` override for a custom filename.
-Keep `extensions/tui/`; session-tools still uses it. Preserve unrelated extensions and dependencies.
-Custom agents with explicit model pins keep those models. Use **Use group defaults** to opt an agent into inheritance.
-Removing the server plugin also removes group inheritance and prompt composition.
-Resolve include directives, restore shared guidance, and restore explicit models before disabling it.
+Install `extensions/`, `package.json`, and `package-lock.json` with the configuration files.
+Merge existing dependencies and preserve unrelated extensions and personal provider settings.
+Register Config Composer 0.0.3 and Prompt Composer 0.0.2 once each in both plugin lists, in that order.
+Use OpenCode 1.19.0. The old Config Composer `agent`, `command`, `skill`, and `sourceDirectories` fields are unsupported.
+Use the new groups, presets, and profiles in `config-composer.jsonc`.
+Preserve explicit `configFile` overrides and deliberate native agent model pins.
 
-Register one Config Composer server entry and one TUI entry. Keep composition settings in
-`config-composer.jsonc` and agent memberships in ordered `groups` arrays.
-Use the raw GitHub `$schema` URL shown in `config-composer.jsonc`, or the installed package schema path above.
-Preserve customized source mappings and prompt fragments instead of overwriting them.
-
-After installing the updated agent bodies, remove matching shared fragments from their configured prompt layers.
-The former shipped default appended `@agent-prompts/response-formats/common.md`.
-The former shipped group layers supplied implementation or reviewer standards, review target and criteria,
-and implementation, review, or documentation profiles. These fragments are now included directly in agent bodies.
-Remove matching per-agent profile appends for `architect`, `planner`, `code-simplifier`, `refactor-cleaner`,
-and `performance-optimizer` after installing their inline includes.
-Preserve custom additional fragments, models, memberships, and the four primary leads' inheritance opt-outs.
-Leads include specialist contracts to delegate work and validate reports.
-These contracts do not define the leads' own responses.
-Do not keep the same fragment in a configured layer and an inline include unless repetition is intended.
-
-Composition fragments now live in `config-composer/agent/prompts/`.
-Set the `agent-prompts` entry in `sourceDirectories` to `./config-composer/agent/prompts`.
-Use this alias in Composer include directives and configured prompt fragments.
-Migrate custom `@agent-prompts` reads to inline includes, or move genuine runtime references into a
-native reference directory.
-After migrating all consumers, remove the native `agent-prompts` entry from `opencode.jsonc`.
-Install templated skills with Config Composer and their configured sources.
-Their includes resolve during native skill loading.
-Conditional guidance lives in `references/agent/`, exposed through the hidden `agent-references` reference.
-Update customized reads to that guidance, such as `@agent-references/testing-standards.md`.
-Move customized fragments and conditional references to their respective directories before removing obsolete copies.
-Hidden references stay available to agents while being omitted from interactive reference selectors.
-See the [reference documentation](https://opencode.ai/docs/references/).
+Move custom prompt fragments into `prompts/`, and replace source-alias directives with relative filenames.
+For example, the new syntax is `{{include:reviewer-standards.md}}`.
+Remove obsolete `config-composer/agent/prompts/` copies after updating all consumers.
+Keep optional prompt defaults and agent rules in `prompt-composer.jsonc`; group prompt layers are unsupported.
+The four primary leads retain their default-prompt opt-outs. Do not duplicate body includes in configured appends.
+Install templated skills with Prompt Composer and their snippets. Conditional native references stay in `references/agent/`.
+Resolve includes before disabling Prompt Composer. Restore explicit model choices before disabling Config Composer.
 
 After installing the new files, remove the old root reference copies of `asd-ste100.md`, `global-coding-style.md`,
 `reviewer-standards.md`, and `review-template.md` from `references/`. Preserve unrelated references.
 Also remove `references/agent-prompts/review-template.md` if present. Update custom review prompts to include
-`{{include:@agent-prompts/response-formats/review.md}}`, and install the complete
-`config-composer/agent/prompts/response-formats/` directory.
+`{{include:response-formats/review.md}}`, and install the complete `prompts/response-formats/` directory.
 The former directory READMEs are also obsolete: `agents/README.markdown`, `commands/README.markdown`,
 `skills/README.md`, and `plugins/README.md`. User documentation is in this README and the [usage guide](USAGE.md).
 
@@ -252,7 +222,7 @@ Copying new files alone leaves old agents, commands, and skills discoverable. Ba
 - Skill directories: `development-workflow/`, `spec-interview/`, `plan/`, `phased-plan/`, `review/`, `security-review/`,
   and `finish/` from `skills/`.
 
-Preserved procedures now live in `config-composer/agent/prompts/` and `references/agent/`.
+Preserved procedures now live in `prompts/` and `references/agent/`.
 The security checklist is `references/agent/owasp-2021.md`.
 After replacing the shipped workflow and performance skill, remove the obsolete
 `references/agent-prompts/LICENSE-pstack.txt` and `skills/measured-performance/LICENSE-pstack.txt` copies.

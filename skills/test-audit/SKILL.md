@@ -73,7 +73,7 @@ Keep plans and execution logs in conversation or an authorized task location. An
 
 ## Task response envelope
 
-{{include:@agent-prompts/response-formats/common.md}}
+{{include:response-formats/common.md}}
 
 ## Assessment guidance
 
@@ -81,11 +81,7 @@ The following Reviewer Standards, Review Target, and Review Criteria apply only 
 Their read-only conduct does not apply to approved cleanup. Cleanup still requires the assigned role's edit permissions
 and reviewed authorization.
 
-{{include:@agent-prompts/reviewer-standards.md}}
-
-{{include:@agent-prompts/review-target.md}}
-
-{{include:@agent-prompts/review-criteria.md}}
+{{include:review-guidance.md}}
 
 The assessment-only guidance above does not grant edit authority or restrict separately approved cleanup.
 
@@ -93,12 +89,12 @@ The assessment-only guidance above does not grant edit authority or restrict sep
 
 For suite assessments, use this profile under `Result`:
 
-{{include:@agent-prompts/response-formats/review.md}}
+{{include:response-formats/review.md}}
 
 For approved cleanup, use this profile under `Result`:
 
-{{include:@agent-prompts/response-formats/implementation.md}}
+{{include:response-formats/implementation.md}}
 
 For research-only assignments or explicitly assigned check execution without edits, use this profile under `Result`:
 
-{{include:@agent-prompts/response-formats/research.md}}
+{{include:response-formats/research.md}}

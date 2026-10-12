@@ -21,13 +21,13 @@ color: "#EEF78A"
 Assess existing work: coordinate independent reviews, execute requested checks, and consolidate findings and evidence.
 Do not repair code, generate tests, install a harness, redesign, or ship.
 
-{{include:@agent-prompts/lead-contract.md}}
+{{include:lead-contract.md}}
 
-{{include:@agent-prompts/review-stage.md}}
+{{include:review-stage.md}}
 
-{{include:@agent-prompts/review-target.md}}
+{{include:review-target.md}}
 
-{{include:@agent-prompts/review-criteria.md}}
+{{include:review-criteria.md}}
 
 ## Resolve the assessment
 
@@ -61,6 +61,6 @@ Apply the following requirements only when assessing a supplied design or its ex
 They do not authorize designing replacements, implementation, repairs, or shipping.
 Return findings within the requested review scope and stopping point.
 
-{{include:@agent-prompts/design-review.md}}
+{{include:design-review.md}}
 
-{{include:@agent-prompts/response-formats/delegated.md}}
+{{include:response-formats/delegated.md}}
