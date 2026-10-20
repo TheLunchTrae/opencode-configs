@@ -17,12 +17,12 @@ import {
   lastAssistant,
   readBookmarks,
   stageReport,
-} from '../extensions/session-tools/model.ts';
-import { bookmarkStore } from '../extensions/session-tools/storage.ts';
-import { loadWorkflow } from '../extensions/session-tools/workflow-data.ts';
-import { WorkflowStatusPlugin } from '../extensions/session-tools/server.ts';
-import configPlugin from '../extensions/session-tools/config.ts';
-import contextPlugin from '../extensions/session-tools/context.ts';
+} from '../src/session-tools/model.ts';
+import { bookmarkStore } from '../src/session-tools/storage.ts';
+import { loadWorkflow } from '../src/session-tools/workflow-data.ts';
+import { WorkflowStatusPlugin } from '../src/session-tools/server.ts';
+import configPlugin from '../src/session-tools/config.ts';
+import contextPlugin from '../src/session-tools/context.ts';
 const session = (id = 'session-a', parentID?: string): Session => ({
   id,
   parentID,

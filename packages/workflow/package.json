@@ -1,0 +1,38 @@
+{
+  "name": "@lunchbox-labs/opencode-workflow",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "license": "GPL-3.0-only",
+  "engines": {
+    "opencode": "1.19.x"
+  },
+  "scripts": {
+    "test": "node --experimental-strip-types --test tests/*.test.ts",
+    "test:render": "bun test --preload @opentui/solid/preload ./tests/workflow-view.native.ts"
+  },
+  "opencodeArtifact": {
+    "directory": "workflow",
+    "resources": {
+      "LICENSE": "../../LICENSE",
+      "THIRD-PARTY-NOTICES.txt": "../../notices/workflow-dependencies.txt"
+    },
+    "entries": {
+      "server": "src/session-tools/server.ts",
+      "workflow": "src/session-tools/workflow.tsx",
+      "config": "src/session-tools/config.ts",
+      "context": "src/session-tools/context.ts",
+      "bookmarks": "src/session-tools/bookmarks.tsx"
+    }
+  },
+  "dependencies": {
+    "@opencode-ai/plugin": "1.19.0"
+  },
+  "devDependencies": {
+    "@opencode-ai/sdk": "1.19.0",
+    "@opentui/core": "0.4.5",
+    "@opentui/keymap": "0.4.5",
+    "@opentui/solid": "0.4.5",
+    "solid-js": "1.9.12"
+  }
+}

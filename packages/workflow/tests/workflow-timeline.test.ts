@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { Session } from '@opencode-ai/sdk/v2';
-import type { Entry } from '../extensions/session-tools/model.ts';
-import { type WorkflowRow, loadWorkflow } from '../extensions/session-tools/workflow-data.ts';
-import { initialPrompt, phaseLabel, workflowTimeline } from '../extensions/session-tools/workflow-timeline.ts';
+import type { Entry } from '../src/session-tools/model.ts';
+import { type WorkflowRow, loadWorkflow } from '../src/session-tools/workflow-data.ts';
+import { initialPrompt, phaseLabel, workflowTimeline } from '../src/session-tools/workflow-timeline.ts';
 import type { TuiPluginApi } from '@opencode-ai/plugin/tui';
 
 const session = (id: string, parentID?: string): Session => ({

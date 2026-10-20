@@ -1,0 +1,20 @@
+{
+  "name": "opencode-local-plugins",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "workflow"
+  ],
+  "scripts": {
+    "package:plugins": "node scripts/package-plugins.mjs",
+    "test": "npm run test --workspaces",
+    "test:render": "npm run test:render --workspace workflow"
+  },
+  "devDependencies": {
+    "@babel/core": "7.28.0",
+    "@babel/preset-typescript": "7.27.1",
+    "babel-preset-solid": "1.9.12",
+    "esbuild": "0.25.12",
+    "fflate": "0.8.2"
+  }
+}

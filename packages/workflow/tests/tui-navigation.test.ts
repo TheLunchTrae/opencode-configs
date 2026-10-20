@@ -7,7 +7,7 @@ import type {
   TuiDialogSelectProps,
   TuiPluginApi,
 } from '@opencode-ai/plugin/tui';
-import { type DialogDecoration, dialogNavigation } from '../extensions/tui/navigation.ts';
+import { type DialogDecoration, dialogNavigation } from '../src/tui/navigation.ts';
 
 type Dialog = TuiDialogSelectProps<string> | TuiDialogAlertProps | TuiDialogConfirmProps | TuiDialogPromptProps;
 

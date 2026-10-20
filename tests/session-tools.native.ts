@@ -8,7 +8,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { setTimeout } from 'node:timers/promises';
-import { type Entry, stageReport } from '../extensions/session-tools/model.ts';
+import { type Entry, stageReport } from '../packages/workflow/src/session-tools/model.ts';
 import { nativeBinary } from './native-host.ts';
 
 type FixtureRequest = Record<string, unknown> & {
@@ -141,7 +141,7 @@ for (const custom of [false, true]) {
       await writeFile(
         join(configRoot, 'opencode.jsonc'),
         JSON.stringify({
-          plugin: [composerDirectory, promptDirectory, './extensions/session-tools/server.ts'],
+          plugin: [composerDirectory, promptDirectory, './extensions/workflow/server.js'],
           model: 'fixture/model',
           small_model: 'fixture/model',
           default_agent: 'lead',

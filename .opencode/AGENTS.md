@@ -140,7 +140,8 @@ Check the installed version against the [V1 documentation](https://opencode.ai/d
 
 ## Plugin tooling
 
-Run `npm ci` from the repository root before editing plugins or extensions. Use the workspace TypeScript version
+Run `npm ci` and `npm --prefix packages ci` from the repository root before editing plugins or extensions.
+Run `npm run package:plugins` after changes to local package source. Use the workspace TypeScript version
 in the editor. Reopen the project or restart its TypeScript service if dependencies remain unresolved.
 Preserve the TypeScript compiler settings and OpenTUI JSX import source.
 The DOM type library supports Solid's declarations. ESLint runtime globals remain limited to Node.js.
@@ -198,7 +199,8 @@ Group names and membership are discovered from configuration; do not hardcode a 
 Use the provider API for model and variant choices. Do not synthesize model IDs from display names.
 The global update API disposes all server workspaces. Keep reload explicit and the current-workspace busy check intact.
 
-Session tool entrypoints are in `extensions/session-tools/`. Register each TUI panel separately in `tui.jsonc`
+Session tool source is in `packages/workflow/src/session-tools/`. Built entrypoints are in `extensions/workflow/`.
+Register each TUI panel separately in `tui.jsonc`
 and the status tool in `opencode.jsonc`. Share helpers without placing them in auto-discovered plugin directories.
 Keep workflow stages attributed to completed tool records. Never infer completion or approval from idle status.
 Keep config and context views read-only. Show evidence limits instead of inventing provenance or prompt contents.
@@ -211,15 +213,18 @@ Run applicable existing checks from the repository root:
 
 ```sh
 npm ci
+npm --prefix packages ci
+npm run package:plugins
 npm run check
 npm run test:native
 ```
 
 - Configuration tests check metadata, routing, and shared references. They do not launch OpenCode or prove behavior.
 - Plugin tests use mocked hooks and synthetic paths. They do not access real secrets or establish V2 compatibility.
-- Type checking includes `plugins/**/*.ts`, `extensions/**/*.ts`, `extensions/**/*.tsx`, and `tests/**/*.ts`.
+- Type checking includes root plugins and tests, plus the workflow package's source and tests.
   It does not validate Markdown, JSONC, or `.opencode/` code.
-- Root dependency manifests are shipped with the local extension. Keep runtime and development dependencies pinned.
+- Root dependency manifests retain runtime and repository test dependencies. The private workspace owns workflow
+  source dependencies and build tools. Keep both lockfiles committed and dependencies pinned.
   `.opencode/` dependency manifests remain local editor support. The checks require Node 22.18 or newer.
 - `npm run test:native` resolves the newest published stable version in `package.json`'s `engines.opencode` range.
   It installs the native executable in fresh temporary state and verifies and logs its exact version.
@@ -249,7 +254,7 @@ npm install --package-lock-only --ignore-scripts
 npm run test:package
 ```
 
-Use Node 22.18 or newer and Bun for the rendered workflow test.
+Use Node 22.18 or newer and Bun for `npm --prefix packages run test:render`.
 Set `BUN_BIN` if Bun is not on PATH. The native runner installs OpenCode from the supported range.
 Set `npm_config_cache` to a writable directory if the default cache is unavailable.
 This procedure does not publish or install anything into live settings.

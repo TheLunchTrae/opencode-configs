@@ -1,10 +1,20 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { setTimeout as delay } from 'node:timers/promises';
-import type { TuiDialogAlertProps, TuiDialogSelectProps, TuiPluginApi, TuiSlotPlugin } from '@opencode-ai/plugin/tui';
+import { cp, mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
+import type {
+  TuiDialogAlertProps,
+  TuiDialogSelectProps,
+  TuiPluginApi,
+  TuiPluginModule,
+  TuiSlotPlugin,
+} from '@opencode-ai/plugin/tui';
 import type { Session } from '@opencode-ai/sdk/v2';
 import type { JSX } from '@opentui/solid';
-import type { Entry } from '../extensions/session-tools/model.ts';
+import type { Entry } from '../src/session-tools/model.ts';
 
 test(
   'workflow sidebar toggles and updates; prompt reader renders, scrolls, resizes, and disposes pending reads',
@@ -17,7 +27,7 @@ test(
     const { testRender } = await import('@opentui/solid');
     const { jsxs, jsx } = await import('@opentui/solid/jsx-runtime');
     const { createSignal } = await import('solid-js');
-    const { PromptReader, workflowUi } = await import('../extensions/session-tools/workflow-view.tsx');
+    const { PromptReader, workflowUi } = await import('../src/session-tools/workflow-view.tsx');
     const [frame, setFrame] = createSignal<(() => JSX.Element) | undefined>();
     let selected: TuiDialogSelectProps<string> | undefined;
     const commands = new Map<string, () => unknown>();
@@ -261,8 +271,42 @@ test(
         status: async () => ({ data: { developer: { type: 'busy' } } }),
       },
     });
-    const workflow = (await import('../extensions/session-tools/workflow.tsx')).default;
-    await workflow.tui(api);
+    // The renderer and artifacts must share host runtime instances, as they do in OpenCode.
+    const { ensureRuntimePluginSupport } = await import('@opentui/solid/runtime-plugin-support/configure');
+    ensureRuntimePluginSupport();
+    const artifactRoot = await mkdtemp(join(tmpdir(), 'workflow ui artifact '));
+    t.after(() => rm(artifactRoot, { recursive: true, force: true }));
+    await cp(new URL('../../../extensions/workflow/', import.meta.url), artifactRoot, { recursive: true });
+    const load = async (name: string) => {
+      const spec = pathToFileURL(join(artifactRoot, `${name}.js`)).href;
+      const plugin = ((await import(spec)) as { default: TuiPluginModule }).default;
+      await plugin.tui(api, undefined, {
+        id: plugin.id ?? name,
+        source: 'file',
+        spec,
+        target: spec,
+        first_time: 1,
+        last_time: 1,
+        time_changed: 1,
+        load_count: 1,
+        fingerprint: 'fixture',
+        state: 'first',
+      });
+      return plugin;
+    };
+    for (const name of ['config', 'context', 'bookmarks']) {
+      await load(name);
+    }
+    for (const command of [
+      'effective-config.open',
+      'context-inspector.open',
+      'session-bookmarks.open',
+      'session-bookmarks.add',
+      'session-bookmarks.handoff',
+    ]) {
+      assert.ok(commands.has(command), `${command}: artifact did not register its command`);
+    }
+    await load('workflow');
     const [sidebarSession, setSidebarSession] = createSignal('root');
     setFrame(() => () => {
       assert.ok(sidebar?.slots.sidebar_content !== undefined);

@@ -274,20 +274,21 @@ See [continue a long task](#continue-a-long-task) for the lead's checkpoint and 
 
 ### Enable or disable panels
 
-Install `extensions/session-tools/` and the shared `extensions/tui/` directory.
+Install the built `extensions/workflow/` directory, or extract `extensions/workflow.zip` into `extensions/`.
+Keep the extracted directory's manifest and license notices. The ZIP is a transport artifact, not a plugin entry.
 Session-tools has no Composer API dependency and works independently of its plugin registration.
 Keep Prompt Composer for body includes and Config Composer for model and group controls.
 The four TUI entries are independent:
 
 | Entry in `tui.jsonc` | Plugin |
 | --- | --- |
-| `./extensions/session-tools/workflow.tsx` | Workflow sidebar and expanded view. |
-| `./extensions/session-tools/config.ts` | Effective configuration inspector. |
-| `./extensions/session-tools/context.ts` | Context inspector. |
-| `./extensions/session-tools/bookmarks.tsx` | Bookmarks and handoff drafts. |
+| `./extensions/workflow/workflow.js` | Workflow sidebar and expanded view. |
+| `./extensions/workflow/config.js` | Effective configuration inspector. |
+| `./extensions/workflow/context.js` | Context inspector. |
+| `./extensions/workflow/bookmarks.js` | Bookmarks and handoff drafts. |
 
-Remove an entry to disable that panel, then restart OpenCode. Keep other plugin entries and the shared helper files.
-`./extensions/session-tools/server.ts` in `opencode.jsonc` supplies `workflow_status` for primary leads.
+Remove an entry to disable that panel, then restart OpenCode. Keep other plugin entries.
+`./extensions/workflow/server.js` in `opencode.jsonc` supplies `workflow_status` for primary leads.
 Removing it stops new stage reports; the other views remain usable. These plugins target OpenCode V1 1.19.0.
 V2 requires a separate port.
 

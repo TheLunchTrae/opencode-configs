@@ -19,7 +19,8 @@ Select a focused lead when you want only planning, approved implementation, or a
 | [`plugins/`](plugins/) | Local plugins, including secret-path checks. |
 | `@lunchbox-labs/opencode-config-composer` | Config Composer: model presets, groups, and project profiles. |
 | `@lunchbox-labs/opencode-prompt-composer` | Prompt Composer: shared body includes and prompt editing. |
-| [`extensions/session-tools/`](extensions/session-tools/) | Workflow, config, context, bookmarks, and handoff panels. |
+| [`extensions/workflow/`](extensions/workflow/) | Built workflow, config, context, bookmarks, and handoff panels. |
+| [`packages/workflow/`](packages/workflow/) | Private source package and tests for the local panels. |
 | [`package.json`](package.json) | Pinned plugin dependencies and maintenance commands. |
 | [`opencode.jsonc`](opencode.jsonc) | Global models, permissions, MCP servers, shell, and plugin settings. |
 | [`config-composer.jsonc`](config-composer.jsonc) | Config Composer groups, presets, profiles, and selection policy. |
@@ -51,7 +52,17 @@ When copying selected skills, include their supporting files, applicable license
 composition sources. Skills with include directives also require Prompt Composer and `prompts/`.
 Load these templates through native skill loading under an agent whose role and permissions permit the procedure.
 
-For local editing of `plugins/` and `extensions/`, run `npm ci` from the checkout root.
+For local editing, run `npm ci` from the checkout root, then `npm --prefix packages ci`.
+The nested development workspace owns the workflow package dependencies and build tools.
+Run `npm run package:plugins` to build every package listed in `packages/package.json`.
+Commit the generated `extensions/workflow/` files and `extensions/workflow.zip` with source changes.
+The ZIP contains built files for transport. Extract it into `extensions/` before use.
+Configuration points to the extracted `.js` entries, never the ZIP. No npm publication is involved.
+The built workflow files need neither package source nor a target-side dependency installation.
+Other configured npm plugins and the root secret-path plugin retain their existing dependency setup.
+The development workspace is not required in the live configuration directory.
+Builds preserve the host's shared Solid/OpenTUI runtime. They bundle the server tool dependency and Zod.
+Their notices are in [workflow dependency notices](notices/workflow-dependencies.txt) and each artifact.
 Select the workspace TypeScript version in your editor. If types remain unresolved, reopen the project or restart
 its TypeScript service. See [plugin tooling](.opencode/AGENTS.md#plugin-tooling) for lint and format commands.
 
@@ -100,7 +111,7 @@ Missing or invalid includes fail composition. A direct Read or raw file copy doe
 See [shared prompt composition](USAGE.md#shared-prompt-composition).
 
 Session-tools uses native OpenCode APIs in `/inspect-config`; it does not interpret Composer settings.
-The shared `extensions/tui/` directory supports the remaining session-tools panels.
+Shared panel helpers are bundled from `packages/workflow/src/tui/`.
 
 The selected `pink` theme uses pink accents, pastel syntax and status colors, and neutral dark backgrounds.
 It keeps the same dark appearance in both terminal modes. Install `themes/` with `tui.jsonc` so OpenCode can find it.
@@ -191,6 +202,10 @@ Back up the configuration first. Update `README.md`, `USAGE.md`, `AGENTS.md`, `a
 together, preserving local overrides and license notices.
 
 Install `extensions/`, `package.json`, and `package-lock.json` with the configuration files.
+Replace the five old `extensions/session-tools/*.ts` or `.tsx` registrations with the corresponding
+`extensions/workflow/*.js` entries shown in [session tools](USAGE.md#enable-or-disable-panels).
+After updating all consumers, remove the old `extensions/session-tools/` and `extensions/tui/` copies.
+Preserve any custom extensions. The workflow ZIP must be extracted before OpenCode loads its entries.
 Merge existing dependencies and preserve unrelated extensions and personal provider settings.
 Register Config Composer 0.0.3 and Prompt Composer 0.0.2 once each in both plugin lists, in that order.
 Use OpenCode 1.19.0. The old Config Composer `agent`, `command`, `skill`, and `sourceDirectories` fields are unsupported.

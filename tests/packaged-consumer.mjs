@@ -9,8 +9,8 @@ import { fileURLToPath } from 'node:url';
 const repository = fileURLToPath(new URL('../', import.meta.url));
 const root = await mkdtemp(join(tmpdir(), 'opencode-packaged-consumer-'));
 const consumer = join(root, 'consumer');
-const run = (command, args) => {
-  const result = spawnSync(command, args, { cwd: consumer, env: process.env, stdio: 'inherit' });
+const run = (command, args, cwd = consumer) => {
+  const result = spawnSync(command, args, { cwd, env: process.env, stdio: 'inherit' });
   assert.ifError(result.error);
   assert.equal(result.status, 0, `${command} ${args.join(' ')} failed`);
 };
@@ -24,6 +24,8 @@ try {
   assert.equal(manifest.dependencies['@lunchbox-labs/opencode-prompt-composer'], '0.0.3');
   assert.equal(manifest.dependencies['opencode-config-composer'], undefined);
   run('npm', ['ci', '--ignore-scripts', '--no-audit', '--no-fund']);
+  run('npm', ['--prefix', 'packages', 'ci', '--ignore-scripts', '--no-audit', '--no-fund']);
+  run('npm', ['run', 'package:plugins']);
   const installed = JSON.parse(
     await readFile(join(consumer, 'node_modules/@lunchbox-labs/opencode-config-composer/package.json'), 'utf8'),
   );
@@ -55,20 +57,13 @@ try {
   await rename(packageDirectory, unavailablePackage);
   try {
     run('npm', ['run', 'typecheck']);
-    run('node', [
-      '--experimental-strip-types',
-      '--test',
-      'tests/block-secrets.test.ts',
-      'tests/session-tools.test.ts',
-      'tests/tui-navigation.test.ts',
-      'tests/workflow-timeline.test.ts',
-    ]);
-    run(process.env.BUN_BIN ?? 'bun', [
-      'test',
-      '--preload',
-      '@opentui/solid/preload',
-      './tests/workflow-view.native.ts',
-    ]);
+    run('node', ['--experimental-strip-types', '--test', 'tests/block-secrets.test.ts']);
+    run('npm', ['--prefix', 'packages', 'test']);
+    run(
+      process.env.BUN_BIN ?? 'bun',
+      ['test', '--preload', '@opentui/solid/preload', './tests/workflow-view.native.ts'],
+      join(consumer, 'packages', 'workflow'),
+    );
   } finally {
     await rename(unavailablePackage, packageDirectory);
   }
