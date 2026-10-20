@@ -30,7 +30,7 @@ Select a focused lead when you want only planning, approved implementation, or a
 
 ## Setup
 
-1. Install OpenCode V1 1.19.0 and Node 22.18 or newer. See <https://opencode.ai/docs/>.
+1. Install the latest OpenCode V1 1.19.x and Node 22.18 or newer. See <https://opencode.ai/docs/>.
 2. Authenticate your provider through `/connect` when supported.
 3. Back up your existing global configuration directory.
 4. Obtain a checkout or download of this repository.
@@ -43,7 +43,7 @@ Select a focused lead when you want only planning, approved implementation, or a
 The global configuration directory is `~/.config/opencode` or `%USERPROFILE%\.config\opencode` on Windows.
 Install the pinned dependencies in this directory with `npm ci`.
 Each settings schema uses its installed package version. Local extensions do not import either Composer package.
-Both plugin lists pin Config Composer 0.0.3 before Prompt Composer 0.0.2 and downstream plugins.
+Both plugin lists pin Config Composer 0.0.4 before Prompt Composer 0.0.3 and downstream plugins.
 
 Do not copy credentials, tokens, `node_modules`, `.idea`, or work-project checkpoints.
 The repository's `.opencode/` directory contains maintenance guidance and is not needed for global installation.

@@ -9,6 +9,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { setTimeout } from 'node:timers/promises';
 import { type Entry, stageReport } from '../extensions/session-tools/model.ts';
+import { nativeBinary } from './native-host.ts';
 
 type FixtureRequest = Record<string, unknown> & {
   tools?: { function?: { name?: string } }[];
@@ -209,11 +210,11 @@ for (const custom of [false, true]) {
       });
       const start = async () => {
         output = '';
-        child = spawn(
-          process.env.OPENCODE_BIN ?? 'opencode',
-          ['serve', '--hostname', '127.0.0.1', '--port', '0', '--print-logs'],
-          { cwd: project, env, stdio: ['ignore', 'pipe', 'pipe'] },
-        );
+        child = spawn(nativeBinary(), ['serve', '--hostname', '127.0.0.1', '--port', '0', '--print-logs'], {
+          cwd: project,
+          env,
+          stdio: ['ignore', 'pipe', 'pipe'],
+        });
         let launchError: Error | undefined;
         child.on('error', (error) => {
           launchError = error;

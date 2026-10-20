@@ -7,6 +7,7 @@ import { join } from 'node:path';
 import { setTimeout } from 'node:timers/promises';
 import { test } from 'node:test';
 import { parse } from 'jsonc-parser';
+import { nativeBinary } from './native-host.ts';
 
 interface Agent {
   name: string;
@@ -66,15 +67,11 @@ test(
       OPENCODE_DISABLE_DEFAULT_PLUGINS: 'true',
       OPENCODE_EXPERIMENTAL_DISABLE_FILEWATCHER: 'true',
     };
-    const child = spawn(
-      process.env.OPENCODE_BIN ?? 'opencode',
-      ['serve', '--hostname', '127.0.0.1', '--port', '0', '--print-logs'],
-      {
-        cwd: project,
-        env: environment,
-        stdio: ['ignore', 'pipe', 'pipe'],
-      },
-    );
+    const child = spawn(nativeBinary(), ['serve', '--hostname', '127.0.0.1', '--port', '0', '--print-logs'], {
+      cwd: project,
+      env: environment,
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
     let output = '';
     let launchError: Error | undefined;
     child.on('error', (error) => {

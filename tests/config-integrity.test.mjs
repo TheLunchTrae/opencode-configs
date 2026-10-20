@@ -528,8 +528,8 @@ test('published Composer registrations match locked dependencies and preserve na
   const dependencies = JSON.parse(read('package.json')).dependencies;
   const lock = JSON.parse(read('package-lock.json'));
   for (const [name, version] of [
-    ['config', '0.0.3'],
-    ['prompt', '0.0.2'],
+    ['config', '0.0.4'],
+    ['prompt', '0.0.3'],
   ]) {
     const dependency = `@lunchbox-labs/opencode-${name}-composer`;
     const spec = `${dependency}@${version}`;
@@ -541,8 +541,8 @@ test('published Composer registrations match locked dependencies and preserve na
     assert.match(lock.packages[`node_modules/${dependency}`].resolved, /^https:\/\/registry\.npmjs\.org\//);
   }
   assert.deepEqual(config.plugin.slice(0, 2), [
-    '@lunchbox-labs/opencode-config-composer@0.0.3',
-    '@lunchbox-labs/opencode-prompt-composer@0.0.2',
+    '@lunchbox-labs/opencode-config-composer@0.0.4',
+    '@lunchbox-labs/opencode-prompt-composer@0.0.3',
   ]);
   assert.equal(composer.$schema, './node_modules/@lunchbox-labs/opencode-config-composer/schema.json');
   assert.equal(lock.packages['node_modules/opencode-config-composer'], undefined);
