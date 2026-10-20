@@ -191,7 +191,10 @@ Stages are `planning`, `implementation`, `review`, `verification`, `blocked`, an
 They describe the lead's scope. A report is not an approval or an independent verification result.
 Sessions without a recorded stage show **Stage not reported**. Idle status never means workflow completion.
 
-Select the workflow heading or an agent in the sidebar, or run `/workflow-panel`.
+The Workflow section starts collapsed, with only the current stage below its heading.
+Select the heading to expand or collapse the summary and agent activity.
+Switching sessions resets the section to collapsed.
+Select the stage or an agent in the sidebar, or run `/workflow-panel`, to open the full panel.
 The panel groups assignments under numbered phases, such as **Planning 1**, **Dev 1**, **Review 1**, and **Dev 2**.
 Repeated reports within one phase update its summary. Returning to a stage creates another numbered occurrence.
 Phase summaries come from the lead's recorded reports. The panel does not send model requests.
