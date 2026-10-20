@@ -221,7 +221,11 @@ npm run test:native
   It does not validate Markdown, JSONC, or `.opencode/` code.
 - Root dependency manifests are shipped with the local extension. Keep runtime and development dependencies pinned.
   `.opencode/` dependency manifests remain local editor support. The checks require Node 22.18 or newer.
-- Native tests require OpenCode V1 1.18.34 on PATH, or its executable path in `OPENCODE_BIN`.
+- `npm run test:native` resolves the newest published stable version in `package.json`'s `engines.opencode` range.
+  It installs the native executable in fresh temporary state and verifies and logs its exact version.
+  Registry or installation failures stop the run. Existing `OPENCODE_BIN`, PATH hosts, and npm caches are not fallbacks.
+  The installer supports x64 Linux and Windows. Run `npm run test:native:minimum` for the oldest published
+  compatible version as additional coverage. Direct native test invocation requires the runner's verified host.
   They use temporary configuration and a synthetic local provider, with no real credentials or paid model calls.
   They verify inheritance, provider dispatch, live reload, workflow tool loading, and report persistence after restart.
   They do not render terminal dialogs. Use a native TUI check for JSX loading, command discovery,
@@ -238,22 +242,22 @@ npm run test:native
 
 Keep the `@lunchbox-labs/opencode-config-composer` dependency and both registrations on the same version.
 Registry installation requires a published version and a lockfile generated from the registry artifact.
-To validate a local package build, pack the intended Composer checkout, then test a disposable consumer installation:
+After both selected Composer versions are published, regenerate the registry lockfile and run:
 
 ```sh
-COMPOSER_TARBALL=/absolute/path/to/package.tgz npm run test:package
+npm install --package-lock-only --ignore-scripts
+npm run test:package
 ```
 
-Use Node 22.18 or newer, OpenCode 1.18.34, and Bun for the rendered workflow test.
-Set `OPENCODE_BIN` and `BUN_BIN` if these binaries are not on PATH.
+Use Node 22.18 or newer and Bun for the rendered workflow test.
+Set `BUN_BIN` if Bun is not on PATH. The native runner installs OpenCode from the supported range.
 Set `npm_config_cache` to a writable directory if the default cache is unavailable.
 This procedure does not publish or install anything into live settings.
 
 `test:package` copies the consumer into a temporary directory without Git metadata or existing dependencies.
-Only that fixture receives a `file:` tarball dependency and a generated fixture lockfile.
-It runs installation and a clean install, then removes Composer from module resolution while running all local checks
+It installs the committed registry lockfile, then removes Composer from module resolution while running local checks
 and the rendered workflow test. It restores the package for native server tests through OpenCode's plugin loader.
-Native fixtures register the installed package directory to test local builds without a registry lookup.
+Native fixtures register the installed package directory.
 Committed configuration uses the selected npm name and pinned version.
 Passing fixtures do not prove registry installation.
 Composer implementation, storage, and native reload tests now belong to the extracted package.

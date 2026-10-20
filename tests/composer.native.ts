@@ -7,6 +7,8 @@ import { join } from 'node:path';
 import { setTimeout } from 'node:timers/promises';
 import { test } from 'node:test';
 import { parse } from 'jsonc-parser';
+import { nativeBinary } from './native-host.ts';
+import { waitForNativeReferences } from './native-references.ts';
 
 interface Agent {
   name: string;
@@ -66,15 +68,11 @@ test(
       OPENCODE_DISABLE_DEFAULT_PLUGINS: 'true',
       OPENCODE_EXPERIMENTAL_DISABLE_FILEWATCHER: 'true',
     };
-    const child = spawn(
-      process.env.OPENCODE_BIN ?? 'opencode',
-      ['serve', '--hostname', '127.0.0.1', '--port', '0', '--print-logs'],
-      {
-        cwd: project,
-        env: environment,
-        stdio: ['ignore', 'pipe', 'pipe'],
-      },
-    );
+    const child = spawn(nativeBinary(), ['serve', '--hostname', '127.0.0.1', '--port', '0', '--print-logs'], {
+      cwd: project,
+      env: environment,
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
     let output = '';
     let launchError: Error | undefined;
     child.on('error', (error) => {
@@ -117,7 +115,18 @@ test(
       assert.ok(response.ok, `${path}: ${await response.clone().text()}\n${output.slice(-3000)}`);
       return (await response.json()) as T;
     };
-    const baseline = await api<Agent[]>('/agent');
+    const snapshot = async () => {
+      // Native reference discovery finishes after its plugin is marked active.
+      // Wait before Agent caches its defaults; keep every permission assertion below.
+      let reads = 0;
+      await waitForNativeReferences(() => {
+        reads++;
+        return api<{ data: { name: string; path: string }[] }>('/api/reference');
+      }, [{ name: 'agent-references', path: join(installation, 'references', 'agent') }]);
+      t.diagnostic(`Native reference discovery ready after ${reads} catalog read(s)`);
+      return api<Agent[]>('/agent');
+    };
+    const baseline = await snapshot();
     const original = new Map(baseline.map((agent) => [agent.name, agent]));
     // Native skill discovery can reorder disjoint trusted-directory grants on restart.
     // Preserve the order of every other rule, including overlapping authored rules.
@@ -163,7 +172,7 @@ test(
       settings.selection = { defaultProfiles: profile !== '' ? [profile] : [], retainOnRestart: false };
       await writeFile(join(installation, 'config-composer.jsonc'), JSON.stringify(settings));
       await api('/global/dispose', 'POST');
-      const agents = await api<Agent[]>('/agent');
+      const agents = await snapshot();
       const developer = agents.find((agent) => agent.name === 'typescript-developer');
       assert.ok(developer !== undefined, `${profile}: developer discovery`);
       const expected =

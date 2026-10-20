@@ -4,7 +4,8 @@
   "type": "module",
   "scripts": {
     "test": "node --experimental-strip-types --test tests/*.test.mjs tests/*.test.ts",
-    "test:native": "node --experimental-strip-types --test tests/*.native.ts",
+    "test:native": "node tests/run-native.mjs",
+    "test:native:minimum": "node tests/run-native.mjs minimum",
     "test:package": "node tests/packaged-consumer.mjs",
     "typecheck": "tsc --project tsconfig.json",
     "lint": "eslint . --max-warnings 0",
@@ -13,9 +14,12 @@
     "format:check": "prettier --check plugins extensions tests package.json tsconfig.json eslint.config.mjs prettier.config.mjs",
     "check": "npm run typecheck && npm run lint && npm run format:check && npm test"
   },
+  "engines": {
+    "opencode": "1.19.x"
+  },
   "dependencies": {
-    "@lunchbox-labs/opencode-config-composer": "0.0.3",
-    "@lunchbox-labs/opencode-prompt-composer": "0.0.2",
+    "@lunchbox-labs/opencode-config-composer": "0.0.4",
+    "@lunchbox-labs/opencode-prompt-composer": "0.0.3",
     "@opencode-ai/plugin": "1.19.0",
     "jsonc-parser": "3.3.1",
     "yaml": "2.9.1"
@@ -33,6 +37,7 @@
     "eslint-plugin-regexp": "3.3.0",
     "globals": "17.12.0",
     "prettier": "3.9.6",
+    "semver": "7.8.5",
     "solid-js": "1.9.12",
     "typescript": "5.9.3",
     "typescript-eslint": "8.69.0"
