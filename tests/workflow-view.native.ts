@@ -1,14 +1,16 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import type { TuiDialogAlertProps, TuiDialogSelectProps, TuiPluginApi } from '@opencode-ai/plugin/tui';
+import { setTimeout as delay } from 'node:timers/promises';
+import type { TuiDialogAlertProps, TuiDialogSelectProps, TuiPluginApi, TuiSlotPlugin } from '@opencode-ai/plugin/tui';
 import type { Session } from '@opencode-ai/sdk/v2';
 import type { JSX } from '@opentui/solid';
 import type { Entry } from '../extensions/session-tools/model.ts';
 
 test(
-  'workflow close header and prompt reader render, scroll, resize, and dispose pending reads',
+  'workflow sidebar toggles and updates; prompt reader renders, scrolls, resizes, and disposes pending reads',
   {
     skip: process.versions.bun === undefined ? 'Run with Bun and @opentui/solid/preload to render TSX.' : false,
+    timeout: 15_000,
   },
   async (t) => {
     const { RGBA } = await import('@opentui/core');
@@ -19,6 +21,8 @@ test(
     const [frame, setFrame] = createSignal<(() => JSX.Element) | undefined>();
     let selected: TuiDialogSelectProps<string> | undefined;
     const commands = new Map<string, () => unknown>();
+    const listeners = new Set<() => void>();
+    let sidebar: TuiSlotPlugin | undefined;
     let closed: (() => void) | undefined;
     const controller = new AbortController();
     const native = (props: TuiDialogAlertProps) =>
@@ -38,8 +42,18 @@ test(
     const api = {
       lifecycle: { signal: controller.signal, onDispose: () => () => {} },
       client: {},
-      event: { on: () => () => {} },
-      slots: { register: () => '' },
+      event: {
+        on: (_type: string, handler: () => void) => {
+          listeners.add(handler);
+          return () => listeners.delete(handler);
+        },
+      },
+      slots: {
+        register: (plugin: TuiSlotPlugin) => {
+          sidebar = plugin;
+          return '';
+        },
+      },
       state: { session: { question: () => [], permission: () => [] } },
       route: { current: { name: 'session', params: { sessionID: 'root' } } },
       theme: {
@@ -213,7 +227,7 @@ test(
         status: 'completed',
         input: {},
         time: { start: time, end: time },
-        metadata: { workflowPanel: { version: 1, stage: name, summary: name, agent: 'lead' } },
+        metadata: { workflowPanel: { version: 1, stage: name, summary: `${name} details`, agent: 'lead' } },
       },
     });
     const task = (id: string, agent: string, child: string, time: number, background = false) => ({
@@ -249,6 +263,64 @@ test(
     });
     const workflow = (await import('../extensions/session-tools/workflow.tsx')).default;
     await workflow.tui(api);
+    const [sidebarSession, setSidebarSession] = createSignal('root');
+    setFrame(() => () => {
+      assert.ok(sidebar?.slots.sidebar_content !== undefined);
+      return sidebar.slots.sidebar_content(
+        { theme: api.theme },
+        {
+          get session_id() {
+            return sidebarSession();
+          },
+        },
+      );
+    });
+    await renderer.waitForFrame((value) => value.includes('review'));
+    const clickText = async (label: string) => {
+      const rows = renderer.captureCharFrame().split('\n');
+      const y = rows.findIndex((row) => row.includes(label));
+      assert.ok(y >= 0, `Missing text: ${label}`);
+      await renderer.mockMouse.click(rows[y].indexOf(label), y);
+      await renderer.flush();
+    };
+    assert.match(renderer.captureCharFrame(), /▸ Workflow/);
+    assert.ok(!renderer.captureCharFrame().includes('lead:'));
+    assert.ok(!renderer.captureCharFrame().includes('review details'));
+    await clickText('Workflow');
+    assert.match(renderer.captureCharFrame(), /▾ Workflow/);
+    assert.match(renderer.captureCharFrame(), /lead:/);
+    assert.match(renderer.captureCharFrame(), /review details/);
+    await clickText('Workflow');
+    assert.match(renderer.captureCharFrame(), /▸ Workflow/);
+    assert.ok(!renderer.captureCharFrame().includes('lead:'));
+    assert.ok(!renderer.captureCharFrame().includes('review details'));
+
+    const update = entry('live-update', [stage('verify', 'verification', 10)]);
+    update.info.time.created = 10;
+    history.push(update);
+    listeners.forEach((listener) => listener());
+    await delay(550);
+    await renderer.waitForFrame((value) => value.includes('verification'));
+    assert.match(renderer.captureCharFrame(), /▸ Workflow/);
+    assert.ok(!renderer.captureCharFrame().includes('review'));
+    assert.ok(!renderer.captureCharFrame().includes('lead:'));
+    assert.ok(!renderer.captureCharFrame().includes('verification details'));
+    const savedHistory = history.splice(0);
+    listeners.forEach((listener) => listener());
+    await delay(550);
+    await renderer.waitForFrame((value) => value.includes('Stage not reported'));
+    assert.match(renderer.captureCharFrame(), /▸ Workflow/);
+    await clickText('Workflow');
+    assert.match(renderer.captureCharFrame(), /▾ Workflow/);
+    setSidebarSession('other');
+    await renderer.flush();
+    assert.match(renderer.captureCharFrame(), /▸ Workflow/);
+    history.push(...savedHistory.slice(0, -1));
+    setSidebarSession('root');
+    await renderer.waitForFrame((value) => value.includes('review'));
+    await clickText('review');
+    await renderer.waitForFrame((value) => value.includes('Review 1'));
+    await clickClose();
     await commands.get('workflow-panel.open')!();
     await renderer.waitForFrame((value) => value.includes('Review 1'));
     const select = (value: string) => {

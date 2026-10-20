@@ -307,6 +307,7 @@ function Dialog(props: {
 
 function Sidebar(props: { api: TuiPluginApi; sessionID: string; open: (row?: WorkflowRow) => void }) {
   const source = feed(props.api, props.sessionID, false);
+  const [expanded, setExpanded] = createSignal(false);
   const report = () => {
     const data = source.data();
     return data !== undefined ? stageReport(data.root.entries) : undefined;
@@ -314,27 +315,31 @@ function Sidebar(props: { api: TuiPluginApi; sessionID: string; open: (row?: Wor
   const theme = () => props.api.theme.current;
   return (
     <box gap={1}>
-      <text fg={theme().primary} onMouseUp={() => props.open()}>
-        Workflow
+      <text fg={theme().primary} onMouseUp={() => setExpanded((value) => !value)}>
+        {expanded() ? '▾' : '▸'} Workflow
       </text>
-      <text fg={theme().text}>{report()?.stage ?? 'Stage not reported'}</text>
-      <Show when={report()?.summary}>{(summary) => <text fg={theme().textMuted}>{summary()}</text>}</Show>
-      <Show when={source.failed()}>
-        <text fg={theme().warning}>Refresh failed; data may be stale.</text>
+      <text fg={theme().text} onMouseUp={() => props.open()}>
+        {report()?.stage ?? 'Stage not reported'}
+      </text>
+      <Show when={expanded()}>
+        <Show when={report()?.summary}>{(summary) => <text fg={theme().textMuted}>{summary()}</text>}</Show>
+        <Show when={source.failed()}>
+          <text fg={theme().warning}>Refresh failed; data may be stale.</text>
+        </Show>
+        <For each={source.data()?.rows.slice(0, 5)}>
+          {(row) => {
+            const status = () => {
+              const data = source.data();
+              return data !== undefined ? rowStatus(props.api, data, row) : 'Loading';
+            };
+            return (
+              <text fg={theme().textMuted} onMouseUp={() => props.open(row)}>
+                {row.agent}: {status()}
+              </text>
+            );
+          }}
+        </For>
       </Show>
-      <For each={source.data()?.rows.slice(0, 5)}>
-        {(row) => {
-          const status = () => {
-            const data = source.data();
-            return data !== undefined ? rowStatus(props.api, data, row) : 'Loading';
-          };
-          return (
-            <text fg={theme().textMuted} onMouseUp={() => props.open(row)}>
-              {row.agent}: {status()}
-            </text>
-          );
-        }}
-      </For>
     </box>
   );
 }
