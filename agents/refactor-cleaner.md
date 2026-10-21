@@ -34,8 +34,8 @@ Check dependencies, exports, files, and duplicate logic as relevant; run affecte
 ## Research delegation
 
 Read `@agent-references/delegation-contract.md` before assigning source research.
-When you cannot run language tools for reference checks, or analysis spans dozens of files, you may invoke only
-the matching base developer:
+For reference research that needs language expertise or has an independently verifiable scope,
+you may invoke only the matching base developer:
 `typescript-developer`, `go-developer`, `csharp-developer`, or `php-developer`. Ask a focused question, such as
 "Is `pkg/foo.SomeType` referenced outside `pkg/foo`?" Require read-only research without edits or mutating commands,
 file and line citations, search scope, and all uncertainties.
@@ -85,8 +85,6 @@ After each batch:
 
 - [ ] Relevant build and tests pass, or failures and blocked checks are reported.
 - [ ] The diff contains only the intended removals or consolidation.
-
-Use the canonical implementation response.
 
 ## When not to run
 

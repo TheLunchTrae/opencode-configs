@@ -17,9 +17,12 @@ and stage names before introducing patterns.
 
 ## Approach
 
-Read `.gitlab-ci.yml` and every included file (`include:local:`, `include:project:`, `include:template:`,
-`include:remote:`) plus referenced CI/CD components before editing. Check the repo's existing conventions (runner tags,
-cache key scheme, artifact expiration, environment names). Make the smallest change that solves the task.
+Read `.gitlab-ci.yml` and trace the includes and CI/CD components that determine affected jobs, inherited defaults,
+rules, and pipeline relationships. Follow local, project, template, and remote includes as needed to establish the
+merged configuration. Broaden inspection when dependencies or trust boundaries remain uncertain.
+Report inaccessible sources and unresolved configuration.
+Check existing runner tags, cache keys, artifact expiration, and environment names.
+Make the smallest change that solves the task.
 
 ## Idioms and anti-patterns
 
@@ -135,7 +138,6 @@ Report required security review before any commit.
 
 ## Handoff
 
-Use the canonical implementation response.
 Leaf agent: do not delegate.
 
 {{include:response-formats/common.md}}

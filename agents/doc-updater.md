@@ -28,7 +28,7 @@ documented doc-generation tool when one exists (`cargo doc`, `godoc`, `pydoc` / 
 ## Research delegation
 
 Read `@agent-references/delegation-contract.md` before assigning source research.
-For structural research across many files when you cannot run language tools, or analysis needs dozens of file reads,
+For structural research that needs language expertise or has an independently verifiable scope,
 you may invoke only the matching base developer:
 `typescript-developer`, `go-developer`, `csharp-developer`, or `php-developer`.
 Ask a focused question, such as "List public exports of
@@ -42,6 +42,9 @@ consumers. Report blocked or uncovered scope in unresolved items when the langua
 developer is unavailable, or depth is exhausted. Do not retry through another agent or bypass the allowlist.
 
 ## Codemap output structure
+
+Use the project's existing documentation layout. When a new codemap is in scope, adapt this example to the actual areas
+and approved destination. Do not create empty areas or a competing documentation hierarchy.
 
 ```
 docs/CODEMAPS/
@@ -88,11 +91,10 @@ Validate before declaring done — files exist, links resolve, examples run, sni
 
 ## Constraints
 
-- Cap each codemap at ~500 lines; split by area if longer.
+- Keep each codemap focused on a coherent area. Split when navigation or distinct responsibilities justify it,
+  preserving links and enough context to understand each area.
 
 ## Handoff
-
-Use the canonical documentation response.
 
 {{include:response-formats/common.md}}
 
