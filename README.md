@@ -192,8 +192,9 @@ together, preserving local overrides and license notices.
 
 Install `extensions/`, `package.json`, and `package-lock.json` with the configuration files.
 Merge existing dependencies and preserve unrelated extensions and personal provider settings.
-Register Config Composer 0.0.3 and Prompt Composer 0.0.2 once each in both plugin lists, in that order.
-Use OpenCode 1.19.0. The old Config Composer `agent`, `command`, `skill`, and `sourceDirectories` fields are unsupported.
+Register Config Composer 0.0.4 and Prompt Composer 0.0.3 once each in both plugin lists, in that order.
+Use the latest stable OpenCode V1 1.19.x within `package.json`'s supported range.
+The old Config Composer `agent`, `command`, `skill`, and `sourceDirectories` fields are unsupported.
 Use the new groups, presets, and profiles in `config-composer.jsonc`.
 Preserve explicit `configFile` overrides and deliberate native agent model pins.
 
