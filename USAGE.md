@@ -288,8 +288,9 @@ The four TUI entries are independent:
 | `./extensions/session-tools/bookmarks.tsx` | Bookmarks and handoff drafts. |
 
 Remove an entry to disable that panel, then restart OpenCode. Keep other plugin entries and the shared helper files.
-`./extensions/session-tools/server.ts` in `opencode.jsonc` supplies `workflow_status` for primary leads.
-Removing it stops new stage reports; the other views remain usable. These plugins target OpenCode V1 1.19.x.
+The auto-discovered `plugins/workflow-status.ts` supplies `workflow_status` for primary leads.
+Move that file outside `plugin/` and `plugins/` to stop new stage reports, then restart OpenCode.
+The other views remain usable. TUI panels still require their explicit entries. These plugins target OpenCode V1 1.19.x.
 V2 requires a separate port.
 
 ## Run a complete workflow

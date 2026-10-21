@@ -6,7 +6,7 @@ import { type ChildProcess, spawn } from 'node:child_process';
 import { once } from 'node:events';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { setTimeout } from 'node:timers/promises';
 import { type Entry, stageReport } from '../extensions/session-tools/model.ts';
 import { nativeBinary } from './native-host.ts';
@@ -17,20 +17,49 @@ type FixtureRequest = Record<string, unknown> & {
   stream?: boolean;
 };
 
-for (const custom of [false, true]) {
+for (const scope of ['global', 'custom', 'project']) {
   test(
-    `V1 loads session tools from ${custom ? 'OPENCODE_CONFIG_DIR' : 'global config'} and preserves reports after restart`,
+    `V1 auto-discovers session tools from ${scope} config and preserves reports after restart`,
     {
       timeout: 90_000,
     },
     async (t) => {
       const root = await mkdtemp(join(tmpdir(), 'opencode-session-tools-'));
       const repo = fileURLToPath(new URL('../', import.meta.url));
-      const configRoot = custom ? join(root, 'installation') : join(root, 'config', 'opencode');
       const project = join(root, 'project');
+      const configRoot =
+        scope === 'custom'
+          ? join(root, 'installation')
+          : scope === 'project'
+            ? join(project, '.opencode')
+            : join(root, 'config', 'opencode');
       await mkdir(configRoot, { recursive: true });
-      await mkdir(project);
+      await mkdir(project, { recursive: true });
       await cp(join(repo, 'extensions'), join(configRoot, 'extensions'), { recursive: true });
+      await cp(join(repo, 'plugins'), join(configRoot, 'plugins'), { recursive: true });
+      const activations = join(root, 'activations.txt');
+      const serverPath = join(configRoot, 'plugins', 'workflow-status.ts');
+      const serverSource = await readFile(serverPath, 'utf8');
+      const factory = 'export const WorkflowStatusPlugin: Plugin = async () => {';
+      assert.ok(serverSource.includes(factory));
+      await writeFile(
+        serverPath,
+        `import { appendFileSync } from 'node:fs';\n${serverSource.replace(
+          factory,
+          `${factory}\nappendFileSync(${JSON.stringify(activations)}, 'workflow\\n');`,
+        )}`,
+      );
+      await mkdir(join(configRoot, 'plugin'));
+      await writeFile(
+        join(configRoot, 'plugin', 'legacy.js'),
+        `import { appendFileSync } from 'node:fs';
+const factory = async () => { appendFileSync(${JSON.stringify(activations)}, 'legacy\\n'); return {}; };
+export { factory as default, factory as named };`,
+      );
+      await mkdir(join(configRoot, 'plugins', 'nested'));
+      for (const relative of ['nested/helper.ts', 'excluded.tsx', 'excluded.mjs', 'excluded.cjs']) {
+        await writeFile(join(configRoot, 'plugins', relative), 'throw new Error("Unexpected discovery");');
+      }
       await cp(join(repo, 'themes'), join(configRoot, 'themes'), { recursive: true });
       // Copy installed dependencies: the native installer can replace or prune symlinked trees.
       const dependencies = await realpath(join(repo, 'node_modules'));
@@ -141,7 +170,7 @@ for (const custom of [false, true]) {
       await writeFile(
         join(configRoot, 'opencode.jsonc'),
         JSON.stringify({
-          plugin: [composerDirectory, promptDirectory, './extensions/session-tools/server.ts'],
+          plugin: [composerDirectory, promptDirectory],
           model: 'fixture/model',
           small_model: 'fixture/model',
           default_agent: 'lead',
@@ -174,14 +203,14 @@ for (const custom of [false, true]) {
         OPENCODE_CONFIG: '',
         OPENCODE_CONFIG_CONTENT: '',
         OPENCODE_TEST_HOME: root,
-        OPENCODE_DISABLE_PROJECT_CONFIG: '1',
+        OPENCODE_DISABLE_PROJECT_CONFIG: scope === 'project' ? '' : '1',
         OPENCODE_DISABLE_AUTOUPDATE: '1',
         OPENCODE_DISABLE_MODELS_FETCH: '1',
         OPENCODE_EXPERIMENTAL_DISABLE_FILEWATCHER: 'true',
         OPENCODE_SERVER_PASSWORD: '',
         OPENCODE_DB: join(root, 'db.sqlite'),
       };
-      if (custom) {
+      if (scope === 'custom') {
         env.OPENCODE_CONFIG_DIR = configRoot;
       } else {
         delete env.OPENCODE_CONFIG_DIR;
@@ -203,7 +232,7 @@ for (const custom of [false, true]) {
         provider.closeAllConnections();
         provider.close();
         if (process.env.SESSION_TOOLS_KEEP_FIXTURE === '1') {
-          t.diagnostic(`Native fixture (${custom ? 'custom' : 'global'}): ${root}`);
+          t.diagnostic(`Native fixture (${scope}): ${root}`);
         } else {
           await rm(root, { recursive: true, force: true });
         }
@@ -257,6 +286,17 @@ for (const custom of [false, true]) {
       assert.equal((await api<{ config: string }>('/path')).config, join(root, 'config', 'opencode'));
       const agents =
         await api<{ name: string; prompt?: string; model?: { providerID: string; modelID: string } }[]>('/agent');
+      const effective = await api<{ plugin: (string | [string, unknown])[] }>('/config');
+      const discovered = effective.plugin
+        .map((spec) => (Array.isArray(spec) ? spec[0] : spec))
+        .filter((spec) => spec.startsWith(pathToFileURL(configRoot).href));
+      assert.deepEqual(
+        discovered.filter((spec) => !spec.includes('/node_modules/')).sort(),
+        ['plugin/legacy.js', 'plugins/block-secrets.ts', 'plugins/workflow-status.ts']
+          .map((path) => pathToFileURL(join(configRoot, path)).href)
+          .sort(),
+      );
+      assert.deepEqual((await readFile(activations, 'utf8')).trim().split('\n').sort(), ['legacy', 'workflow']);
       const lead = agents.find((agent) => agent.name === 'lead');
       assert.equal(lead?.prompt, 'Report review using workflow_status, then answer briefly.');
       assert.deepEqual(lead.model, { providerID: 'fixture', modelID: 'model' });
@@ -292,6 +332,12 @@ for (const custom of [false, true]) {
       await stop();
       baseURL = await start();
       assert.deepEqual(stageReport(await api<Entry[]>(`/session/${created.id}/message`)), report);
+      assert.deepEqual((await readFile(activations, 'utf8')).trim().split('\n').sort(), [
+        'legacy',
+        'legacy',
+        'workflow',
+        'workflow',
+      ]);
     },
   );
 }

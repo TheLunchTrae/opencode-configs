@@ -1,5 +1,5 @@
 import { type Plugin, type PluginModule, tool } from '@opencode-ai/plugin';
-import { clean, stages } from './model.ts';
+import { clean, stages } from '../extensions/session-tools/model.ts';
 
 // eslint-disable-next-line @typescript-eslint/require-await -- OpenCode requires Promise-returning server plugin factories.
 export const WorkflowStatusPlugin: Plugin = async () => {

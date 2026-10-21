@@ -198,8 +198,9 @@ Use the provider API for model and variant choices. Do not synthesize model IDs 
 Keep apply/reload explicit and its current-instance busy check intact. Config Composer applies to the current instance;
 native configuration and agent-file changes require a restart. Do not infer that apply reloaded those native files.
 
-Session tool entrypoints are in `extensions/session-tools/`. Register each TUI panel separately in `tui.jsonc`
-and the status tool in `opencode.jsonc`. Share helpers without placing them in auto-discovered plugin directories.
+The workflow server entrypoint is `plugins/workflow-status.ts`; native discovery loads it without an explicit entry.
+Keep only server entrypoints at the root of `plugins/`. Register each TUI panel from `extensions/session-tools/`
+separately in `tui.jsonc`. Share helpers under `extensions/`, outside auto-discovered plugin directories.
 Keep workflow stages attributed to completed tool records. Never infer completion or approval from idle status.
 Keep config and context views read-only. Show evidence limits instead of inventing provenance or prompt contents.
 Bookmark storage must remain scoped by project, workspace, directory, and session. Preserve invalid data on errors.
