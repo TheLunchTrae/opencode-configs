@@ -43,7 +43,7 @@ Select a focused lead when you want only planning, approved implementation, or a
 The global configuration directory is `~/.config/opencode` or `%USERPROFILE%\.config\opencode` on Windows.
 Install the pinned dependencies in this directory with `npm ci`.
 Each settings schema uses its installed package version. Local extensions do not import either Composer package.
-Both plugin lists pin Config Composer 0.0.4 before Prompt Composer 0.0.3 and downstream plugins.
+Both plugin lists pin Config Composer 0.0.7 before Prompt Composer 0.0.6 and downstream plugins.
 
 Do not copy credentials, tokens, `node_modules`, `.idea`, or work-project checkpoints.
 The repository's `.opencode/` directory contains maintenance guidance and is not needed for global installation.
@@ -192,7 +192,7 @@ together, preserving local overrides and license notices.
 
 Install `extensions/`, `package.json`, and `package-lock.json` with the configuration files.
 Merge existing dependencies and preserve unrelated extensions and personal provider settings.
-Register Config Composer 0.0.4 and Prompt Composer 0.0.3 once each in both plugin lists, in that order.
+Register Config Composer 0.0.7 and Prompt Composer 0.0.6 once each in both plugin lists, in that order.
 Use the latest stable OpenCode V1 1.19.x within `package.json`'s supported range.
 The old Config Composer `agent`, `command`, `skill`, and `sourceDirectories` fields are unsupported.
 Use the new groups, presets, and profiles in `config-composer.jsonc`.
