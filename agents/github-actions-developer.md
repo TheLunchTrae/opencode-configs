@@ -19,9 +19,11 @@ Match existing runner labels, caching, and reusable-workflow layout before intro
 
 ## Approach
 
-Read all files under `.github/workflows/` plus any `action.yml` / `action.yaml` before editing — workflows compose
-through references and shared concurrency. Check the repo's branch protection rules to see which workflow names are
-required. Make the smallest change that solves the task; adding a job is usually safer than adding a workflow.
+Identify affected workflows, then trace their callers, reusable workflows, actions, event triggers, and shared
+concurrency groups before editing. Read the files that define those interactions, including relevant
+`action.yml` / `action.yaml` files. Broaden inspection when dependencies or trust boundaries remain uncertain.
+Check branch protection rules for required workflow names. Report inaccessible dependencies and unverified rules.
+Make the smallest coherent change that preserves the intended job graph and required checks.
 
 ## Idioms and anti-patterns
 
@@ -142,7 +144,6 @@ Report required security review before any commit.
 
 ## Handoff
 
-Use the canonical implementation response.
 Leaf agent: do not delegate.
 
 {{include:response-formats/common.md}}

@@ -29,8 +29,9 @@ that solves the task.
 
 ### Tracking and projection
 
-Idiom: `AsNoTracking()` on every read-only query. Project to DTOs with `.Select(...)` for anything crossing an API
-boundary — never return tracked entities. Tracking is for entities you intend to mutate in this unit-of-work.
+Prefer `AsNoTracking()` for read-only entity queries when the contract does not require tracked identity or local state.
+Preserve identity resolution and unit-of-work behavior when choosing tracking. Project to DTOs with `.Select(...)`
+for anything crossing an API boundary — never return tracked entities.
 
 ```csharp
 // BAD: tracked entity returned from API; serialises proxies + navigation cycles
@@ -65,8 +66,9 @@ await _db.Sessions
 
 ### Eager loading and N+1
 
-Idiom: `Include` / `ThenInclude` for eager loading at known navigation needs; `.AsSplitQuery()` when a single JOIN
-explodes the row count; compiled queries (`EF.CompileAsyncQuery`) for hot paths that run every request.
+Use `Include` / `ThenInclude` for known navigation needs. Assess `.AsSplitQuery()` when joins multiply rows,
+including its consistency and round-trip costs. Consider compiled queries (`EF.CompileAsyncQuery`) when measurements
+identify avoidable query-processing overhead. Request frequency alone does not establish a benefit.
 
 ```csharp
 // BAD: N+1 — lazy load fires once per item
@@ -115,7 +117,6 @@ Report required security review before any commit.
 
 ## Handoff
 
-Use the canonical implementation response.
 Leaf agent: do not delegate.
 
 {{include:response-formats/common.md}}

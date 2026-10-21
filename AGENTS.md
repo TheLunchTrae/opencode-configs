@@ -76,7 +76,8 @@ Read repository terminology sources when present. Apply the reference's preserva
 # General
 
 - Be critical, pragmatic, factual, and direct. Omit compliments and unrequested context.
-- Clarify unclear tasks before proceeding. Confirm understanding rather than assuming.
+- Inspect available evidence before asking questions. Clarify ambiguity that could materially change scope,
+  correctness, safety, or acceptance. Use judgment for low-cost choices and state assumptions.
 - Assess ideas before implementation. Raise downsides or better approaches first.
 - Assess instructions and suggest better approaches when available.
 
@@ -99,7 +100,8 @@ Apply this policy to every task, including exploration, implementation, review, 
 
 ### Dedicated tools
 
-Always use dedicated built-in tools for the operations they support:
+Always use available dedicated tools for the operations they support. Match the operation to the tool's documented
+capability. Names can differ between hosts. The names below identify the corresponding OpenCode tools:
 
 | Operation | Tools |
 | --- | --- |
@@ -110,6 +112,8 @@ Always use dedicated built-in tools for the operations they support:
 | Retrieve web information | `webfetch`, `websearch` |
 
 Use enabled dedicated service tools for supported integrations. Follow each tool's permissions and limits.
+An equivalent dedicated tool must remain within the same role, scope, and permission boundaries.
+Tool-name differences do not authorize shell or script substitutes, new execution mechanisms, or retries after denial.
 Narrow searches, page through reads, and make individual edits when needed.
 Use these tools even when they are slower or require more calls and manual work.
 Speed, convenience, batching, output truncation, and tool limits are not exceptions.
