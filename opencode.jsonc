@@ -1,8 +1,8 @@
 {
   "$schema": "https://opencode.ai/config.json",
   "plugin": [
-    "@lunchbox-labs/opencode-config-composer@0.0.4",
-    "@lunchbox-labs/opencode-prompt-composer@0.0.3",
+    "@lunchbox-labs/opencode-config-composer@0.0.7",
+    "@lunchbox-labs/opencode-prompt-composer@0.0.6",
     "@slkiser/opencode-quota@4.9.0",
     "./extensions/workflow/server.js"
   ],

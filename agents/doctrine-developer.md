@@ -28,9 +28,11 @@ Laminas, or standalone). Make the smallest change that solves the task.
 
 ### Entity mapping and lifecycle
 
-Idiom: PHP 8 attribute mapping in new code (`#[ORM\Entity]`, `#[ORM\Column]`, `#[ORM\ManyToOne]`). Associations always
-declare owning / inverse side, `inversedBy` / `mappedBy`, and cascade policy. Lifecycle callbacks (`#[ORM\PrePersist]`)
-only for trivial state housekeeping — business logic belongs in services or event listeners.
+Follow the project's supported mapping format. Use PHP attributes (`#[ORM\Entity]`, `#[ORM\Column]`,
+`#[ORM\ManyToOne]`) when supported and consistent with that format. Do not migrate mapping styles incidentally.
+Make association ownership and cascade policy explicit, with `inversedBy` / `mappedBy` where the relationship requires
+them. Keep lifecycle callbacks (`#[ORM\PrePersist]`) for trivial state housekeeping. Business logic belongs in services
+or event listeners.
 
 ```php
 // BAD: missing inverse side, no cascade decision, business logic in callback
@@ -138,7 +140,6 @@ Report required security review before any commit.
 
 ## Handoff
 
-Use the canonical implementation response.
 Leaf agent: do not delegate.
 
 {{include:response-formats/common.md}}

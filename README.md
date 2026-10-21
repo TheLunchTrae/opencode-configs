@@ -44,7 +44,7 @@ Select a focused lead when you want only planning, approved implementation, or a
 The global configuration directory is `~/.config/opencode` or `%USERPROFILE%\.config\opencode` on Windows.
 Install the pinned dependencies in this directory with `npm ci`.
 Each settings schema uses its installed package version. Local extensions do not import either Composer package.
-Both plugin lists pin Config Composer 0.0.4 before Prompt Composer 0.0.3 and downstream plugins.
+Both plugin lists pin Config Composer 0.0.7 before Prompt Composer 0.0.6 and downstream plugins.
 
 Do not copy credentials, tokens, `node_modules`, `.idea`, or work-project checkpoints.
 The repository's `.opencode/` directory contains maintenance guidance and is not needed for global installation.
@@ -207,8 +207,9 @@ Replace the five old `extensions/session-tools/*.ts` or `.tsx` registrations wit
 After updating all consumers, remove the old `extensions/session-tools/` and `extensions/tui/` copies.
 Preserve any custom extensions. The workflow ZIP must be extracted before OpenCode loads its entries.
 Merge existing dependencies and preserve unrelated extensions and personal provider settings.
-Register Config Composer 0.0.3 and Prompt Composer 0.0.2 once each in both plugin lists, in that order.
-Use OpenCode 1.19.0. The old Config Composer `agent`, `command`, `skill`, and `sourceDirectories` fields are unsupported.
+Register Config Composer 0.0.7 and Prompt Composer 0.0.6 once each in both plugin lists, in that order.
+Use the latest stable OpenCode V1 1.19.x within `package.json`'s supported range.
+The old Config Composer `agent`, `command`, `skill`, and `sourceDirectories` fields are unsupported.
 Use the new groups, presets, and profiles in `config-composer.jsonc`.
 Preserve explicit `configFile` overrides and deliberate native agent model pins.
 

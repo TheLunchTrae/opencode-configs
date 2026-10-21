@@ -125,10 +125,11 @@ The shipped profiles leave all permission rules native to preserve behavior when
 Use `model` or `modelRef`, never both. A reference can use `opencode:model`, `opencode:small_model`, or `preset:NAME`.
 An explicit native agent pin takes precedence over group and preset defaults; an agent override can replace it.
 Changing a model binding clears inherited Composer variants and parameters before destination settings apply.
-See the [Config Composer reference](https://github.com/lunchbox-labs/opencode-config-composer/blob/v0.0.3/docs/composition-schema.md).
+See the [Config Composer reference](https://github.com/lunchbox-labs/opencode-config-composer/wiki/Configuration-Reference).
 
-The installed package supplies the pinned schema. Both plugin lists register Config Composer 0.0.3 before
-Prompt Composer 0.0.2 and downstream plugins. Use OpenCode V1 1.19.0; V2 requires a separate port.
+The installed package supplies the pinned schema. Both plugin lists register Config Composer 0.0.7 before
+Prompt Composer 0.0.6 and downstream plugins. Use the latest stable OpenCode V1 1.19.x within `package.json`'s
+supported range. V2 requires a separate port.
 The editors need shared filesystem access. Review previews before saving, and apply changes explicitly while idle.
 
 ## Shared prompt composition
@@ -289,7 +290,7 @@ The four TUI entries are independent:
 
 Remove an entry to disable that panel, then restart OpenCode. Keep other plugin entries.
 `./extensions/workflow/server.js` in `opencode.jsonc` supplies `workflow_status` for primary leads.
-Removing it stops new stage reports; the other views remain usable. These plugins target OpenCode V1 1.19.0.
+Removing it stops new stage reports; the other views remain usable. These plugins target OpenCode V1 1.19.x.
 V2 requires a separate port.
 
 ## Run a complete workflow
