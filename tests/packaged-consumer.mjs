@@ -20,19 +20,19 @@ try {
     filter: (path) => !['.git', 'node_modules'].includes(basename(path)),
   });
   const manifest = JSON.parse(await readFile(join(consumer, 'package.json'), 'utf8'));
-  assert.equal(manifest.dependencies['@lunchbox-labs/opencode-config-composer'], '0.0.4');
-  assert.equal(manifest.dependencies['@lunchbox-labs/opencode-prompt-composer'], '0.0.3');
+  assert.equal(manifest.dependencies['@lunchbox-labs/opencode-config-composer'], '0.0.7');
+  assert.equal(manifest.dependencies['@lunchbox-labs/opencode-prompt-composer'], '0.0.6');
   assert.equal(manifest.dependencies['opencode-config-composer'], undefined);
   run('npm', ['ci', '--ignore-scripts', '--no-audit', '--no-fund']);
   const installed = JSON.parse(
     await readFile(join(consumer, 'node_modules/@lunchbox-labs/opencode-config-composer/package.json'), 'utf8'),
   );
   assert.equal(installed.name, '@lunchbox-labs/opencode-config-composer');
-  assert.equal(installed.version, '0.0.4');
+  assert.equal(installed.version, '0.0.7');
   const prompt = JSON.parse(
     await readFile(join(consumer, 'node_modules/@lunchbox-labs/opencode-prompt-composer/package.json'), 'utf8'),
   );
-  assert.equal(prompt.version, '0.0.3');
+  assert.equal(prompt.version, '0.0.6');
   assert.equal(prompt.dependencies[installed.name], undefined, 'Prompt Composer must remain independent');
   assert.equal(installed.dependencies[prompt.name], undefined, 'Config Composer must remain independent');
   assert.equal(installed.license, 'MIT');
@@ -48,8 +48,9 @@ try {
   assert.equal(schema.type, 'object');
   assert.ok(schema.properties.profiles);
   assert.equal(schema.properties.agent, undefined);
-  assert.equal(installed.engines.opencode, manifest.engines.opencode);
-  assert.equal(prompt.engines.opencode, manifest.engines.opencode);
+  assert.equal(manifest.engines.opencode, '1.19.x');
+  assert.deepEqual(installed.engines, { node: '>=22.18.0' });
+  assert.deepEqual(prompt.engines, { node: '>=22.18.0' });
   const packageDirectory = join(consumer, 'node_modules', installed.name);
   const unavailablePackage = join(root, 'unavailable-package');
   await rename(packageDirectory, unavailablePackage);
@@ -76,7 +77,7 @@ try {
   run('npm', ['run', 'check']);
   run('npm', ['run', 'test:native']);
   console.log(
-    'Published Config Composer 0.0.4 and Prompt Composer 0.0.3 passed together in an isolated registry consumer.',
+    'Published Config Composer 0.0.7 and Prompt Composer 0.0.6 passed together in an isolated registry consumer.',
   );
 } finally {
   await rm(root, { recursive: true, force: true });
