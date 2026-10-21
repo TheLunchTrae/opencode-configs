@@ -142,7 +142,9 @@ Check the installed version against the [V1 documentation](https://opencode.ai/d
 ## Plugin tooling
 
 Run `npm ci` and `npm --prefix packages ci` from the repository root before editing plugins or extensions.
-Run `npm run package:plugins` after changes to local package source. Use the workspace TypeScript version
+Run `npm run package:plugins` after changes to local package source, then
+`npm install --ignore-scripts ./extensions/workflow.tgz` to refresh the root lockfile and installed copy.
+Commit the tarball and updated lockfile together. Use the workspace TypeScript version
 in the editor. Reopen the project or restart its TypeScript service if dependencies remain unresolved.
 Preserve the TypeScript compiler settings and OpenTUI JSX import source.
 The DOM type library supports Solid's declarations. ESLint runtime globals remain limited to Node.js.
@@ -199,7 +201,8 @@ Use the provider API for model and variant choices. Do not synthesize model IDs 
 Keep apply/reload explicit and its current-instance busy check intact. Config Composer applies to the current instance;
 native configuration and agent-file changes require a restart. Do not infer that apply reloaded those native files.
 
-Session tool source is in `packages/workflow/src/session-tools/`. Built entrypoints are in `extensions/workflow/`.
+Session tool source is in `packages/workflow/src/session-tools/`. Packaged entrypoints install from
+`extensions/workflow.tgz` into `node_modules/@lunchbox-labs/opencode-workflow/`.
 Register each TUI panel separately in `tui.jsonc`
 and the status tool in `opencode.jsonc`. Share helpers without placing them in auto-discovered plugin directories.
 Keep workflow stages attributed to completed tool records. Never infer completion or approval from idle status.
@@ -236,6 +239,11 @@ npm run test:native
   They do not render terminal dialogs. Use a native TUI check for JSX loading, command discovery,
   and dialog interaction.
   Set `SESSION_TOOLS_KEEP_FIXTURE=1` to retain the session-tools fixture for that check; the test prints its location.
+- The native resolver test uses separate empty caches and a loopback registry to distinguish installed tarballs
+  from OpenCode's package installer. It tests server resolution everywhere the native runner is supported.
+  On Linux with util-linux `script`, it also starts a real TUI and verifies that all four installed panels activate.
+  The TUI cases report a skip on other platforms. They do not automate panel interaction.
+  Fixture setup installs the matching public `@opencode-ai/plugin`; runtime registry requests stay on loopback.
 - Report unavailable dependencies and checks explicitly. Do not install unrelated tooling to hide a missing check.
 - Check internal links, moved-file consumers, command routing, and unchanged model and permission fields.
   After runtime configuration changes, restart OpenCode and test the relevant discovery and permission behavior
@@ -255,7 +263,8 @@ npm run test:package
 ```
 
 Use Node 22.18 or newer and Bun for `npm --prefix packages run test:render`.
-Set `BUN_BIN` if Bun is not on PATH. The native runner installs OpenCode from the supported range.
+That command requires Bun on PATH. `npm run test:package` also accepts `BUN_BIN` for an explicit executable path.
+The native runner installs OpenCode from the supported range.
 Set `npm_config_cache` to a writable directory if the default cache is unavailable.
 This procedure does not publish or install anything into live settings.
 

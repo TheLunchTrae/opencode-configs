@@ -276,7 +276,9 @@ test(
     ensureRuntimePluginSupport();
     const artifactRoot = await mkdtemp(join(tmpdir(), 'workflow ui artifact '));
     t.after(() => rm(artifactRoot, { recursive: true, force: true }));
-    await cp(new URL('../../../extensions/workflow/', import.meta.url), artifactRoot, { recursive: true });
+    await cp(new URL('../../../node_modules/@lunchbox-labs/opencode-workflow/', import.meta.url), artifactRoot, {
+      recursive: true,
+    });
     const load = async (name: string) => {
       const spec = pathToFileURL(join(artifactRoot, `${name}.js`)).href;
       const plugin = ((await import(spec)) as { default: TuiPluginModule }).default;

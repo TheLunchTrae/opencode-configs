@@ -1,12 +1,13 @@
 import assert from 'node:assert/strict';
-import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
+import { copyFile, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { spawnSync } from 'node:child_process';
+import { tmpdir } from 'node:os';
 import { dirname, isAbsolute, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { transformAsync } from '@babel/core';
 import typescript from '@babel/preset-typescript';
 import solid from 'babel-preset-solid';
 import { build } from 'esbuild';
-import { zipSync } from 'fflate';
 
 const workspace = fileURLToPath(new URL('../', import.meta.url));
 const repository = resolve(workspace, '..');
@@ -95,6 +96,7 @@ for (const directory of [...manifest.workspaces].sort()) {
         type: 'module',
         license: pkg.license,
         engines: pkg.engines,
+        exports: Object.fromEntries(Object.keys(entries).map((name) => [`./${name}`, `./${name}.js`])),
       },
       null,
       2,
@@ -109,23 +111,28 @@ for (const directory of [...manifest.workspaces].sort()) {
     assert.ok(local && !local.startsWith('..') && !isAbsolute(local), 'Resources must stay inside the repository');
     files[name] = await readFile(path);
   }
-  const staged = `${output}.tmp`;
-  await rm(staged, { recursive: true, force: true });
-  await mkdir(staged, { recursive: true });
+  const staged = await mkdtemp(resolve(tmpdir(), 'opencode-plugin-pack-'));
   try {
-    const archive = {};
     for (const name of Object.keys(files).sort()) {
       await writeFile(resolve(staged, name), files[name]);
-      // ZIP stores local calendar fields, not an instant. Keep those fields identical in every timezone.
-      archive[`${artifact.directory}/${name}`] = [files[name], { mtime: new Date(1980, 0, 1) }];
     }
-    await writeFile(`${output}.zip.tmp`, zipSync(archive, { level: 9 }));
-    await rm(output, { recursive: true, force: true });
-    await rename(staged, output);
-    await rename(`${output}.zip.tmp`, `${output}.zip`);
+    assert.ok(process.env.npm_execpath, 'Run package:plugins through npm');
+    const packed = spawnSync(
+      process.execPath,
+      [process.env.npm_execpath, 'pack', '--json', '--ignore-scripts', '--offline'],
+      {
+        cwd: staged,
+        encoding: 'utf8',
+      },
+    );
+    assert.ifError(packed.error);
+    assert.equal(packed.status, 0, packed.stderr);
+    const [info] = JSON.parse(packed.stdout);
+    assert.deepEqual(info.files.map((file) => file.path).sort(), Object.keys(files).sort(), 'Unexpected packed files');
+    await mkdir(dirname(output), { recursive: true });
+    await copyFile(resolve(staged, info.filename), `${output}.tgz`);
   } finally {
     await rm(staged, { recursive: true, force: true });
-    await rm(`${output}.zip.tmp`, { force: true });
   }
-  console.log(`Packaged ${pkg.name}: ${relative(repository, output)} and transport ZIP`);
+  console.log(`Packed ${pkg.name}: ${relative(repository, output)}.tgz`);
 }

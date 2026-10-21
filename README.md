@@ -19,7 +19,7 @@ Select a focused lead when you want only planning, approved implementation, or a
 | [`plugins/`](plugins/) | Local plugins, including secret-path checks. |
 | `@lunchbox-labs/opencode-config-composer` | Config Composer: model presets, groups, and project profiles. |
 | `@lunchbox-labs/opencode-prompt-composer` | Prompt Composer: shared body includes and prompt editing. |
-| [`extensions/workflow/`](extensions/workflow/) | Built workflow, config, context, bookmarks, and handoff panels. |
+| [`extensions/workflow.tgz`](extensions/workflow.tgz) | Packed workflow, config, context, bookmarks, and handoff panels. |
 | [`packages/workflow/`](packages/workflow/) | Private source package and tests for the local panels. |
 | [`package.json`](package.json) | Pinned plugin dependencies and maintenance commands. |
 | [`opencode.jsonc`](opencode.jsonc) | Global models, permissions, MCP servers, shell, and plugin settings. |
@@ -54,12 +54,15 @@ Load these templates through native skill loading under an agent whose role and 
 
 For local editing, run `npm ci` from the checkout root, then `npm --prefix packages ci`.
 The nested development workspace owns the workflow package dependencies and build tools.
-Run `npm run package:plugins` to build every package listed in `packages/package.json`.
-Commit the generated `extensions/workflow/` files and `extensions/workflow.zip` with source changes.
-The ZIP contains built files for transport. Extract it into `extensions/` before use.
-Configuration points to the extracted `.js` entries, never the ZIP. No npm publication is involved.
-The built workflow files need neither package source nor a target-side dependency installation.
-Other configured npm plugins and the root secret-path plugin retain their existing dependency setup.
+Run `npm run package:plugins` to build and `npm pack` every package listed in `packages/package.json`.
+After source changes, run `npm install --ignore-scripts ./extensions/workflow.tgz` to refresh the installed package
+and root lockfile. Commit `extensions/workflow.tgz` and both manifests/lockfiles with source changes.
+The root dependency uses `file:extensions/workflow.tgz`; `npm ci` installs it into
+`node_modules/@lunchbox-labs/opencode-workflow`. No npm publication or manual extraction is involved.
+Configuration points to the five installed `.js` files. A bare package name makes OpenCode use its separate
+plugin installer; it does not use the root manifest's local tarball mapping.
+The workflow tarball has no registry dependencies or install scripts. A fresh root installation still needs
+registry access for the other configured packages. OpenCode can also install its own runtime dependencies.
 The development workspace is not required in the live configuration directory.
 Builds preserve the host's shared Solid/OpenTUI runtime. They bundle the server tool dependency and Zod.
 Their notices are in [workflow dependency notices](notices/workflow-dependencies.txt) and each artifact.
@@ -203,9 +206,11 @@ together, preserving local overrides and license notices.
 
 Install `extensions/`, `package.json`, and `package-lock.json` with the configuration files.
 Replace the five old `extensions/session-tools/*.ts` or `.tsx` registrations with the corresponding
-`extensions/workflow/*.js` entries shown in [session tools](USAGE.md#enable-or-disable-panels).
+`node_modules/@lunchbox-labs/opencode-workflow/*.js` entries shown in [session tools](USAGE.md#enable-or-disable-panels).
 After updating all consumers, remove the old `extensions/session-tools/` and `extensions/tui/` copies.
-Preserve any custom extensions. The workflow ZIP must be extracted before OpenCode loads its entries.
+Preserve any custom extensions. Run `npm ci` after copying the new tarball and lockfile, then restart OpenCode.
+If upgrading from the earlier packaging preview, remove `extensions/workflow/` and `extensions/workflow.zip`
+after changing all five registrations. Do not register the installed files and the old entries together.
 Merge existing dependencies and preserve unrelated extensions and personal provider settings.
 Register Config Composer 0.0.7 and Prompt Composer 0.0.6 once each in both plugin lists, in that order.
 Use the latest stable OpenCode V1 1.19.x within `package.json`'s supported range.

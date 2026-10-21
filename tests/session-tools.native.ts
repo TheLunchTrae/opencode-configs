@@ -38,7 +38,9 @@ for (const custom of [false, true]) {
       await cp(join(dirname(dependencies), 'package.json'), join(configRoot, 'package.json'));
       await cp(join(dirname(dependencies), 'package-lock.json'), join(configRoot, 'package-lock.json'));
       const tui = JSON.parse(await readFile(join(repo, 'tui.jsonc'), 'utf8')) as { plugin: string[] };
-      tui.plugin = tui.plugin.filter((item: string) => item.startsWith('./extensions/'));
+      tui.plugin = tui.plugin.filter((item: string) =>
+        item.startsWith('./node_modules/@lunchbox-labs/opencode-workflow/'),
+      );
       const composerDirectory = join(configRoot, 'node_modules', '@lunchbox-labs/opencode-config-composer');
       const promptDirectory = join(configRoot, 'node_modules', '@lunchbox-labs/opencode-prompt-composer');
       tui.plugin.unshift(composerDirectory, promptDirectory);
@@ -141,7 +143,7 @@ for (const custom of [false, true]) {
       await writeFile(
         join(configRoot, 'opencode.jsonc'),
         JSON.stringify({
-          plugin: [composerDirectory, promptDirectory, './extensions/workflow/server.js'],
+          plugin: [composerDirectory, promptDirectory, './node_modules/@lunchbox-labs/opencode-workflow/server.js'],
           model: 'fixture/model',
           small_model: 'fixture/model',
           default_agent: 'lead',

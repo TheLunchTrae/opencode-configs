@@ -275,21 +275,22 @@ See [continue a long task](#continue-a-long-task) for the lead's checkpoint and 
 
 ### Enable or disable panels
 
-Install the built `extensions/workflow/` directory, or extract `extensions/workflow.zip` into `extensions/`.
-Keep the extracted directory's manifest and license notices. The ZIP is a transport artifact, not a plugin entry.
+Copy `extensions/workflow.tgz` and the root dependency manifests with the configuration, then run `npm ci`.
+The local tarball installs the compiled entries and license notices into `node_modules/@lunchbox-labs/opencode-workflow`.
+Register the installed files below; do not register the tarball or a bare workflow package name.
 Session-tools has no Composer API dependency and works independently of its plugin registration.
 Keep Prompt Composer for body includes and Config Composer for model and group controls.
 The four TUI entries are independent:
 
 | Entry in `tui.jsonc` | Plugin |
 | --- | --- |
-| `./extensions/workflow/workflow.js` | Workflow sidebar and expanded view. |
-| `./extensions/workflow/config.js` | Effective configuration inspector. |
-| `./extensions/workflow/context.js` | Context inspector. |
-| `./extensions/workflow/bookmarks.js` | Bookmarks and handoff drafts. |
+| `./node_modules/@lunchbox-labs/opencode-workflow/workflow.js` | Workflow sidebar and expanded view. |
+| `./node_modules/@lunchbox-labs/opencode-workflow/config.js` | Effective configuration inspector. |
+| `./node_modules/@lunchbox-labs/opencode-workflow/context.js` | Context inspector. |
+| `./node_modules/@lunchbox-labs/opencode-workflow/bookmarks.js` | Bookmarks and handoff drafts. |
 
 Remove an entry to disable that panel, then restart OpenCode. Keep other plugin entries.
-`./extensions/workflow/server.js` in `opencode.jsonc` supplies `workflow_status` for primary leads.
+`./node_modules/@lunchbox-labs/opencode-workflow/server.js` in `opencode.jsonc` supplies `workflow_status` for primary leads.
 Removing it stops new stage reports; the other views remain usable. These plugins target OpenCode V1 1.19.x.
 V2 requires a separate port.
 

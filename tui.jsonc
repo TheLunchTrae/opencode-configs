@@ -5,9 +5,9 @@
     "@lunchbox-labs/opencode-config-composer@0.0.7",
     "@lunchbox-labs/opencode-prompt-composer@0.0.6",
     "@slkiser/opencode-quota@4.9.0",
-    "./extensions/workflow/workflow.js",
-    "./extensions/workflow/config.js",
-    "./extensions/workflow/context.js",
-    "./extensions/workflow/bookmarks.js"
+    "./node_modules/@lunchbox-labs/opencode-workflow/workflow.js",
+    "./node_modules/@lunchbox-labs/opencode-workflow/config.js",
+    "./node_modules/@lunchbox-labs/opencode-workflow/context.js",
+    "./node_modules/@lunchbox-labs/opencode-workflow/bookmarks.js"
   ]
 }

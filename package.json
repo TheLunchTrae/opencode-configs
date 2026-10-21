@@ -21,6 +21,7 @@
   "dependencies": {
     "@lunchbox-labs/opencode-config-composer": "0.0.7",
     "@lunchbox-labs/opencode-prompt-composer": "0.0.6",
+    "@lunchbox-labs/opencode-workflow": "file:extensions/workflow.tgz",
     "@opencode-ai/plugin": "1.19.0",
     "jsonc-parser": "3.3.1",
     "yaml": "2.9.1"

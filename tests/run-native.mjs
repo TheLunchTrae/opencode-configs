@@ -6,7 +6,7 @@ import { withNativeRuntime } from './native-runtime.mjs';
 
 const repository = fileURLToPath(new URL('../', import.meta.url));
 const files = (await readdir(new URL('./', import.meta.url)))
-  .filter((file) => file.endsWith('.native.ts'))
+  .filter((file) => file.endsWith('.native.ts') || file.endsWith('.native.mjs'))
   .map((file) => `tests/${file}`);
 await withNativeRuntime(process.argv[2] ?? 'latest', (env) => {
   const result = spawnSync(process.execPath, ['--experimental-strip-types', '--test', ...files], {

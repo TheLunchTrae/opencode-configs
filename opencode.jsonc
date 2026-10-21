@@ -4,7 +4,7 @@
     "@lunchbox-labs/opencode-config-composer@0.0.7",
     "@lunchbox-labs/opencode-prompt-composer@0.0.6",
     "@slkiser/opencode-quota@4.9.0",
-    "./extensions/workflow/server.js"
+    "./node_modules/@lunchbox-labs/opencode-workflow/server.js"
   ],
   "shell": "C:/Program Files/Git/bin/bash.exe",
   "disabled_providers": ["opencode"],
