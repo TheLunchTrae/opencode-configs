@@ -1,87 +1,377 @@
 {
   "$schema": "./node_modules/@lunchbox-labs/opencode-config-composer/schema.json",
-  "componentGroups": {
-    "workflow": {},
-    "planning": {},
-    "developers": {},
-    "reviewers": {},
-    "refactoring": {},
-    "documentation": {},
-    "research": {},
-    "system": { "configuration": { "modelRef": "preset:current-lightweight" } }
-  },
-  "configurationPresets": {
-    "workspace-main": { "modelRef": "opencode:model", "variant": "high" },
-    "current-balanced": { "model": "openai/gpt-5.6-sol", "variant": "medium" },
-    "current-lightweight": { "model": "openai/gpt-5.6-terra", "variant": "medium" },
-    "openai-reasoning": { "model": "openai/gpt-6-astra", "variant": "high" },
-    "openai-development": { "model": "openai/gpt-6.1-sol", "variant": "medium" },
-    "openai-lightweight": { "model": "openai/gpt-6-luna", "variant": "medium" },
-    "anthropic-reasoning": { "model": "anthropic/claude-opus-5-5", "variant": "high" },
-    "anthropic-development": { "model": "anthropic/claude-sonnet-5-5", "variant": "medium" },
-    "anthropic-lightweight": { "model": "anthropic/claude-haiku-5-5", "variant": "medium" }
-  },
-  "profiles": {
-    "roles": {
-      "layers": [
-        { "componentGroup": "workflow" },
-        { "componentGroup": "planning" },
-        { "componentGroup": "developers" },
-        { "componentGroup": "reviewers" },
-        { "componentGroup": "refactoring" },
-        { "componentGroup": "documentation" },
-        { "componentGroup": "research" },
-        { "componentGroup": "system" }
-      ]
+  "defaultProfile": "current",
+  "groups": [
+    {
+      "name": "workflow",
+      "members": {
+        "agent": [
+          "workflow-lead"
+        ]
+      }
     },
+    {
+      "name": "planning",
+      "members": {
+        "agent": [
+          "architect",
+          "planner",
+          "planning-lead"
+        ]
+      },
+      "agent": {
+        "permission": {
+          "edit": "deny",
+          "bash": "deny"
+        }
+      }
+    },
+    {
+      "name": "developers",
+      "members": {
+        "agent": [
+          "csharp-developer",
+          "doctrine-developer",
+          "efcore-developer",
+          "github-actions-developer",
+          "gitlab-ci-developer",
+          "go-developer",
+          "implementation-lead",
+          "laminas-developer",
+          "php-developer",
+          "react-developer",
+          "typescript-developer",
+          "general"
+        ]
+      },
+      "agent": {
+        "permission": {
+          "edit": "allow"
+        }
+      }
+    },
+    {
+      "name": "reviewers",
+      "members": {
+        "agent": [
+          "architecture-reviewer",
+          "code-reviewer",
+          "csharp-reviewer",
+          "go-reviewer",
+          "php-reviewer",
+          "review-lead",
+          "security-reviewer",
+          "typescript-reviewer"
+        ]
+      },
+      "agent": {
+        "permission": {
+          "edit": "deny",
+          "task": "deny"
+        }
+      }
+    },
+    {
+      "name": "refactoring",
+      "members": {
+        "agent": [
+          "code-simplifier",
+          "performance-optimizer",
+          "refactor-cleaner"
+        ]
+      },
+      "agent": {
+        "permission": {
+          "edit": "allow"
+        }
+      }
+    },
+    {
+      "name": "documentation",
+      "members": {
+        "agent": [
+          "doc-updater"
+        ]
+      }
+    },
+    {
+      "name": "research",
+      "members": {
+        "agent": [
+          "explore"
+        ]
+      }
+    },
+    {
+      "name": "system",
+      "members": {
+        "agent": [
+          "summary",
+          "compaction",
+          "title"
+        ]
+      },
+      "agent": {
+        "model": "openai/gpt-5.6-terra",
+        "variant": "medium"
+      }
+    },
+    {
+      "name": "developer-delegation",
+      "members": {
+        "agent": [
+          "doc-updater",
+          "refactor-cleaner"
+        ]
+      },
+      "agent": {
+        "permission": {
+          "edit": "allow",
+          "task": {
+            "*": "deny",
+            "typescript-developer": "allow",
+            "go-developer": "allow",
+            "csharp-developer": "allow",
+            "php-developer": "allow"
+          }
+        }
+      }
+    },
+    {
+      "name": "delegating-reviewers",
+      "members": {
+        "agent": [
+          "code-reviewer",
+          "security-reviewer"
+        ]
+      },
+      "agent": {
+        "permission": {
+          "edit": "deny",
+          "task": {
+            "*": "deny",
+            "typescript-reviewer": "allow",
+            "go-reviewer": "allow",
+            "csharp-reviewer": "allow",
+            "php-reviewer": "allow"
+          }
+        }
+      }
+    }
+  ],
+  "profiles": {
     "current": {
-      "extends": "roles",
-      "layers": [
-        { "configurationPreset": "workspace-main", "target": { "componentGroups": ["workflow", "planning", "reviewers"] } },
-        { "configurationPreset": "current-balanced", "target": { "componentGroups": ["developers", "refactoring"] } },
-        { "configurationPreset": "current-lightweight", "target": { "componentGroups": ["documentation", "research"] } }
-      ]
+      "groups": [
+        {
+          "name": "workflow",
+          "agent": {
+            "model": "openai/gpt-6-astra",
+            "variant": "high"
+          }
+        },
+        {
+          "name": "planning",
+          "agent": {
+            "model": "openai/gpt-6-astra",
+            "variant": "high"
+          }
+        },
+        {
+          "name": "developers",
+          "agent": {
+            "model": "openai/gpt-5.6-sol",
+            "variant": "medium"
+          }
+        },
+        {
+          "name": "reviewers",
+          "agent": {
+            "model": "openai/gpt-6-astra",
+            "variant": "high"
+          }
+        },
+        {
+          "name": "refactoring",
+          "agent": {
+            "model": "openai/gpt-5.6-sol",
+            "variant": "medium"
+          }
+        },
+        {
+          "name": "documentation",
+          "agent": {
+            "model": "openai/gpt-5.6-terra",
+            "variant": "medium"
+          }
+        },
+        {
+          "name": "research",
+          "agent": {
+            "model": "openai/gpt-5.6-terra",
+            "variant": "medium"
+          }
+        }
+      ],
+      "agent": {
+        "doctrine-developer": {
+          "model": "openai/gpt-6-astra",
+          "variant": "high"
+        },
+        "efcore-developer": {
+          "model": "openai/gpt-6-astra",
+          "variant": "high"
+        },
+        "implementation-lead": {
+          "model": "openai/gpt-6-astra",
+          "variant": "high"
+        },
+        "performance-optimizer": {
+          "model": "openai/gpt-6-astra",
+          "variant": "high"
+        }
+      }
     },
     "openai-latest": {
-      "extends": "roles",
-      "layers": [
-        { "configurationPreset": "openai-reasoning", "target": { "componentGroups": ["workflow", "planning", "reviewers"] } },
-        { "configurationPreset": "openai-development", "target": { "componentGroups": ["developers", "refactoring"] } },
-        { "configurationPreset": "openai-lightweight", "target": { "componentGroups": ["documentation", "research"] } }
+      "groups": [
+        {
+          "name": "workflow",
+          "agent": {
+            "model": "openai/gpt-6-astra",
+            "variant": "high"
+          }
+        },
+        {
+          "name": "planning",
+          "agent": {
+            "model": "openai/gpt-6-astra",
+            "variant": "high"
+          }
+        },
+        {
+          "name": "developers",
+          "agent": {
+            "model": "openai/gpt-6.1-sol",
+            "variant": "medium"
+          }
+        },
+        {
+          "name": "reviewers",
+          "agent": {
+            "model": "openai/gpt-6-astra",
+            "variant": "high"
+          }
+        },
+        {
+          "name": "refactoring",
+          "agent": {
+            "model": "openai/gpt-6.1-sol",
+            "variant": "medium"
+          }
+        },
+        {
+          "name": "documentation",
+          "agent": {
+            "model": "openai/gpt-6-luna",
+            "variant": "medium"
+          }
+        },
+        {
+          "name": "research",
+          "agent": {
+            "model": "openai/gpt-6-luna",
+            "variant": "medium"
+          }
+        }
       ],
-      "overrides": {
-        "agents": {
-          "implementation-lead": { "modelRef": "preset:openai-reasoning" },
-          "doctrine-developer": { "modelRef": "preset:openai-reasoning" },
-          "efcore-developer": { "modelRef": "preset:openai-reasoning" },
-          "performance-optimizer": { "modelRef": "preset:openai-reasoning" }
+      "agent": {
+        "doctrine-developer": {
+          "model": "openai/gpt-6-astra",
+          "variant": "high"
+        },
+        "efcore-developer": {
+          "model": "openai/gpt-6-astra",
+          "variant": "high"
+        },
+        "implementation-lead": {
+          "model": "openai/gpt-6-astra",
+          "variant": "high"
+        },
+        "performance-optimizer": {
+          "model": "openai/gpt-6-astra",
+          "variant": "high"
         }
       }
     },
     "anthropic-latest": {
-      "extends": "roles",
-      "layers": [
-        { "configurationPreset": "anthropic-reasoning", "target": { "componentGroups": ["workflow", "planning", "reviewers"] } },
-        { "configurationPreset": "anthropic-development", "target": { "componentGroups": ["developers", "refactoring"] } },
-        { "configurationPreset": "anthropic-lightweight", "target": { "componentGroups": ["documentation", "research"] } }
+      "groups": [
+        {
+          "name": "workflow",
+          "agent": {
+            "model": "anthropic/claude-opus-5-5",
+            "variant": "high"
+          }
+        },
+        {
+          "name": "planning",
+          "agent": {
+            "model": "anthropic/claude-opus-5-5",
+            "variant": "high"
+          }
+        },
+        {
+          "name": "developers",
+          "agent": {
+            "model": "anthropic/claude-sonnet-5-5",
+            "variant": "medium"
+          }
+        },
+        {
+          "name": "reviewers",
+          "agent": {
+            "model": "anthropic/claude-opus-5-5",
+            "variant": "high"
+          }
+        },
+        {
+          "name": "refactoring",
+          "agent": {
+            "model": "anthropic/claude-sonnet-5-5",
+            "variant": "medium"
+          }
+        },
+        {
+          "name": "documentation",
+          "agent": {
+            "model": "anthropic/claude-haiku-5-5",
+            "variant": "medium"
+          }
+        },
+        {
+          "name": "research",
+          "agent": {
+            "model": "anthropic/claude-haiku-5-5",
+            "variant": "medium"
+          }
+        }
       ],
-      "overrides": {
-        "agents": {
-          "implementation-lead": { "modelRef": "preset:anthropic-reasoning" },
-          "doctrine-developer": { "modelRef": "preset:anthropic-reasoning" },
-          "efcore-developer": { "modelRef": "preset:anthropic-reasoning" },
-          "performance-optimizer": { "modelRef": "preset:anthropic-reasoning" }
+      "agent": {
+        "doctrine-developer": {
+          "model": "anthropic/claude-opus-5-5",
+          "variant": "high"
+        },
+        "efcore-developer": {
+          "model": "anthropic/claude-opus-5-5",
+          "variant": "high"
+        },
+        "implementation-lead": {
+          "model": "anthropic/claude-opus-5-5",
+          "variant": "high"
+        },
+        "performance-optimizer": {
+          "model": "anthropic/claude-opus-5-5",
+          "variant": "high"
         }
       }
     }
-  },
-  "profileShortcuts": {
-    "current-models": { "activeProfiles": ["current"], "description": "Restore the existing model allocation." },
-    "openai-latest": { "activeProfiles": ["openai-latest"], "description": "Use current OpenAI models for task agents." },
-    "anthropic-latest": { "activeProfiles": ["anthropic-latest"], "description": "Use current Anthropic models for task agents; keep OpenAI background models." }
-  },
-  "selection": {
-    "defaultProfiles": ["current"],
-    "retainOnRestart": true
   }
 }

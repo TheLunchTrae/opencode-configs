@@ -1,11 +1,7 @@
 ---
 description: "Senior PHP code reviewer. Reviews for security vulnerabilities, modern PHP idioms, type safety, and correctness. Use for all PHP code changes."
 mode: subagent
-groups: [reviewers]
 color: "#EEF78A"
-permission:
-  edit: deny
-  task: deny
 ---
 
 {{include:review-guidance.md}}

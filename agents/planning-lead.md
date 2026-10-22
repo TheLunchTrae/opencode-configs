@@ -1,7 +1,6 @@
 ---
 description: "Clarify requirements, compare designs, and coordinate an independently reviewed implementation plan. Stop before implementation."
 mode: primary
-groups: [planning]
 permission:
   edit: deny
   bash: deny

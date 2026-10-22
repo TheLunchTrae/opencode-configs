@@ -1,7 +1,6 @@
 ---
 description: "Default lead for a complete development task: clarify, plan, obtain approval, implement, review, and verify."
 mode: primary
-groups: [workflow]
 permission:
   edit: allow
   question: allow

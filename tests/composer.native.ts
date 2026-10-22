@@ -1,14 +1,22 @@
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { once } from 'node:events';
-import { cp, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { cp, mkdir, mkdtemp, readFile, readdir, realpath, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, isAbsolute, join, relative, sep } from 'node:path';
 import { setTimeout } from 'node:timers/promises';
 import { test } from 'node:test';
 import { parse } from 'jsonc-parser';
 import { nativeBinary } from './native-host.ts';
 import { waitForNativeReferences } from './native-references.ts';
+import { orderedSkillPermissions } from './native-skill-permissions.ts';
+import {
+  type Permission,
+  expectedModels,
+  expectedPolicies,
+  globalPermission,
+  movedModels,
+} from './config-expectations.ts';
 
 interface Agent {
   name: string;
@@ -19,10 +27,68 @@ interface Agent {
   permission: { permission: string; pattern: string; action: string }[];
 }
 
+interface RuntimeMarker {
+  version: number;
+  id: string;
+  definitionId: string;
+  status: string;
+  diagnostic?: string;
+  source: { path: string; canonicalPath: string; fingerprint: string };
+  selectionLocator: { root: string; baseFile: string; path: string };
+  selection: { path: string; revision: number; choice?: string | null };
+  candidate: { profile: string | null };
+  revision: { sources: string; effective: string };
+}
+interface NativeConfig {
+  model: string;
+  small_model: string;
+  default_agent: string;
+  permission: Permission;
+  agent: Record<
+    string,
+    { permission?: Permission; disable?: boolean; options?: Record<string, unknown>; model?: string; variant?: string }
+  >;
+  plugin: (string | [string, { __configComposerRuntime?: RuntimeMarker }])[];
+}
+
+const matches = (pattern: string, value: string) =>
+  new RegExp(
+    `^${pattern
+      .split('*')
+      .map((part) => part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+      .join('.*')}$`,
+    's',
+  ).test(value);
+const outcome = (agent: Agent, tool: string, target: string) =>
+  agent.permission.findLast((rule) => matches(rule.permission, tool) && matches(rule.pattern, target))?.action ?? 'ask';
+
+// /config validates agent permissions in native schema order. Keep nested authored pattern order exact.
+const nativeAgentPolicy = (policy: Permission) =>
+  Object.fromEntries(
+    ['edit', 'bash', 'task', 'question'].filter((key) => Object.hasOwn(policy, key)).map((key) => [key, policy[key]]),
+  );
+// This is the /config transport projection, not the authored or /agent evaluation order.
+const nativeGlobalPermission = Object.fromEntries(
+  ['read', 'edit', 'bash', 'task', 'github_*', 'playwright_*'].map((key) => [key, globalPermission[key]]),
+);
+
 test(
   'OpenCode 1.19 discovers shipped prompts and profiles without provider requests',
   { timeout: 120_000 },
   async (t) => {
+    for (const name of ['config', 'prompt']) {
+      const installed = JSON.parse(
+        await readFile(
+          new URL(`../node_modules/@lunchbox-labs/opencode-${name}-composer/package.json`, import.meta.url),
+          'utf8',
+        ),
+      ) as { version: string };
+      assert.equal(
+        installed.version,
+        '0.1.0',
+        'Install the published Composer 0.1.0 packages from the committed lockfile with npm ci.',
+      );
+    }
     const root = await mkdtemp(join(tmpdir(), 'opencode-configs-native-'));
     const installation = join(root, 'config', 'opencode');
     const project = join(root, 'project');
@@ -68,42 +134,53 @@ test(
       OPENCODE_DISABLE_DEFAULT_PLUGINS: 'true',
       OPENCODE_EXPERIMENTAL_DISABLE_FILEWATCHER: 'true',
     };
-    const child = spawn(nativeBinary(), ['serve', '--hostname', '127.0.0.1', '--port', '0', '--print-logs'], {
-      cwd: project,
-      env: environment,
-      stdio: ['ignore', 'pipe', 'pipe'],
-    });
+    const launch = () =>
+      spawn(nativeBinary(), ['serve', '--hostname', '127.0.0.1', '--port', '0', '--print-logs'], {
+        cwd: project,
+        env: environment,
+        stdio: ['ignore', 'pipe', 'pipe'],
+      });
+    let child = launch();
     let output = '';
     let launchError: Error | undefined;
-    child.on('error', (error) => {
-      launchError = error;
-    });
-    child.stdout.on('data', (data: Buffer) => {
-      output += data.toString();
-    });
-    child.stderr.on('data', (data: Buffer) => {
-      output += data.toString();
-    });
-    const stopped = once(child, 'exit').catch(() => undefined);
-    t.after(async () => {
+    const listen = () => {
+      child.on('error', (error) => {
+        launchError = error;
+      });
+      child.stdout.on('data', (data: Buffer) => {
+        output += data.toString();
+      });
+      child.stderr.on('data', (data: Buffer) => {
+        output += data.toString();
+      });
+      return once(child, 'exit').catch(() => undefined);
+    };
+    let stopped = listen();
+    const stop = async () => {
       child.kill();
       const kill = globalThis.setTimeout(() => child.kill('SIGKILL'), 3000);
       kill.unref();
       await stopped;
       globalThis.clearTimeout(kill);
+    };
+    t.after(async () => {
+      await stop();
       await rm(root, { recursive: true, force: true });
     });
     let baseURL: string | undefined;
-    for (let attempt = 0; attempt < 150; attempt++) {
-      assert.equal(launchError, undefined);
-      baseURL = /http:\/\/127\.0\.0\.1:\d+/.exec(output)?.[0];
-      if (baseURL !== undefined) {
-        break;
+    const waitForServer = async () => {
+      for (let attempt = 0; attempt < 150; attempt++) {
+        assert.equal(launchError, undefined);
+        baseURL = /http:\/\/127\.0\.0\.1:\d+/.exec(output)?.[0];
+        if (baseURL !== undefined) {
+          break;
+        }
+        assert.equal(child.exitCode, null, output);
+        await setTimeout(100);
       }
-      assert.equal(child.exitCode, null, output);
-      await setTimeout(100);
-    }
-    assert.ok(baseURL !== undefined && baseURL !== '', output);
+      assert.ok(baseURL !== undefined && baseURL !== '', output);
+    };
+    await waitForServer();
     const api = async <T>(path: string, method = 'GET'): Promise<T> => {
       const response = await fetch(`${baseURL}${path}`, {
         method,
@@ -126,108 +203,177 @@ test(
       t.diagnostic(`Native reference discovery ready after ${reads} catalog read(s)`);
       return api<Agent[]>('/agent');
     };
+    assert.equal(settings.defaultProfile, 'current');
     const baseline = await snapshot();
     const original = new Map(baseline.map((agent) => [agent.name, agent]));
-    // Native skill discovery can reorder disjoint trusted-directory grants on restart.
-    // Preserve the order of every other rule, including overlapping authored rules.
-    const skillGrant = (rule: Agent['permission'][number]) =>
-      rule.permission === 'external_directory' &&
-      rule.action === 'allow' &&
-      (rule.pattern.startsWith(`${installation}/skills/`) ||
-        rule.pattern.startsWith(`${installation}/node_modules/@lunchbox-labs/opencode-config-composer/skills/`));
-    const permissionSnapshot = (rules: Agent['permission']) => ({
-      ordered: rules.filter((rule) => !skillGrant(rule)),
-      skills: rules
-        .filter(skillGrant)
-        .map((rule) => rule.pattern)
-        .sort(),
-    });
-    assert.equal(original.get('workflow-lead')?.model?.modelID, 'gpt-6-astra');
-    assert.equal(original.get('typescript-developer')?.model?.modelID, 'gpt-5.6-sol');
+    const expectedSkillFiles = [
+      ...(await readdir(join(installation, 'skills'), { withFileTypes: true }))
+        .filter((entry) => entry.isDirectory())
+        .map((entry) => join(installation, 'skills', entry.name, 'SKILL.md')),
+      ...['config-composer-create', 'config-composer-explain'].map((name) =>
+        join(installation, 'node_modules/@lunchbox-labs/opencode-config-composer/skills', name, 'SKILL.md'),
+      ),
+    ];
+    const discoveredSkills = await api<{ name: string; location: string }[]>('/skill');
+    assert.deepEqual(
+      discoveredSkills.filter((skill) => skill.location === '<built-in>').map((skill) => skill.name),
+      ['customize-opencode'],
+    );
+    const discoveredFiles = await Promise.all(
+      discoveredSkills.filter((skill) => skill.location !== '<built-in>').map((skill) => realpath(skill.location)),
+    );
+    assert.deepEqual(
+      discoveredFiles.sort(),
+      (await Promise.all(expectedSkillFiles.map((file) => realpath(file)))).sort(),
+      'exact independent skill directory inventory',
+    );
+    const skillPatterns = discoveredFiles.map((file) => join(dirname(file), '*'));
+    const permissionSnapshot = (agent: Agent) =>
+      orderedSkillPermissions(agent.permission, skillPatterns, agent.name === 'explore' ? 2 : 1);
     assert.equal(original.get('workflow-lead')?.prompt?.includes('# Lead contract'), true);
     const catalog = await api<{
       all: { id: string; models: Record<string, { variants?: Record<string, unknown> }> }[];
     }>('/provider');
-    for (const [provider, ids] of [
-      ['openai', ['gpt-6-astra', 'gpt-6.1-sol', 'gpt-6-luna']],
-      ['anthropic', ['claude-opus-5-5', 'claude-sonnet-5-5', 'claude-haiku-5-5']],
-    ] as const) {
-      const models = catalog.all.find((entry) => entry.id === provider)?.models;
-      for (const id of ids) {
-        assert.ok(models?.[id] !== undefined, `${provider}/${id}: missing host catalog entry`);
-        const variants = models[id].variants;
-        assert.ok(variants?.medium !== undefined, `${provider}/${id}: medium variant unavailable`);
-        assert.ok(variants.high !== undefined, `${provider}/${id}: high variant unavailable`);
+    for (const profile of ['current', 'openai-latest', 'anthropic-latest']) {
+      for (const allocation of Object.values(expectedModels(profile))) {
+        assert.ok(allocation.model !== undefined && allocation.variant !== undefined);
+        const [provider, id] = allocation.model.split('/');
+        const model = catalog.all.find((entry) => entry.id === provider)?.models[id];
+        assert.ok(model !== undefined, `${allocation.model}: missing host catalog entry`);
+        assert.ok(
+          model.variants?.[allocation.variant] !== undefined,
+          `${allocation.model}: ${allocation.variant} variant unavailable`,
+        );
       }
     }
-    for (const profile of [
-      'openai-latest',
-      'anthropic-latest',
-      'openai-latest',
-      'current',
-      '',
-      'anthropic-latest',
-      'current',
-    ]) {
-      settings.selection = { defaultProfiles: profile !== '' ? [profile] : [], retainOnRestart: false };
-      await writeFile(join(installation, 'config-composer.jsonc'), JSON.stringify(settings));
-      await api('/global/dispose', 'POST');
-      const agents = await snapshot();
-      const developer = agents.find((agent) => agent.name === 'typescript-developer');
-      assert.ok(developer !== undefined, `${profile}: developer discovery`);
-      const expected =
-        profile === 'anthropic-latest'
-          ? 'claude-sonnet-5-5'
-          : profile === 'openai-latest'
-            ? 'gpt-6.1-sol'
-            : profile === 'current'
-              ? 'gpt-5.6-sol'
-              : undefined;
-      assert.equal(developer.model?.modelID, expected, profile);
-      assert.equal(
-        developer.variant ?? undefined,
-        profile === '' ? undefined : 'medium',
-        `${profile}: developer variant`,
-      );
-      if (profile === 'openai-latest' || profile === 'anthropic-latest') {
-        const provider = profile === 'openai-latest' ? 'openai' : 'anthropic';
-        const reasoning = provider === 'openai' ? 'gpt-6-astra' : 'claude-opus-5-5';
-        const lightweight = provider === 'openai' ? 'gpt-6-luna' : 'claude-haiku-5-5';
-        for (const name of [
-          'workflow-lead',
-          'planning-lead',
-          'review-lead',
-          'code-reviewer',
-          'implementation-lead',
-          'doctrine-developer',
-          'efcore-developer',
-          'performance-optimizer',
-        ]) {
-          const agent = agents.find((entry) => entry.name === name);
-          assert.deepEqual(agent?.model, { providerID: provider, modelID: reasoning }, `${profile}/${name}`);
-          assert.equal(agent.variant, 'high', `${profile}/${name}: variant`);
-        }
-        assert.deepEqual(developer.model, { providerID: provider, modelID: expected });
-        assert.deepEqual(agents.find((agent) => agent.name === 'doc-updater')?.model, {
-          providerID: provider,
-          modelID: lightweight,
-        });
+    const evidence: Record<string, unknown> = {};
+    let orderExceptions = 0;
+    t.after(async () => {
+      if (process.env.CONFIG_CONSUMER_EVIDENCE !== undefined) {
+        await writeFile(
+          `${process.env.CONFIG_CONSUMER_EVIDENCE}-${process.env.OPENCODE_NATIVE_VERSION}.json`,
+          JSON.stringify(
+            {
+              version: process.env.OPENCODE_NATIVE_VERSION,
+              root,
+              installation,
+              skillPatterns,
+              orderExceptions,
+              runs: evidence,
+            },
+            null,
+            2,
+          ),
+        );
       }
+    });
+    const runtime = async () => {
+      const cfg = await api<NativeConfig>('/config');
+      const markers = cfg.plugin.flatMap((entry) =>
+        typeof entry === 'string' || entry[1].__configComposerRuntime === undefined
+          ? []
+          : [entry[1].__configComposerRuntime],
+      );
+      assert.equal(markers.length, 1, 'one Config runtime attestation');
+      const marker = markers[0];
+      assert.equal(marker.version, 2);
+      assert.equal(marker.status, 'applied', marker.diagnostic);
+      assert.equal(marker.diagnostic, undefined);
+      assert.ok(marker.id !== '' && marker.definitionId !== '');
+      assert.match(marker.revision.sources, /^[a-f0-9]{64}$/);
+      assert.match(marker.revision.effective, /^[a-f0-9]{64}$/);
+      return { cfg, marker };
+    };
+    const verify = async (profile: string | null, label: string) => {
+      const { cfg, marker } = await runtime();
+      assert.equal(marker.candidate.profile, profile, label);
+      const agents = await snapshot();
+      evidence[label] = {
+        profile,
+        selection: marker.selection.choice,
+        runtimeStatus: marker.status,
+        globals: {
+          model: cfg.model,
+          small_model: cfg.small_model,
+          default_agent: cfg.default_agent,
+          permission: cfg.permission,
+        },
+        config: Object.fromEntries(
+          Object.entries(cfg.agent).map(([name, value]) => [
+            name,
+            Object.fromEntries(
+              Object.entries(value).filter(([key]) =>
+                ['model', 'variant', 'permission', 'mode', 'options', 'disable'].includes(key),
+              ),
+            ),
+          ]),
+        ),
+        agents: Object.fromEntries(
+          agents.map(({ name, model, variant, permission, options }) => [
+            name,
+            { model, variant, permission, options },
+          ]),
+        ),
+      };
+      const expected = expectedModels(profile);
+      assert.equal(agents.length, 32, label);
+      assert.deepEqual(agents.map((agent) => agent.name).sort(), Object.keys(expected).sort(), label);
+      assert.equal(cfg.model, 'openai/gpt-6-astra');
+      assert.equal(cfg.small_model, 'openai/gpt-5.6-luna');
+      assert.equal(cfg.default_agent, 'workflow-lead');
+      assert.equal(
+        JSON.stringify(cfg.permission),
+        JSON.stringify(nativeGlobalPermission),
+        `${label}: native global permission projection`,
+      );
+      assert.equal(cfg.agent.build.disable, true);
+      assert.equal(cfg.agent.plan.disable, true);
+      assert.deepEqual(cfg.agent.title.options, { reasoningEffort: 'low' });
+      assert.deepEqual(cfg.agent.compaction.options, { reasoningEffort: 'medium' });
       for (const agent of agents) {
+        const allocation = expected[agent.name];
+        const model = allocation.model?.split('/');
+        assert.deepEqual(
+          agent.model,
+          model === undefined ? undefined : { providerID: model[0], modelID: model[1] },
+          `${label}/${agent.name}: model`,
+        );
+        assert.equal(agent.variant ?? undefined, allocation.variant, `${label}/${agent.name}: variant`);
+        assert.equal(
+          JSON.stringify(cfg.agent[agent.name].permission ?? {}),
+          JSON.stringify(nativeAgentPolicy(expectedPolicies[agent.name])),
+          `${label}/${agent.name}: ordered authored policy`,
+        );
         const previous = original.get(agent.name);
         assert.ok(previous !== undefined);
-        if (profile === 'current' || (profile !== '' && ['title', 'compaction'].includes(agent.name))) {
-          assert.deepEqual(agent.model, previous.model, `${profile}/${agent.name}: retained model`);
-          assert.equal(agent.variant, previous.variant, `${profile}/${agent.name}: retained variant`);
+        if (JSON.stringify(agent.permission) !== JSON.stringify(previous.permission)) {
+          orderExceptions++;
+          t.diagnostic(
+            `${label}/${agent.name}: native skill-grant block order differs; checking exact paths, actions, multiplicity, and boundaries`,
+          );
         }
         assert.deepEqual(
-          permissionSnapshot(agent.permission),
-          permissionSnapshot(previous.permission),
-          `${profile}/${agent.name}: permissions`,
+          permissionSnapshot(agent),
+          permissionSnapshot(previous),
+          `${label}/${agent.name}: ordered native permissions`,
         );
-        assert.deepEqual(agent.options, previous.options, `${profile}/${agent.name}: stale provider parameters`);
-        assert.equal(agent.prompt, original.get(agent.name)?.prompt, `${profile}/${agent.name}: prompt`);
+        assert.deepEqual(agent.options, previous.options, `${label}/${agent.name}: retained options`);
+        assert.equal(agent.prompt, previous.prompt, `${label}/${agent.name}: prompt`);
         assert.notEqual(agent.prompt?.includes('{{include:'), true, `${agent.name}: unresolved directive`);
+        assert.equal(outcome(agent, 'task', 'unlisted-agent'), 'deny', agent.name);
+        assert.equal(outcome(agent, 'read', 'secrets/token'), 'deny', agent.name);
+        assert.equal(outcome(agent, 'bash', 'git reset --hard HEAD'), 'deny', agent.name);
+        const shellDenied = ['architect', 'planner', 'architecture-reviewer', 'planning-lead'].includes(agent.name);
+        assert.equal(outcome(agent, 'bash', 'git status --short'), shellDenied ? 'deny' : 'allow', agent.name);
+        assert.equal(outcome(agent, 'bash', 'npm test'), shellDenied ? 'deny' : 'ask', agent.name);
+        const task = expectedPolicies[agent.name].task;
+        if (typeof task === 'object') {
+          for (const [target, action] of Object.entries(task)) {
+            if (target !== '*') {
+              assert.equal(outcome(agent, 'task', target), action, `${agent.name}/${target}`);
+            }
+          }
+        }
         if (
           agent.prompt !== undefined &&
           !['workflow-lead', 'planning-lead', 'implementation-lead', 'review-lead'].includes(agent.name) &&
@@ -237,8 +383,71 @@ test(
           assert.equal(agent.prompt.split('# Research response').length - 1, 1, `${agent.name}: research profile`);
         }
       }
+      if (profile === null) {
+        for (const name of movedModels) {
+          assert.equal(agents.find((agent) => agent.name === name)?.variant ?? undefined, undefined);
+        }
+      }
+      return marker;
+    };
+    let marker = await verify('current', 'startup-current');
+    for (const [step, [choice, restart]] of (
+      [
+        ['openai-latest', false],
+        ['anthropic-latest', false],
+        ['openai-latest', false],
+        ['openai-latest', true],
+        [null, false],
+        [null, true],
+        [undefined, false],
+        [undefined, true],
+      ] as const
+    ).entries()) {
+      const statePath = relative(join(root, 'state'), marker.selection.path);
+      assert.ok(
+        statePath !== '' && !isAbsolute(statePath) && statePath.split(sep)[0] !== '..',
+        'isolated selection path',
+      );
+      await mkdir(dirname(marker.selection.path), { recursive: true });
+      await writeFile(
+        marker.selection.path,
+        JSON.stringify({
+          version: 2,
+          revision: marker.selection.revision + 1,
+          selection: choice === undefined ? {} : { choice },
+        }),
+      );
+      if (restart) {
+        await stop();
+        output = '';
+        baseURL = undefined;
+        launchError = undefined;
+        child = launch();
+        stopped = listen();
+        await waitForServer();
+      } else {
+        await api('/global/dispose', 'POST');
+      }
+      const previous = marker;
+      marker = await verify(
+        choice === undefined ? 'current' : choice,
+        `${step + 1}-${choice ?? (choice === null ? 'none' : 'default')}-${restart ? 'restart' : 'rebootstrap'}`,
+      );
+      assert.equal(marker.selection.choice, choice);
+      assert.notEqual(marker.id, previous.id);
+      assert.equal(
+        marker.definitionId === previous.definitionId,
+        !restart,
+        'definitions change only on server restart',
+      );
+      assert.deepEqual(marker.source, previous.source);
+      assert.deepEqual(marker.selectionLocator, previous.selectionLocator);
     }
     const commands = await api<{ name: string }[]>('/command');
     assert.ok(commands.some((command) => command.name === 'test-audit'));
+    assert.equal(child.exitCode, null);
+    await runtime();
+    assert.doesNotMatch(output, /Composer not applied|ConfigInvalidError|PluginInitError/);
+    t.diagnostic(`All 32 agents verified; host skill-grant order exceptions: ${orderExceptions}`);
   },
 );

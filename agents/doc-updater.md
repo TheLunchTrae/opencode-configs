@@ -1,16 +1,7 @@
 ---
 description: "Documentation and codemap specialist. Updates codemaps, READMEs, guides, and documentation from current source."
 mode: subagent
-groups: [documentation]
 color: "#8AEEF7"
-permission:
-  edit: allow
-  task:
-    '*': deny
-    typescript-developer: allow
-    go-developer: allow
-    csharp-developer: allow
-    php-developer: allow
 ---
 
 Keep codemaps and documentation current with source across languages and frameworks.

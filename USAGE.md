@@ -6,7 +6,7 @@ The default `workflow-lead` coordinates a complete development task. Focused lea
 ## Contents
 
 - [Choose a lead](#choose-a-lead): select the scope and stopping point.
-- [Agent groups and models](#agent-groups-and-models): change models, defaults, and group membership in the TUI.
+- [Agent groups and models](#agent-groups-and-models): select profiles and inspect loaded settings.
 - [Shared prompt composition](#shared-prompt-composition): include guidance and inspect it through Prompt Composer.
 - [Session tools](#session-tools): inspect workflow, configuration, and context; bookmark decisions and draft handoffs.
 - [Run a complete workflow](#run-a-complete-workflow): start once, resolve questions, and approve the plan.
@@ -50,25 +50,31 @@ Specialists receive task inputs and constraints without needing the lead's ident
 
 ## Agent groups and models
 
-Use `/compose-configs` to select profiles, inspect effective settings, and apply saved changes when the instance is idle.
-Use `/agent-models` and `/agent-groups` for focused edits. These controls do not send model requests.
-The editor checks choices against the running provider catalog. Catalog presence does not establish account entitlement.
+Use `/profiles` to select one worktree profile, with a preview and Apply confirmation while the instance is idle.
+Use `/view-configs` for read-only shared and profile definitions, configured and applied values, and origins.
+Explicit native frontmatter is final. Definitions load when each project directory first loads in the server process.
+Edit definitions externally in `config-composer.jsonc`, then restart the server process to load changes.
+These controls do not send model requests. Check model availability in the running provider catalog;
+catalog presence does not establish account entitlement.
 Connect an available provider with `/connect`; preserve your existing authentication setup.
 
 ### Shipped profiles
 
-The default `current` profile preserves the existing allocation, global models, explicit pins, and permissions.
-The optional profiles change task-agent models only:
+The configured default is `current`. These three profiles preserve the allocations observed with Config Composer 0.0.7:
 
-| Preset role | `openai-latest` | `anthropic-latest` | Variant |
-| --- | --- | --- | --- |
-| Orchestration, planning, review | `openai/gpt-6-astra` | `anthropic/claude-opus-5-5` | `high` |
-| Development and refactoring | `openai/gpt-6.1-sol` | `anthropic/claude-sonnet-5-5` | `medium` |
-| Documentation and research | `openai/gpt-6-luna` | `anthropic/claude-haiku-5-5` | `medium` |
+| Role | `current` | `openai-latest` | `anthropic-latest` | Variant |
+| --- | --- | --- | --- | --- |
+| Orchestration, planning, review | `openai/gpt-6-astra` | `openai/gpt-6-astra` | `anthropic/claude-opus-5-5` | `high` |
+| Development and refactoring | `openai/gpt-5.6-sol` | `openai/gpt-6.1-sol` | `anthropic/claude-sonnet-5-5` | `medium` |
+| Documentation and research | `openai/gpt-5.6-terra` | `openai/gpt-6-luna` | `anthropic/claude-haiku-5-5` | `medium` |
 
-The four existing stronger-model exceptions use the reasoning preset in each optional profile.
-Their native pins remain intact and return when `current` is selected or profiles are cleared.
+`doctrine-developer`, `efcore-developer`, `implementation-lead`, and `performance-optimizer` use explicit named patches
+in all three profiles: Astra/high for current and OpenAI, Opus/high for Anthropic. Their old frontmatter model/variant
+pairs are removed so final authored overrides do not block profile selection.
+`current` records concrete Astra rather than following the native global model by reference. Update that profile
+explicitly if its allocation should change; changing the native global model alone no longer changes it.
 Background agents, `small_model`, and the global `model` remain on their existing OpenAI settings in every shipped profile.
+Summary and compaction retain Terra/medium; title retains its native Luna 5.6/low model, variant, and reasoning option.
 The Anthropic profile therefore still requires OpenAI access for background calls.
 No profile changes accounts, credentials, permissions, prompt content, or service tier.
 
@@ -84,53 +90,52 @@ Select an optional profile only after reviewing availability and cost. It is not
 
 ### Selection and retention
 
-Select one shipped profile, or use its shortcut. The `roles` profile supplies shared membership for the other profiles;
-it is not a complete model allocation by itself. Multiple selections replay from left to right.
+`defaultProfile` is `"current"`.
+Choose **Follow configured default**, **Shared only**, or a named profile in `/profiles`.
+Definitions are shared by worktrees using this settings file.
+Choices are saved per worktree outside that file and survive server restarts.
+Applying a profile changes only the current directory instance.
+Other loaded instances retain their applied configuration.
+A saved choice takes precedence over `defaultProfile`.
 
-`selection.defaultProfiles` is `["current"]`, and `selection.retainOnRestart` is `true`.
-Saved selections are independent per project and persist across server restarts.
-Sessions in the same project share the applied configuration.
-Use **Use configured defaults** to remove a saved selection. Use **Select no profiles** for native settings only.
-The latter also removes the shipped group model contributions, including the background group default.
+**Shared only** keeps all central permission policies and system defaults. Task agents have no profile model or variant
+contributions, including the four migrated stronger allocations; native model fallback applies. This differs from the
+old fully inactive profile stack, which also disabled shared group settings.
 
-For a work project's default, add `.opencode/config-composer.jsonc`:
+Set the shared configured default in `config-composer.jsonc`:
 
 ```jsonc
 {
-  "selection": {
-    "defaultProfiles": ["openai-latest"],
-    "retainOnRestart": false
-  }
+  "defaultProfile": "openai-latest"
 }
 ```
 
-This example resets to that project's configured defaults on a new server process.
-It does not erase a previously retained choice; enabling retention again can restore that choice.
-Project and local `.opencode/config-composer.local.jsonc` selection fields override shared fields independently.
-A saved selection overrides configured defaults. Changing defaults alone does not replace a saved selection.
+Keep the existing groups and profiles when changing that field. **Follow configured default** clears a saved choice;
+changing `defaultProfile` alone does not replace one. There are no profile stacks, inheritance, or shortcuts.
 
-Switching profiles rebuilds configuration from native inputs and removes fields from the previous selection.
+Switching profiles uses loaded definitions and removes fields from the previous selection.
 Existing conversations can retain their selected model and variant. After applying a profile, use `/models`,
 then `/variants`, to select the destination settings for that conversation.
-Restart after editing native agent files or `opencode.jsonc`. Applying Composer settings does not reload those files.
+Restart the server process after editing Composer definitions or native files.
+Reconnecting the TUI is not a server restart.
 
 ### Configuration ownership
 
-Native agent files own roles, ordered `groups`, permissions, and explicit model pins.
-`componentGroups` names reusable memberships; profile layers determine settings precedence.
-`configurationPresets` supplies model settings, and `profiles` selects groups before targeting them with presets.
-Explicit profile agent overrides replace the four native task-agent pins only while those profiles are selected.
-The shipped profiles leave all permission rules native to preserve behavior when profiles are cleared.
-
-Use `model` or `modelRef`, never both. A reference can use `opencode:model`, `opencode:small_model`, or `preset:NAME`.
-An explicit native agent pin takes precedence over group and preset defaults; an agent override can replace it.
-Changing a model binding clears inherited Composer variants and parameters before destination settings apply.
+Ten ordered root `groups` own membership and shared settings. Profiles use that membership for model/variant patches;
+their native named `agent` patches allocate the four stronger task agents. Root groups always apply.
+Native files retain prompts, modes, colors, unrelated metadata, and final authored overrides. The 22 shared permission
+blocks move into planning, developer, reviewer, refactoring, and the two delegation groups.
+`architecture-reviewer` and the four leads retain their complete frontmatter permission blocks in authored order.
+These whole fields are final; shortening them to partial exceptions would change the policy. Native general/explore
+policies and all global security rules stay in `opencode.jsonc`.
+Models and variants are concrete native values. Presets, model references, old frontmatter memberships, and profile
+layers are removed. Group or profile settings cannot replace an explicit authored native field.
 See the [Config Composer reference](https://github.com/lunchbox-labs/opencode-config-composer/wiki/Configuration-Reference).
 
-The installed package supplies the pinned schema. Both plugin lists register Config Composer 0.0.7 before
+The installed package supplies the pinned schema. Both plugin lists register Config Composer 0.1.0 before
 Prompt Composer 0.1.0 and downstream plugins. Use the latest stable OpenCode V1 1.19.x within `package.json`'s
 supported range. V2 requires a separate port.
-The editors need shared filesystem access. Review previews before saving, and apply changes explicitly while idle.
+Definition edits require filesystem access to the source files. Review profile previews before applying changes.
 
 ## Shared prompt composition
 
@@ -200,7 +205,7 @@ and last recorded model for that agent in the current session.
 The inspector uses native OpenCode APIs only. It does not read plugin configuration files or interpret plugin options.
 Saved Composer group choices, source paths, and prompt fragment counts are not shown here.
 A matching model does not establish whether an agent inherited a group default or has an explicit pin.
-Use the standalone package's [agent groups and models](#agent-groups-and-models) controls for group and model settings.
+Use `/view-configs` to inspect Composer definitions, configured and applied values, and origins.
 Use `/view-prompts` for server-provided loaded agent prompts and command templates; session-tools does not supply a prompt viewer.
 
 V1 exposes merged settings without exact file provenance. The inspector identifies that limit instead of naming
@@ -249,7 +254,7 @@ See [continue a long task](#continue-a-long-task) for the lead's checkpoint and 
 
 Install `extensions/session-tools/` and the shared `extensions/tui/` directory.
 Session-tools has no Composer API dependency and works independently of its plugin registration.
-Keep Prompt Composer for body includes and Config Composer for model and group controls.
+Keep Prompt Composer for body includes and Config Composer for shared settings and worktree profiles.
 The three TUI entries are independent:
 
 | Entry in `tui.jsonc` | Plugin |
