@@ -1,7 +1,8 @@
 # OpenCode Global Configuration
 
 Personal global configuration for OpenCode, with focused lead agents, specialists, commands, reusable skills,
-shared prompt composition, agent group and model controls, workflow panels, session bookmarks, and secret-path checks.
+shared prompt composition, agent group and model controls, configuration and context inspectors, session bookmarks,
+and secret-path checks.
 The default agent is `workflow-lead`. It coordinates complete development tasks.
 Select a focused lead when you want only planning, approved implementation, or assessment of existing work.
 
@@ -19,7 +20,7 @@ Select a focused lead when you want only planning, approved implementation, or a
 | [`plugins/`](plugins/) | Local plugins, including secret-path checks. |
 | `@lunchbox-labs/opencode-config-composer` | Config Composer: model presets, groups, and project profiles. |
 | `@lunchbox-labs/opencode-prompt-composer` | Prompt Composer: shared body includes and prompt editing. |
-| [`extensions/session-tools/`](extensions/session-tools/) | Workflow, config, context, bookmarks, and handoff panels. |
+| [`extensions/session-tools/`](extensions/session-tools/) | Config, context, bookmarks, and handoff panels. |
 | [`package.json`](package.json) | Pinned plugin dependencies and maintenance commands. |
 | [`opencode.jsonc`](opencode.jsonc) | Global models, permissions, MCP servers, shell, and plugin settings. |
 | [`config-composer.jsonc`](config-composer.jsonc) | Config Composer groups, presets, profiles, and selection policy. |
@@ -82,9 +83,9 @@ Keep tokens out of version control.
 
 The quota plugin is configured for OpenAI. To opt out, remove its entries from both `opencode.jsonc` and `tui.jsonc`.
 
-The session tools add a live workflow sidebar, read-only configuration and context inspectors, and session bookmarks
-with editable handoff drafts. Open them through the command palette or `/workflow-panel`, `/inspect-config`,
-`/inspect-context`, and `/bookmarks`. See [session tools](USAGE.md#session-tools) for use and individual opt-outs.
+The session tools add read-only configuration and context inspectors, and session bookmarks with editable handoff drafts.
+Open them through the command palette or `/inspect-config`, `/inspect-context`, and `/bookmarks`.
+See [session tools](USAGE.md#session-tools) for use and individual opt-outs.
 
 Config Composer applies shared model settings through `/compose-configs`, `/agent-models`, and `/agent-groups`.
 The default `current` profile preserves the existing model allocation. The `openai-latest` and `anthropic-latest`
@@ -191,6 +192,12 @@ Back up the configuration first. Update `README.md`, `USAGE.md`, `AGENTS.md`, `a
 together, preserving local overrides and license notices.
 
 Install `extensions/`, `package.json`, and `package-lock.json` with the configuration files.
+Remove the old `extensions/session-tools/server.ts` registration from `opencode.jsonc` and
+`extensions/session-tools/workflow.tsx` registration from `tui.jsonc`.
+Delete those two files and the old `workflow-data.ts`, `workflow-timeline.ts`, and `workflow-view.tsx` helpers
+from `extensions/session-tools/`. Keep the config, context, and bookmarks entries and their shared helpers.
+Preserve existing bookmark data. Lead coordination and progress updates continue in the conversation.
+
 Merge existing dependencies and preserve unrelated extensions and personal provider settings.
 Register Config Composer 0.0.7 and Prompt Composer 0.0.6 once each in both plugin lists, in that order.
 Use the latest stable OpenCode V1 1.19.x within `package.json`'s supported range.

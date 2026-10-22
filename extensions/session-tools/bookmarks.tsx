@@ -4,7 +4,7 @@ import type { TuiPluginApi, TuiPluginModule } from '@opencode-ai/plugin/tui';
 import type { TextareaRenderable } from '@opentui/core';
 import { onCleanup } from 'solid-js';
 import { useTerminalDimensions } from '@opentui/solid';
-import { type Bookmark, PanelError, bookmarkKinds, clean, handoff, ordered, stageReport } from './model.ts';
+import { type Bookmark, PanelError, bookmarkKinds, clean, handoff, ordered } from './model.ts';
 import { bookmarkStore } from './storage.ts';
 import { type Snapshot, currentSession, historyNote, snapshot, ui } from './client.ts';
 
@@ -93,7 +93,7 @@ export default {
     };
     const draft = async () => {
       const data = await source();
-      const text = handoff(data.session, bookmarkStore(api, data).read(), stageReport(data.entries));
+      const text = handoff(data.session, bookmarkStore(api, data).read());
       view.navigation.show(() => <Draft api={api} text={text} view={view} />);
     };
     const add = (data: Snapshot, note = '', messageID?: string) => {

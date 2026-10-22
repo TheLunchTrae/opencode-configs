@@ -171,55 +171,18 @@ The [context inspector](#context-evidence) does not show exact assembled prompt 
 
 ## Session tools
 
-These four plugins use native TUI dialogs and the selected theme. Open the command palette or use these commands.
-Open a session first for workflow, context, and bookmark actions. Inspectors do not send model requests.
+These three plugins use native TUI dialogs and the selected theme. Open the command palette or use these commands.
+Open a session first for context and bookmark actions. Inspectors do not send model requests.
 Choose **← Back** or press Escape to return to the previous view. Escape closes the panel at its first view.
 Prompts and handoff drafts return without saving when canceled. Completed bookmark changes remain saved.
 
 | Command | Action |
 | --- | --- |
-| `/workflow-panel` | Open the phase timeline and inspect agent assignments. |
 | `/inspect-config` | Inspect an agent's resolved configuration and recorded model. |
 | `/inspect-context` | Inspect recorded usage, file reads, skill loads, and compactions. |
 | `/bookmarks` | Manage session bookmarks and select notes for a handoff. |
 | `/bookmark` | Bookmark a recent message or create a manual note. |
 | `/session-handoff` | Build an editable draft from selected bookmarks. |
-
-### Live workflow
-
-The sidebar shows the latest stage reported by the primary lead through `workflow_status`.
-Stages are `planning`, `implementation`, `review`, `verification`, `blocked`, and `complete`.
-They describe the lead's scope. A report is not an approval or an independent verification result.
-Sessions without a recorded stage show **Stage not reported**. Idle status never means workflow completion.
-
-The Workflow section starts collapsed, with only the current stage below its heading.
-Select the heading to expand or collapse the summary and agent activity.
-Switching sessions resets the section to collapsed.
-Select the stage or an agent in the sidebar, or run `/workflow-panel`, to open the full panel.
-The panel groups assignments under numbered phases, such as **Planning 1**, **Dev 1**, **Review 1**, and **Dev 2**.
-Repeated reports within one phase update its summary. Returning to a stage creates another numbered occurrence.
-Phase summaries come from the lead's recorded reports. The panel does not send model requests.
-Select a phase to expand or collapse its assignments. The current phase starts expanded.
-
-Each assignment stays in the phase where it started. A reused agent session can have assignments in several phases.
-Nested assignments inherit their parent assignment's phase when recorded timing establishes that relationship.
-Work without a recorded phase or linked delegation appears under **Unassigned**.
-Completed assignments keep their completion status when the same session is reused.
-Background rows distinguish completed dispatch from ongoing activity in the latest child assignment.
-The list distinguishes active work, retry, questions, permissions, and completed or failed delegations.
-
-Select an assignment to inspect its prompt, recorded model, task, timing, or conversation.
-**View assignment prompt** opens the recorded prompt for that particular delegation in a large, read-only view.
-An unlinked session offers **View initial prompt** instead. **Initial request** opens the first recorded user request.
-Prompt views preserve full text and line breaks, excluding terminal control sequences and generated reference expansions.
-Use arrow keys, Page Up, Page Down, Home, End, or the mouse wheel to scroll.
-Click **×** to close the entire workflow popup. Escape returns one view and closes the popup at its first view.
-
-Session events trigger refreshes; a ten-second refresh also runs while the panel is mounted.
-The sidebar shows up to five sessions and reads the primary session's latest 200 messages and each child's latest 20.
-The phase timeline reads complete recorded histories for at most 24 sessions and two child levels.
-Its phase numbers and assignment prompts survive reopening the panel and restarting OpenCode while that history remains available.
-Missing history can leave phase membership, prompts, or model details unavailable. A failed refresh marks displayed data stale.
 
 ### Effective configuration
 
@@ -278,18 +241,16 @@ See [continue a long task](#continue-a-long-task) for the lead's checkpoint and 
 Install `extensions/session-tools/` and the shared `extensions/tui/` directory.
 Session-tools has no Composer API dependency and works independently of its plugin registration.
 Keep Prompt Composer for body includes and Config Composer for model and group controls.
-The four TUI entries are independent:
+The three TUI entries are independent:
 
 | Entry in `tui.jsonc` | Plugin |
 | --- | --- |
-| `./extensions/session-tools/workflow.tsx` | Workflow sidebar and expanded view. |
 | `./extensions/session-tools/config.ts` | Effective configuration inspector. |
 | `./extensions/session-tools/context.ts` | Context inspector. |
 | `./extensions/session-tools/bookmarks.tsx` | Bookmarks and handoff drafts. |
 
 Remove an entry to disable that panel, then restart OpenCode. Keep other plugin entries and the shared helper files.
-`./extensions/session-tools/server.ts` in `opencode.jsonc` supplies `workflow_status` for primary leads.
-Removing it stops new stage reports; the other views remain usable. These plugins target OpenCode V1 1.19.x.
+These plugins target OpenCode V1 1.19.x.
 V2 requires a separate port.
 
 ## Run a complete workflow

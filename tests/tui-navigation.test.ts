@@ -7,11 +7,11 @@ import type {
   TuiDialogSelectProps,
   TuiPluginApi,
 } from '@opencode-ai/plugin/tui';
-import { type DialogDecoration, dialogNavigation } from '../extensions/tui/navigation.ts';
+import { dialogNavigation } from '../extensions/tui/navigation.ts';
 
 type Dialog = TuiDialogSelectProps<string> | TuiDialogAlertProps | TuiDialogConfirmProps | TuiDialogPromptProps;
 
-function harness(decoration?: DialogDecoration) {
+function harness() {
   let current: Dialog | undefined;
   let closed: (() => void) | undefined;
   const controller = new AbortController();
@@ -47,7 +47,7 @@ function harness(decoration?: DialogDecoration) {
   } as unknown as TuiPluginApi;
   return {
     api,
-    navigation: dialogNavigation(api, decoration),
+    navigation: dialogNavigation(api),
     controller,
     get current() {
       return current;
@@ -59,22 +59,18 @@ function harness(decoration?: DialogDecoration) {
   };
 }
 
-test('the close control clears every frame without restoring a parent', async () => {
-  let close: () => void = () => assert.fail('The close control was not rendered');
-  const view = harness((element, dismiss) => {
-    close = dismiss;
-    return element;
-  });
+test('closing the panel clears every frame without restoring a parent', async () => {
+  const view = harness();
   const nav = view.navigation;
-  nav.menu({ title: 'Workflow', options: [] }, true);
-  nav.menu({ title: 'Assignment', options: [] });
-  nav.alert({ title: 'Prompt', message: 'Original assignment' });
+  nav.menu({ title: 'Bookmarks', options: [] }, true);
+  nav.menu({ title: 'Bookmark', options: [] });
+  nav.alert({ title: 'Prompt', message: 'Saved note' });
   assert.equal(nav.canGoBack, true);
-  close();
+  nav.close();
   await Promise.resolve();
   assert.equal(view.current, undefined);
   assert.equal(nav.canGoBack, false);
-  nav.menu({ title: 'Workflow reopened', options: [] }, true);
+  nav.menu({ title: 'Bookmarks reopened', options: [] }, true);
   await view.escape();
   assert.equal(view.current, undefined);
 });
