@@ -168,8 +168,12 @@ The viewer is read-only and works without shared filesystem access.
 Skills are composed but omitted from this viewer because of API limitations.
 It does not show the full model request: OpenCode system instructions, conversation history, tool schemas, and future skill
 output are outside the preview. It does not execute commands or load skills.
-Restart after editing native agent or command bodies. Direct reads, raw copies, and skill-derived slash commands
-do not expand skill includes; use the native `skill` tool for templated skills.
+Use `/reload-prompts` or **Reload prompts** in the viewer menu after editing snippets or native definitions.
+Reload checks for running agents, then reloads the current server instance and reads its configuration again.
+Project configuration, native Markdown definitions, and cached skill bodies are refreshed. Global JSON configuration
+edits require a restart. OpenCode can log composition errors and return unexpanded text; check loaded prompts and server
+diagnostics after a reload. Direct reads, raw copies, and skill-derived slash commands do not expand skill includes;
+use the native `skill` tool for templated skills.
 Missing, unsafe, or cyclic includes fail composition. Ambiguous native skill framing is rejected when the output contains
 an include marker. Output without include markers passes through unchanged unless the host reports truncation.
 Host-reported truncation always fails composition.

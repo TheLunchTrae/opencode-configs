@@ -189,6 +189,10 @@ Command arguments, shell expressions, and file references remain literal before 
 Skills are composed but omitted from this viewer because of API limitations.
 It does not expose the full model request, OpenCode system instructions, conversation history, tool schemas, or future skill output.
 Keep the preview read-only; it does not write files, apply changes, execute commands, or load skills.
+`/reload-prompts` and the viewer's separate **Reload prompts** action reload the current server instance after an idle check.
+Wait for native disposal and a fresh configuration read; do not treat the disposal acknowledgement as completion.
+Project configuration, native Markdown definitions, and cached skill bodies refresh; global JSON edits require restart.
+Reload completion does not prove composition succeeded: the host can log hook errors and retain unexpanded text.
 Server composition still covers command bodies and native skill-tool output.
 Use Config Composer's installed `schema.json` for its settings file, as in the committed configuration.
 Keep schemas, settings, references, and templated prompts compatible during upgrades. Preserve customized settings.

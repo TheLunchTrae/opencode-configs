@@ -98,6 +98,7 @@ The read-only viewer shows complete loaded agent prompts and command templates r
 with includes expanded and pages that preserve all text. Native fallback and disabled agents are labeled.
 Command arguments, shell expressions, and file references remain literal before invocation.
 Skills are composed but omitted from this viewer because of API limitations.
+Use `/reload-prompts` or **Reload prompts** in the viewer menu after editing prompt sources, while agents are idle.
 The preview excludes the full model request: OpenCode system instructions, conversation history, tool schemas,
 and future skill output are outside its scope.
 Skill-derived slash commands do not expand includes.
