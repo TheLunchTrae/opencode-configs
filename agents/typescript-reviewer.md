@@ -1,11 +1,7 @@
 ---
 description: "Senior TypeScript/JavaScript code reviewer. Reviews for type safety, async correctness, security vulnerabilities, and idiomatic patterns. Use for all TypeScript and JavaScript code changes."
 mode: subagent
-groups: [reviewers]
 color: "#EEF78A"
-permission:
-  edit: deny
-  task: deny
 ---
 
 {{include:review-guidance.md}}

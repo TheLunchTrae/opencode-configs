@@ -7,9 +7,16 @@ import { fileURLToPath } from 'node:url';
 
 // Install the shipped lockfile, with an optional candidate overlay only in disposable state.
 const repository = fileURLToPath(new URL('../', import.meta.url));
-const candidateTarball =
+const promptTarball =
   process.env.PROMPT_COMPOSER_TARBALL === undefined ? undefined : await realpath(process.env.PROMPT_COMPOSER_TARBALL);
-const expectedPromptVersion = candidateTarball === undefined ? '0.0.6' : '0.1.0';
+const configTarball =
+  process.env.CONFIG_COMPOSER_TARBALL === undefined ? undefined : await realpath(process.env.CONFIG_COMPOSER_TARBALL);
+if (configTarball === undefined || promptTarball === undefined) {
+  console.error(
+    'This draft requires Config Composer 0.1.0 and Prompt Composer 0.1.0 candidates. Set CONFIG_COMPOSER_TARBALL and PROMPT_COMPOSER_TARBALL; committed registry pins remain 0.0.7/0.0.6 until publication.',
+  );
+  process.exit(1);
+}
 const root = await mkdtemp(join(tmpdir(), 'opencode-packaged-consumer-'));
 const consumer = join(root, 'consumer');
 const run = (command, args) => {
@@ -29,35 +36,33 @@ try {
   assert.equal(manifest.dependencies['@lunchbox-labs/opencode-prompt-composer'], '0.0.6');
   assert.equal(manifest.dependencies['opencode-config-composer'], undefined);
   run('npm', ['ci', '--ignore-scripts', '--no-audit', '--no-fund']);
-  if (candidateTarball !== undefined) {
-    run('npm', [
-      'install',
-      '--no-save',
-      '--package-lock=false',
-      '--ignore-scripts',
-      '--no-audit',
-      '--no-fund',
-      candidateTarball,
-    ]);
-  }
+  // One install prevents npm restoring the other candidate from the unchanged manifest.
+  run('npm', [
+    'install',
+    '--no-save',
+    '--package-lock=false',
+    '--ignore-scripts',
+    '--no-audit',
+    '--no-fund',
+    configTarball,
+    promptTarball,
+  ]);
   assert.equal(await readFile(join(consumer, 'package.json'), 'utf8'), manifestText);
   assert.equal(await readFile(join(consumer, 'package-lock.json'), 'utf8'), lockText);
   const installed = JSON.parse(
     await readFile(join(consumer, 'node_modules/@lunchbox-labs/opencode-config-composer/package.json'), 'utf8'),
   );
   assert.equal(installed.name, '@lunchbox-labs/opencode-config-composer');
-  assert.equal(installed.version, '0.0.7');
+  assert.equal(installed.version, '0.1.0');
   const prompt = JSON.parse(
     await readFile(join(consumer, 'node_modules/@lunchbox-labs/opencode-prompt-composer/package.json'), 'utf8'),
   );
   assert.equal(prompt.name, '@lunchbox-labs/opencode-prompt-composer');
-  assert.equal(prompt.version, expectedPromptVersion);
+  assert.equal(prompt.version, '0.1.0');
   assert.equal(prompt.dependencies?.[installed.name], undefined, 'Prompt Composer must remain independent');
-  if (expectedPromptVersion === '0.1.0') {
-    assert.deepEqual(prompt.dependencies ?? {}, {}, 'Include-only Prompt Composer has no runtime dependencies');
-    assert.equal(prompt.exports['./schema.json'], undefined);
-    assert.equal(prompt.exports['./editor'], undefined);
-  }
+  assert.deepEqual(prompt.dependencies ?? {}, {}, 'Include-only Prompt Composer has no runtime dependencies');
+  assert.equal(prompt.exports['./schema.json'], undefined);
+  assert.equal(prompt.exports['./editor'], undefined);
   assert.equal(installed.dependencies[prompt.name], undefined, 'Config Composer must remain independent');
   assert.equal(installed.license, 'MIT');
   assert.match(
@@ -71,7 +76,13 @@ try {
   );
   assert.equal(schema.type, 'object');
   assert.ok(schema.properties.profiles);
-  assert.equal(schema.properties.agent, undefined);
+  assert.ok(schema.properties.agent);
+  assert.ok(schema.properties.command);
+  assert.ok(schema.properties.groups);
+  assert.ok(schema.properties.defaultProfile);
+  for (const legacy of ['componentGroups', 'configurationPresets', 'profileShortcuts', 'selection']) {
+    assert.equal(schema.properties[legacy], undefined, legacy);
+  }
   assert.equal(manifest.engines.opencode, '1.19.x');
   assert.deepEqual(installed.engines, { node: '>=22.18.0' });
   assert.deepEqual(prompt.engines, { node: '>=22.18.0' });
@@ -98,9 +109,12 @@ try {
   }
   console.log('Local extension type and behavior checks passed with Config Composer unavailable to module resolution.');
   run('npm', ['run', 'check']);
+  run('npm', ['run', 'test:native:minimum']);
   run('npm', ['run', 'test:native']);
+  assert.equal(await readFile(join(consumer, 'package.json'), 'utf8'), manifestText);
+  assert.equal(await readFile(join(consumer, 'package-lock.json'), 'utf8'), lockText);
   console.log(
-    `Published Config Composer 0.0.7 and ${candidateTarball === undefined ? 'published' : 'candidate'} Prompt Composer ${expectedPromptVersion} passed together in an isolated consumer.`,
+    'Config Composer 0.1.0 and Prompt Composer 0.1.0 candidates passed together at the minimum and current native versions; published manifest and lock bytes are unchanged.',
   );
 } finally {
   await rm(root, { recursive: true, force: true });

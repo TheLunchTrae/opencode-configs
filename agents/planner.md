@@ -1,11 +1,7 @@
 ---
 description: "Expert planning specialist for complex features and refactoring. Use when users request feature implementation, architectural changes, or complex refactoring. Automatically activated for planning tasks."
 mode: subagent
-groups: [planning]
 color: "#CA8AF7"
-permission:
-  edit: deny
-  bash: deny
 ---
 
 Plan bounded assignments read-only using this procedure.

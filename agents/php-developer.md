@@ -1,10 +1,7 @@
 ---
 description: "Senior PHP developer for implementing features, fixing bugs, and modifying .php code. Writes modern PHP 8.x with strict types, typed properties, and Composer-managed dependencies. Works across Laravel, Symfony, and vanilla PHP. Use for any PHP implementation task."
 mode: subagent
-groups: [developers]
 color: "#8AF793"
-permission:
-  edit: allow
 ---
 
 {{include:implementation-standards.md}}

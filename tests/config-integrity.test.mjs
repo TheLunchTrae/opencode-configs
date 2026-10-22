@@ -4,6 +4,15 @@ import { test } from 'node:test';
 import { parseDocument } from 'yaml';
 import { parse } from 'jsonc-parser';
 import { fileURLToPath } from 'node:url';
+import {
+  expectedModels,
+  expectedPolicies,
+  globalPermission,
+  memberships,
+  movedModels,
+  movedPermissions,
+  retainedPolicies,
+} from './config-expectations.ts';
 
 const root = new URL('../', import.meta.url);
 const read = (path) => readFileSync(new URL(path, root), 'utf8');
@@ -21,6 +30,116 @@ const authoredAgents = Object.fromEntries(
       return [name.slice(0, -3), { ...document.toJS(), prompt: text.slice(header[0].length) }];
     }),
 );
+// Inspect only the shipped groups and named patches; the native suite exercises the packaged resolver.
+const shippedSettings = (name, profile = null) => {
+  let shared = {};
+  for (const group of composer.groups) {
+    if (group.members.agent?.includes(name)) {
+      shared = { ...shared, ...group.agent };
+    }
+  }
+  if (profile !== null) {
+    for (const group of composer.profiles[profile].groups) {
+      if (composer.groups.find((entry) => entry.name === group.name).members.agent.includes(name)) {
+        shared = { ...shared, ...group.agent };
+      }
+    }
+    shared = { ...shared, ...composer.profiles[profile].agent[name] };
+  }
+  return { ...shared, ...config.agent[name], ...authoredAgents[name] };
+};
+
+test('shared configuration uses ten central groups and one configured profile', () => {
+  assert.equal(composer.defaultProfile, 'current');
+  assert.deepEqual(
+    composer.groups.map(({ name, members }) => [name, members.agent]),
+    Object.entries(memberships),
+  );
+  assert.deepEqual(Object.keys(composer.profiles), ['current', 'openai-latest', 'anthropic-latest']);
+  for (const key of ['componentGroups', 'configurationPresets', 'profileShortcuts', 'selection']) {
+    assert.equal(composer[key], undefined, `${key}: old composition layout`);
+  }
+  for (const [name, agent] of Object.entries({ ...config.agent, ...authoredAgents })) {
+    assert.equal(agent.groups, undefined, `${name}: membership belongs in central groups`);
+  }
+});
+
+test('exact shared policies move while five complete ordered frontmatter exceptions remain', () => {
+  assert.deepEqual(
+    Object.keys(authoredAgents)
+      .filter((name) => authoredAgents[name].permission === undefined)
+      .sort(),
+    movedPermissions,
+  );
+  assert.deepEqual(
+    Object.keys(authoredAgents)
+      .filter((name) => authoredAgents[name].permission !== undefined)
+      .sort(),
+    Object.keys(retainedPolicies),
+  );
+  for (const [name, permission] of Object.entries(retainedPolicies)) {
+    assert.equal(JSON.stringify(authoredAgents[name].permission), JSON.stringify(permission), name);
+  }
+  assert.equal(JSON.stringify(config.permission), JSON.stringify(globalPermission));
+});
+
+test('four profile allocations replace frontmatter model and variant pairs', () => {
+  for (const [name, agent] of Object.entries(authoredAgents)) {
+    assert.equal(agent.model, undefined, `${name}: unexpected permanent model pin`);
+    assert.equal(agent.variant, undefined, `${name}: unexpected permanent variant pin`);
+  }
+  for (const [profile, settings] of Object.entries(composer.profiles)) {
+    assert.deepEqual(Object.keys(settings.agent), movedModels, profile);
+    for (const name of movedModels) {
+      assert.deepEqual(settings.agent[name], expectedModels(profile)[name], `${profile}/${name}`);
+    }
+  }
+});
+
+test('all 32 allocations and complete ordered policies match in each profile and shared-only mode', () => {
+  for (const profile of ['current', 'openai-latest', 'anthropic-latest', null]) {
+    const expected = expectedModels(profile);
+    assert.equal(Object.keys(expected).length, 32);
+    for (const [name, allocation] of Object.entries(expected)) {
+      const actual = shippedSettings(name, profile);
+      assert.deepEqual(
+        { model: actual.model, variant: actual.variant },
+        { model: allocation.model, variant: allocation.variant },
+        `${profile}/${name}`,
+      );
+      assert.equal(
+        JSON.stringify(actual.permission ?? {}),
+        JSON.stringify(expectedPolicies[name]),
+        `${profile}/${name}: policy order`,
+      );
+    }
+  }
+});
+
+test('shared policies retain delegate, read, and shell outcomes without widening', () => {
+  for (const name of Object.keys(expectedPolicies)) {
+    const policy = { ...config.permission, ...shippedSettings(name).permission };
+    assert.equal(configuredAction('task', 'unlisted-agent', policy), 'deny', name);
+    assert.equal(configuredAction('read', 'secrets/token', policy), 'deny', name);
+    assert.equal(configuredAction('bash', 'git reset --hard HEAD', policy), 'deny', name);
+    const shellDenied = ['architect', 'planner', 'architecture-reviewer', 'planning-lead'].includes(name);
+    assert.equal(configuredAction('bash', 'git status --short', policy), shellDenied ? 'deny' : 'allow', name);
+    assert.equal(configuredAction('bash', 'npm test', policy), shellDenied ? 'deny' : 'ask', name);
+  }
+  for (const [name, target] of [
+    ['doc-updater', 'typescript-developer'],
+    ['refactor-cleaner', 'php-developer'],
+    ['code-reviewer', 'typescript-reviewer'],
+    ['security-reviewer', 'php-reviewer'],
+    ['planning-lead', 'planner'],
+  ]) {
+    assert.equal(
+      configuredAction('task', target, { ...config.permission, ...shippedSettings(name).permission }),
+      'allow',
+      name,
+    );
+  }
+});
 // Check this configuration's literal and * patterns, with V1 slash normalization and last-match order.
 // These policy examples do not launch OpenCode or model its full permission system.
 const matchesPolicyPattern = (pattern, input) => {
@@ -172,7 +291,7 @@ test('retired workflow entrypoints are absent and documented for upgrades', () =
 
 const permissionActions = new Set(['allow', 'ask', 'deny']);
 const isRecord = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
-const agentSettings = (text, name) => {
+const agentSettings = (text, name, defaults = {}) => {
   const header = text.match(/^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/)?.[1];
   assert.ok(header, `${name}: missing agent frontmatter`);
   const document = parseDocument(header, { uniqueKeys: true });
@@ -180,7 +299,7 @@ const agentSettings = (text, name) => {
   const fields = document.toJS();
   assert.ok(isRecord(fields), `${name}: agent frontmatter must be a mapping`);
   assert.ok(['primary', 'subagent', 'all'].includes(fields.mode), `${name}: invalid agent mode`);
-  const permission = fields.permission === undefined ? {} : fields.permission;
+  const permission = fields.permission ?? defaults.permission ?? {};
   assert.ok(isRecord(permission), `${name}: agent permissions must be a mapping`);
   for (const key of ['edit', 'bash', 'question']) {
     assert.ok(
@@ -222,7 +341,7 @@ const agents = Object.fromEntries(
     .filter((name) => name.endsWith('.md'))
     .map((file) => {
       const name = file.slice(0, -3);
-      return [name, agentSettings(read(`agents/${file}`), name)];
+      return [name, agentSettings(read(`agents/${file}`), name, shippedSettings(name))];
     }),
 );
 const builtinAgents = Object.fromEntries(
@@ -537,15 +656,23 @@ test('published Composer registrations match locked dependencies and preserve na
   assert.equal(composer.$schema, './node_modules/@lunchbox-labs/opencode-config-composer/schema.json');
   assert.equal(lock.packages['node_modules/opencode-config-composer'], undefined);
   assert.ok(!existsSync(new URL('extensions/config-composer/', root)), 'implementation belongs to the package');
-  for (const legacy of ['agent', 'command', 'skill', 'sourceDirectories', 'components']) {
+  for (const legacy of [
+    'skill',
+    'sourceDirectories',
+    'components',
+    'componentGroups',
+    'configurationPresets',
+    'profileShortcuts',
+    'selection',
+  ]) {
     assert.equal(composer[legacy], undefined, `${legacy}: use native files and current configuration settings`);
   }
-  assert.deepEqual(composer.selection, { defaultProfiles: ['current'], retainOnRestart: true });
-  for (const [name, group] of Object.entries(composer.componentGroups)) {
+  assert.equal(composer.defaultProfile, 'current');
+  for (const { name, ...group } of composer.groups) {
     assert.equal(group.prompt, undefined, `${name}: shipped guidance belongs in explicit body includes`);
   }
   for (const [name, settings] of Object.entries(authoredAgents)) {
-    assert.ok(Array.isArray(settings.groups), `${name}: use an ordered membership array`);
+    assert.equal(settings.groups, undefined, `${name}: membership belongs in central groups`);
     assert.equal(settings.agent_group, undefined, `${name}: legacy membership remains`);
   }
 });
@@ -651,7 +778,7 @@ test('specialists declare ordered response profiles and required guidance withou
       assert.ok(resources.indexOf('response-formats/common.md') >= 0);
       assert.ok(resources.indexOf('response-formats/common.md') < resources.indexOf(profile));
     }
-    const groups = authoredAgents[name].groups;
+    const groups = composer.groups.filter((group) => group.members.agent.includes(name)).map((group) => group.name);
     const requirements = [
       ...(groups.some((group) => ['developers', 'refactoring'].includes(group)) ? ['implementation-standards'] : []),
       ...(groups.includes('reviewers') ? ['reviewer-standards', 'review-target', 'review-criteria'] : []),

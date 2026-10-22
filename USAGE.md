@@ -50,25 +50,28 @@ Specialists receive task inputs and constraints without needing the lead's ident
 
 ## Agent groups and models
 
-Use `/compose-configs` to select profiles, inspect effective settings, and apply saved changes when the instance is idle.
+Use `/compose-configs` to select one profile, inspect effective settings, and apply saved changes when the instance is idle.
 Use `/agent-models` and `/agent-groups` for focused edits. These controls do not send model requests.
 The editor checks choices against the running provider catalog. Catalog presence does not establish account entitlement.
 Connect an available provider with `/connect`; preserve your existing authentication setup.
 
 ### Shipped profiles
 
-The default `current` profile preserves the existing allocation, global models, explicit pins, and permissions.
-The optional profiles change task-agent models only:
+The configured default is `current`. These three profiles preserve the allocations observed with Config Composer 0.0.7:
 
-| Preset role | `openai-latest` | `anthropic-latest` | Variant |
-| --- | --- | --- | --- |
-| Orchestration, planning, review | `openai/gpt-6-astra` | `anthropic/claude-opus-5-5` | `high` |
-| Development and refactoring | `openai/gpt-6.1-sol` | `anthropic/claude-sonnet-5-5` | `medium` |
-| Documentation and research | `openai/gpt-6-luna` | `anthropic/claude-haiku-5-5` | `medium` |
+| Role | `current` | `openai-latest` | `anthropic-latest` | Variant |
+| --- | --- | --- | --- | --- |
+| Orchestration, planning, review | `openai/gpt-6-astra` | `openai/gpt-6-astra` | `anthropic/claude-opus-5-5` | `high` |
+| Development and refactoring | `openai/gpt-5.6-sol` | `openai/gpt-6.1-sol` | `anthropic/claude-sonnet-5-5` | `medium` |
+| Documentation and research | `openai/gpt-5.6-terra` | `openai/gpt-6-luna` | `anthropic/claude-haiku-5-5` | `medium` |
 
-The four existing stronger-model exceptions use the reasoning preset in each optional profile.
-Their native pins remain intact and return when `current` is selected or profiles are cleared.
+`doctrine-developer`, `efcore-developer`, `implementation-lead`, and `performance-optimizer` use explicit named patches
+in all three profiles: Astra/high for current and OpenAI, Opus/high for Anthropic. Their old frontmatter model/variant
+pairs are removed so final authored overrides do not block profile selection.
+`current` records concrete Astra rather than following the native global model by reference. Update that profile
+explicitly if its allocation should change; changing the native global model alone no longer changes it.
 Background agents, `small_model`, and the global `model` remain on their existing OpenAI settings in every shipped profile.
+Summary and compaction retain Terra/medium; title retains its native Luna 5.6/low model, variant, and reasoning option.
 The Anthropic profile therefore still requires OpenAI access for background calls.
 No profile changes accounts, credentials, permissions, prompt content, or service tier.
 
@@ -84,30 +87,24 @@ Select an optional profile only after reviewing availability and cost. It is not
 
 ### Selection and retention
 
-Select one shipped profile, or use its shortcut. The `roles` profile supplies shared membership for the other profiles;
-it is not a complete model allocation by itself. Multiple selections replay from left to right.
+`defaultProfile` is `"current"`. Select one profile, **No profile — keep shared settings**, or **Use configured default**.
+Definitions are shared by worktrees using this settings file; each worktree's saved choice persists across server restarts.
+Sessions in that worktree share the applied configuration. A saved choice takes precedence over `defaultProfile`.
 
-`selection.defaultProfiles` is `["current"]`, and `selection.retainOnRestart` is `true`.
-Saved selections are independent per project and persist across server restarts.
-Sessions in the same project share the applied configuration.
-Use **Use configured defaults** to remove a saved selection. Use **Select no profiles** for native settings only.
-The latter also removes the shipped group model contributions, including the background group default.
+No profile keeps all central permission policies and system defaults. Task agents have no profile model or variant
+contributions, including the four migrated stronger allocations; native model fallback applies. This differs from the
+old fully inactive profile stack, which also disabled shared group settings.
 
-For a work project's default, add `.opencode/config-composer.jsonc`:
+Set the shared configured default in `config-composer.jsonc`:
 
 ```jsonc
 {
-  "selection": {
-    "defaultProfiles": ["openai-latest"],
-    "retainOnRestart": false
-  }
+  "defaultProfile": "openai-latest"
 }
 ```
 
-This example resets to that project's configured defaults on a new server process.
-It does not erase a previously retained choice; enabling retention again can restore that choice.
-Project and local `.opencode/config-composer.local.jsonc` selection fields override shared fields independently.
-A saved selection overrides configured defaults. Changing defaults alone does not replace a saved selection.
+Keep the existing groups and profiles when changing that field. **Use configured default** clears a saved choice;
+changing `defaultProfile` alone does not replace one. There are no profile stacks, inheritance, or shortcuts.
 
 Switching profiles rebuilds configuration from native inputs and removes fields from the previous selection.
 Existing conversations can retain their selected model and variant. After applying a profile, use `/models`,
@@ -116,19 +113,21 @@ Restart after editing native agent files or `opencode.jsonc`. Applying Composer 
 
 ### Configuration ownership
 
-Native agent files own roles, ordered `groups`, permissions, and explicit model pins.
-`componentGroups` names reusable memberships; profile layers determine settings precedence.
-`configurationPresets` supplies model settings, and `profiles` selects groups before targeting them with presets.
-Explicit profile agent overrides replace the four native task-agent pins only while those profiles are selected.
-The shipped profiles leave all permission rules native to preserve behavior when profiles are cleared.
-
-Use `model` or `modelRef`, never both. A reference can use `opencode:model`, `opencode:small_model`, or `preset:NAME`.
-An explicit native agent pin takes precedence over group and preset defaults; an agent override can replace it.
-Changing a model binding clears inherited Composer variants and parameters before destination settings apply.
+Ten ordered root `groups` own membership and shared settings. Profiles use that membership for model/variant patches;
+their native named `agent` patches allocate the four stronger task agents. Root groups always apply.
+Native files retain prompts, modes, colors, unrelated metadata, and final authored overrides. The 22 shared permission
+blocks move into planning, developer, reviewer, refactoring, and the two delegation groups.
+`architecture-reviewer` and the four leads retain their complete frontmatter permission blocks in authored order.
+These whole fields are final; shortening them to partial exceptions would change the policy. Native general/explore
+policies and all global security rules stay in `opencode.jsonc`.
+Models and variants are concrete native values. Presets, model references, old frontmatter memberships, and profile
+layers are removed. Group or profile settings cannot replace an explicit authored native field.
 See the [Config Composer reference](https://github.com/lunchbox-labs/opencode-config-composer/wiki/Configuration-Reference).
 
 The installed package supplies the pinned schema. Both plugin lists register Config Composer 0.0.7 before
-Prompt Composer 0.0.6 and downstream plugins. Use the latest stable OpenCode V1 1.19.x within `package.json`'s
+Prompt Composer 0.0.6 and downstream plugins while this draft awaits publication. Its new configuration requires
+Config 0.1.0 and Prompt 0.1.0 candidates together; package/native checks fail with a prerequisite message without them.
+Real registry pins and lock entries must be finalized after publication. Use OpenCode V1 1.19.x within `package.json`'s
 supported range. V2 requires a separate port.
 The editors need shared filesystem access. Review previews before saving, and apply changes explicitly while idle.
 

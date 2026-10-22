@@ -27,13 +27,14 @@ Check the installed version against the [V1 documentation](https://opencode.ai/d
 
 ## Agents and model settings
 
-- Custom agent `groups`, explicit `model`, and `variant` settings belong in `agents/*.md` frontmatter.
+- Central group membership and profile model/variant allocations belong in `config-composer.jsonc`.
   Root `opencode.jsonc` owns global defaults, server plugin registrations, and built-in overrides.
-  `config-composer.jsonc` owns `componentGroups`, `configurationPresets`, `profiles`, `profileShortcuts`,
-  and `selection`.
-  Keep the shipped agent, command, and skill definitions in their native files. Group configuration affects agents only.
-  Preserve explicit exceptions and native pins. Profile layers determine settings precedence.
-  Keep permission rules native; do not introduce Composer permission contributions during documentation cleanup.
+  `config-composer.jsonc` owns ordered `groups`, native named patches, `profiles`, and `defaultProfile`.
+  Keep the shipped agent, command, and skill definitions in their native files. The shipped groups target agents only.
+  Explicit authored native fields always win. Preserve all five complete frontmatter permission exceptions and their
+  ordered rules; the other 22 agent policies come from shared groups. Keep native global security policy unchanged.
+  The four stronger task-agent model/variant pairs belong in every profile, with no permanent frontmatter pins.
+  **No profile — keep shared settings** retains shared policies and system defaults while omitting task-profile allocations.
 - Agent Markdown bodies are prompts. Declare shared fragments with explicit includes at their intended positions.
   Keep the shipped guidance in those bodies.
   Do not add a separate `prompt` frontmatter field.
@@ -189,8 +190,10 @@ it does not write files, apply changes, execute commands, or load skills. Server
 and native skill-tool output.
 Use Config Composer's installed `schema.json` for its settings file, as in the committed configuration.
 Keep schemas, settings, references, and templated prompts compatible during upgrades. Preserve customized settings.
-Keep settings in their owning package's file. Reject legacy Config Composer `agent`, `command`, `skill`, and
-`sourceDirectories` layouts.
+Keep settings in their owning package's file. Reject old component groups, presets, profile layers, shortcuts, selection
+fields, and source-directory layouts. Native named `agent` and `command` patches are supported by the new schema.
+Definitions use one shared file; one saved profile choice persists per worktree. **Use configured default** follows
+`defaultProfile`; **No profile — keep shared settings** keeps shared settings. The current profile stores a concrete allocation.
 Built-in agents without authored prompts must retain native prompts.
 The settings editor must preserve unrelated configuration, prompts, comments, explicit exceptions, and permissions.
 Group names and membership are discovered from configuration; do not hardcode a group inventory in the UI.
@@ -242,11 +245,11 @@ npm run test:native
 
 Keep the `@lunchbox-labs/opencode-config-composer` dependency and both registrations on the same version.
 Registry installation requires a published version and a lockfile generated from the registry artifact.
-After both selected Composer versions are published, regenerate the registry lockfile and run:
+This draft retains published Config 0.0.7/Prompt 0.0.6 pins. Validate both 0.1.0 candidates together:
 
 ```sh
-npm install --package-lock-only --ignore-scripts
-npm run test:package
+CONFIG_COMPOSER_TARBALL=/path/to/config-composer-0.1.0.tgz \
+PROMPT_COMPOSER_TARBALL=/path/to/prompt-composer-0.1.0.tgz npm run test:package
 ```
 
 Use Node 22.18 or newer and Bun for the rendered bookmark test.
@@ -255,8 +258,11 @@ Set `npm_config_cache` to a writable directory if the default cache is unavailab
 This procedure does not publish or install anything into live settings.
 
 `test:package` copies the consumer into a temporary directory without Git metadata or existing dependencies.
-It installs the committed registry lockfile, then removes Composer from module resolution while running local checks
-and the rendered bookmark test. It restores the package for native server tests through OpenCode's plugin loader.
+It installs the committed registry lockfile and overlays both tarballs in one unsaved install without changing manifest
+or lock bytes. It hides Config Composer during local extension checks and the rendered bookmark test, then restores it
+for native server checks at the minimum and current supported versions. Missing candidate prerequisites fail explicitly.
+After publication, finalize real registry pins, matching registrations and package assertions, regenerate the lockfile,
+and repeat package/native verification. Keep this PR draft until those steps and prerequisite consumer coordination pass.
 Native fixtures register the installed package directory.
 Committed configuration uses the selected npm name and pinned version.
 Passing fixtures do not prove registry installation.
