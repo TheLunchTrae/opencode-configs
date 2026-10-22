@@ -6,7 +6,7 @@ The default `workflow-lead` coordinates a complete development task. Focused lea
 ## Contents
 
 - [Choose a lead](#choose-a-lead): select the scope and stopping point.
-- [Agent groups and models](#agent-groups-and-models): change models, defaults, and group membership in the TUI.
+- [Agent groups and models](#agent-groups-and-models): select profiles and inspect loaded settings.
 - [Shared prompt composition](#shared-prompt-composition): include guidance and inspect it through Prompt Composer.
 - [Session tools](#session-tools): inspect workflow, configuration, and context; bookmark decisions and draft handoffs.
 - [Run a complete workflow](#run-a-complete-workflow): start once, resolve questions, and approve the plan.
@@ -50,9 +50,12 @@ Specialists receive task inputs and constraints without needing the lead's ident
 
 ## Agent groups and models
 
-Use `/compose-configs` to select one profile, inspect effective settings, and apply saved changes when the instance is idle.
-Use `/agent-models` and `/agent-groups` for focused edits. These controls do not send model requests.
-The editor checks choices against the running provider catalog. Catalog presence does not establish account entitlement.
+Use `/profiles` to select one worktree profile, with a preview and Apply confirmation while the instance is idle.
+Use `/view-configs` for read-only shared and profile definitions, configured and applied values, and origins.
+Explicit native frontmatter is final. Definitions load when each project directory first loads in the server process.
+Edit definitions externally in `config-composer.jsonc`, then restart the server process to load changes.
+These controls do not send model requests. Check model availability in the running provider catalog;
+catalog presence does not establish account entitlement.
 Connect an available provider with `/connect`; preserve your existing authentication setup.
 
 ### Shipped profiles
@@ -87,11 +90,15 @@ Select an optional profile only after reviewing availability and cost. It is not
 
 ### Selection and retention
 
-`defaultProfile` is `"current"`. Select one profile, **No profile — keep shared settings**, or **Use configured default**.
-Definitions are shared by worktrees using this settings file; each worktree's saved choice persists across server restarts.
-Sessions in that worktree share the applied configuration. A saved choice takes precedence over `defaultProfile`.
+`defaultProfile` is `"current"`.
+Choose **Follow configured default**, **Shared only**, or a named profile in `/profiles`.
+Definitions are shared by worktrees using this settings file.
+Choices are saved per worktree outside that file and survive server restarts.
+Applying a profile changes only the current directory instance.
+Other loaded instances retain their applied configuration.
+A saved choice takes precedence over `defaultProfile`.
 
-No profile keeps all central permission policies and system defaults. Task agents have no profile model or variant
+**Shared only** keeps all central permission policies and system defaults. Task agents have no profile model or variant
 contributions, including the four migrated stronger allocations; native model fallback applies. This differs from the
 old fully inactive profile stack, which also disabled shared group settings.
 
@@ -103,13 +110,14 @@ Set the shared configured default in `config-composer.jsonc`:
 }
 ```
 
-Keep the existing groups and profiles when changing that field. **Use configured default** clears a saved choice;
+Keep the existing groups and profiles when changing that field. **Follow configured default** clears a saved choice;
 changing `defaultProfile` alone does not replace one. There are no profile stacks, inheritance, or shortcuts.
 
-Switching profiles rebuilds configuration from native inputs and removes fields from the previous selection.
+Switching profiles uses loaded definitions and removes fields from the previous selection.
 Existing conversations can retain their selected model and variant. After applying a profile, use `/models`,
 then `/variants`, to select the destination settings for that conversation.
-Restart after editing native agent files or `opencode.jsonc`. Applying Composer settings does not reload those files.
+Restart the server process after editing Composer definitions or native files.
+Reconnecting the TUI is not a server restart.
 
 ### Configuration ownership
 
@@ -124,12 +132,10 @@ Models and variants are concrete native values. Presets, model references, old f
 layers are removed. Group or profile settings cannot replace an explicit authored native field.
 See the [Config Composer reference](https://github.com/lunchbox-labs/opencode-config-composer/wiki/Configuration-Reference).
 
-The installed package supplies the pinned schema. Both plugin lists register Config Composer 0.0.7 before
-Prompt Composer 0.0.6 and downstream plugins while this draft awaits publication. Its new configuration requires
-Config 0.1.0 and Prompt 0.1.0 candidates together; package/native checks fail with a prerequisite message without them.
-Real registry pins and lock entries must be finalized after publication. Use OpenCode V1 1.19.x within `package.json`'s
+The installed package supplies the pinned schema. Both plugin lists register Config Composer 0.1.0 before
+Prompt Composer 0.1.0 and downstream plugins. Use the latest stable OpenCode V1 1.19.x within `package.json`'s
 supported range. V2 requires a separate port.
-The editors need shared filesystem access. Review previews before saving, and apply changes explicitly while idle.
+Definition edits require filesystem access to the source files. Review profile previews before applying changes.
 
 ## Shared prompt composition
 
@@ -159,12 +165,19 @@ All guidance stays in explicit body includes at its intended position.
 Built-ins without authored prompts retain their native fallback.
 Avoid including the same guidance twice; fragments are not deduplicated.
 
-Use `/agent-prompts` to preview the complete composed agent prompt returned by the connected server for the active project,
-with includes expanded. The viewer is agent-only, read-only, and works without shared filesystem access.
+Use `/view-prompts`, choose **Agents** or **Commands**, then select a configured component and a page.
+The viewer shows complete loaded agent prompts and command templates returned by the connected server for the active project,
+with includes expanded. Pages preserve all text without truncation. Native fallback and disabled agents are labeled.
+Command arguments, shell expressions, and file references remain literal before invocation.
+The viewer is read-only and works without shared filesystem access.
+Skills are composed but omitted from this viewer because of API limitations.
 It does not show the full model request: OpenCode system instructions, conversation history, tool schemas, and future skill
 output are outside the preview. It does not execute commands or load skills.
-Restart after editing native agent or command bodies. Direct reads, raw copies, and skill-derived slash commands
-do not expand skill includes; use the native `skill` tool for templated skills.
+Restart OpenCode after editing `prompts/` snippets or native agent, command, or skill definitions.
+Composer keeps loaded snippet text until the server restarts; OpenCode controls native skill loading.
+OpenCode can log composition errors and return unexpanded text; check loaded prompts and server diagnostics after restart.
+Direct reads, raw copies, and skill-derived slash commands do not expand skill includes;
+use the native `skill` tool for templated skills.
 Missing, unsafe, or cyclic includes fail composition. Ambiguous native skill framing is rejected when the output contains
 an include marker. Output without include markers passes through unchanged unless the host reports truncation.
 Host-reported truncation always fails composition.
@@ -192,8 +205,8 @@ and last recorded model for that agent in the current session.
 The inspector uses native OpenCode APIs only. It does not read plugin configuration files or interpret plugin options.
 Saved Composer group choices, source paths, and prompt fragment counts are not shown here.
 A matching model does not establish whether an agent inherited a group default or has an explicit pin.
-Use the standalone package's [agent groups and models](#agent-groups-and-models) controls for group and model settings.
-Use `/agent-prompts` for the server-provided composed agent prompt; session-tools does not supply a prompt viewer.
+Use `/view-configs` to inspect Composer definitions, configured and applied values, and origins.
+Use `/view-prompts` for server-provided loaded agent prompts and command templates; session-tools does not supply a prompt viewer.
 
 V1 exposes merged settings without exact file provenance. The inspector identifies that limit instead of naming
 an unverified source file. Recorded models describe past turns; they do not predict the next request's model.
@@ -241,7 +254,7 @@ See [continue a long task](#continue-a-long-task) for the lead's checkpoint and 
 
 Install `extensions/session-tools/` and the shared `extensions/tui/` directory.
 Session-tools has no Composer API dependency and works independently of its plugin registration.
-Keep Prompt Composer for body includes and Config Composer for model and group controls.
+Keep Prompt Composer for body includes and Config Composer for shared settings and worktree profiles.
 The three TUI entries are independent:
 
 | Entry in `tui.jsonc` | Plugin |

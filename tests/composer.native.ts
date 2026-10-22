@@ -3,7 +3,7 @@ import { spawn } from 'node:child_process';
 import { once } from 'node:events';
 import { cp, mkdir, mkdtemp, readFile, readdir, realpath, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
+import { dirname, isAbsolute, join, relative, sep } from 'node:path';
 import { setTimeout } from 'node:timers/promises';
 import { test } from 'node:test';
 import { parse } from 'jsonc-parser';
@@ -29,8 +29,12 @@ interface Agent {
 
 interface RuntimeMarker {
   version: number;
+  id: string;
+  definitionId: string;
   status: string;
   diagnostic?: string;
+  source: { path: string; canonicalPath: string; fingerprint: string };
+  selectionLocator: { root: string; baseFile: string; path: string };
   selection: { path: string; revision: number; choice?: string | null };
   candidate: { profile: string | null };
   revision: { sources: string; effective: string };
@@ -82,7 +86,7 @@ test(
       assert.equal(
         installed.version,
         '0.1.0',
-        'This draft needs both Composer 0.1.0 candidates. Run npm run test:package with CONFIG_COMPOSER_TARBALL and PROMPT_COMPOSER_TARBALL; committed registry pins remain unchanged.',
+        'Install the published Composer 0.1.0 packages from the committed lockfile with npm ci.',
       );
     }
     const root = await mkdtemp(join(tmpdir(), 'opencode-configs-native-'));
@@ -275,6 +279,7 @@ test(
       assert.equal(marker.version, 2);
       assert.equal(marker.status, 'applied', marker.diagnostic);
       assert.equal(marker.diagnostic, undefined);
+      assert.ok(marker.id !== '' && marker.definitionId !== '');
       assert.match(marker.revision.sources, /^[a-f0-9]{64}$/);
       assert.match(marker.revision.effective, /^[a-f0-9]{64}$/);
       return { cfg, marker };
@@ -398,7 +403,11 @@ test(
         [undefined, true],
       ] as const
     ).entries()) {
-      assert.ok(marker.selection.path.startsWith(`${join(root, 'state')}/`), 'isolated selection path');
+      const statePath = relative(join(root, 'state'), marker.selection.path);
+      assert.ok(
+        statePath !== '' && !isAbsolute(statePath) && statePath.split(sep)[0] !== '..',
+        'isolated selection path',
+      );
       await mkdir(dirname(marker.selection.path), { recursive: true });
       await writeFile(
         marker.selection.path,
@@ -419,11 +428,20 @@ test(
       } else {
         await api('/global/dispose', 'POST');
       }
+      const previous = marker;
       marker = await verify(
         choice === undefined ? 'current' : choice,
-        `${step + 1}-${choice ?? (choice === null ? 'none' : 'default')}-${restart ? 'restart' : 'reload'}`,
+        `${step + 1}-${choice ?? (choice === null ? 'none' : 'default')}-${restart ? 'restart' : 'rebootstrap'}`,
       );
       assert.equal(marker.selection.choice, choice);
+      assert.notEqual(marker.id, previous.id);
+      assert.equal(
+        marker.definitionId === previous.definitionId,
+        !restart,
+        'definitions change only on server restart',
+      );
+      assert.deepEqual(marker.source, previous.source);
+      assert.deepEqual(marker.selectionLocator, previous.selectionLocator);
     }
     const commands = await api<{ name: string }[]>('/command');
     assert.ok(commands.some((command) => command.name === 'test-audit'));

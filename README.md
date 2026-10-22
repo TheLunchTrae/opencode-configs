@@ -1,8 +1,8 @@
 # OpenCode Global Configuration
 
 Personal global configuration for OpenCode, with focused lead agents, specialists, commands, reusable skills,
-shared prompt composition, agent group and model controls, configuration and context inspectors, session bookmarks,
-and secret-path checks.
+shared prompt composition, shared settings and worktree profiles, configuration and context inspectors,
+session bookmarks, and secret-path checks.
 The default agent is `workflow-lead`. It coordinates complete development tasks.
 Select a focused lead when you want only planning, approved implementation, or assessment of existing work.
 
@@ -19,7 +19,7 @@ Select a focused lead when you want only planning, approved implementation, or a
 | [`prompts/`](prompts/) | Shared fragments for native agent and skill bodies. |
 | [`plugins/`](plugins/) | Local plugins, including secret-path checks. |
 | `@lunchbox-labs/opencode-config-composer` | Config Composer: shared settings, central groups, and one worktree profile. |
-| `@lunchbox-labs/opencode-prompt-composer` | Prompt Composer: shared body includes and a read-only agent prompt preview. |
+| `@lunchbox-labs/opencode-prompt-composer` | Prompt Composer: shared body includes and a read-only agent prompt and command template viewer. |
 | [`extensions/session-tools/`](extensions/session-tools/) | Config, context, bookmarks, and handoff panels. |
 | [`package.json`](package.json) | Pinned plugin dependencies and maintenance commands. |
 | [`opencode.jsonc`](opencode.jsonc) | Global models, permissions, MCP servers, shell, and plugin settings. |
@@ -43,9 +43,7 @@ Select a focused lead when you want only planning, approved implementation, or a
 The global configuration directory is `~/.config/opencode` or `%USERPROFILE%\.config\opencode` on Windows.
 Install the pinned dependencies in this directory with `npm ci`.
 Config Composer's settings schema uses its installed package version. Local extensions do not import either Composer package.
-Both plugin lists pin Config Composer 0.0.7 before Prompt Composer 0.0.6 and downstream plugins.
-This draft's configuration requires both 0.1.0 candidates. Published pins and the lockfile remain unchanged until
-both releases exist; the draft is not ready for installation with those older pins.
+Both plugin lists pin Config Composer 0.1.0 before Prompt Composer 0.1.0 and downstream plugins.
 
 Do not copy credentials, tokens, `node_modules`, `.idea`, or work-project checkpoints.
 The repository's `.opencode/` directory contains maintenance guidance and is not needed for global installation.
@@ -69,7 +67,8 @@ See the [V2 migration guide](https://opencode.ai/v2/docs/migrate-v1/).
 2. Select models available from your authenticated provider. Global defaults are in `opencode.jsonc`.
    Config Composer memberships, shared settings, and profile allocations are in `config-composer.jsonc`.
    Explicit authored agent fields, including complete permission blocks, are final overrides.
-   After launch, use `/agent-models` to select models and `/agent-groups` to assign agents to groups.
+   After launch, use `/profiles` to select a worktree profile and `/view-configs` to inspect settings and origins.
+   Edit definitions externally in `config-composer.jsonc`.
    See [agent groups and models](USAGE.md#agent-groups-and-models) for precedence and configuration examples.
 3. Use reasoning and sampling options supported by the selected models.
 4. Remove `opencode` from `disabled_providers` if you want to use that provider.
@@ -88,16 +87,27 @@ The session tools add read-only configuration and context inspectors, and sessio
 Open them through the command palette or `/inspect-config`, `/inspect-context`, and `/bookmarks`.
 See [session tools](USAGE.md#session-tools) for use and individual opt-outs.
 
-Config Composer applies shared settings through `/compose-configs`, `/agent-models`, and `/agent-groups`.
+Config Composer uses `/profiles` for selection and `/view-configs` for read-only definitions, configured and applied
+values, and origins. Explicit native frontmatter is final.
 The default `current` profile preserves the existing model allocation. The `openai-latest` and `anthropic-latest`
 profiles are explicit opt-ins for task agents. They preserve the existing OpenAI background models and global defaults.
-Choose one profile per worktree. **No profile — keep shared settings** retains shared policies and system settings.
-Saved choices persist across restarts. See [agent groups and models](USAGE.md#agent-groups-and-models).
+Choose **Follow configured default**, **Shared only**, or a named profile. **Shared only** retains shared policies and
+system settings. Choices are saved per worktree outside the definitions file and survive server restarts.
+Switching uses loaded definitions, with preview and Apply confirmation.
+Definitions load when each project directory first loads in the OpenCode server process.
+Edit definitions externally, then restart that process to load changes.
+See [agent groups and models](USAGE.md#agent-groups-and-models).
 
 Prompt Composer resolves explicit body includes from `prompts/` at configuration load and through the native `skill` tool.
-Use `/agent-prompts` for a read-only preview of the complete composed agent prompt returned by the connected server,
-with includes expanded. The preview excludes the full model request: OpenCode system instructions, conversation history,
-tool schemas, and future skill output are outside its scope.
+Use `/view-prompts`, choose **Agents** or **Commands**, then select a configured component and a page.
+The read-only viewer shows complete loaded agent prompts and command templates returned by the connected server,
+with includes expanded and pages that preserve all text. Native fallback and disabled agents are labeled.
+Command arguments, shell expressions, and file references remain literal before invocation.
+Skills are composed but omitted from this viewer because of API limitations.
+Restart OpenCode after editing `prompts/` snippets or native agent, command, or skill definitions.
+Composer keeps loaded snippet text until the server restarts; OpenCode controls native skill loading.
+The preview excludes the full model request: OpenCode system instructions, conversation history, tool schemas,
+and future skill output are outside its scope.
 Skill-derived slash commands do not expand includes.
 Native agent files retain prompts, roles, and five complete permission exceptions. Central groups supply the other
 22 agent policies. Commands and skills remain native files.
@@ -124,7 +134,7 @@ Read and edit permissions still apply to those paths.
 
 ## Quick start
 
-Restart OpenCode after configuration changes, then run `opencode` from your work project.
+Restart the OpenCode server process after configuration changes, then run `opencode` from your work project.
 Confirm that `workflow-lead` is active and the four primary leads are available.
 Project settings and explicit session model choices can override global defaults.
 
@@ -204,8 +214,7 @@ from `extensions/session-tools/`. Keep the config, context, and bookmarks entrie
 Preserve existing bookmark data. Lead coordination and progress updates continue in the conversation.
 
 Merge existing dependencies and preserve unrelated extensions and personal provider settings.
-This draft retains Config Composer 0.0.7 and Prompt Composer 0.0.6 registrations, in that order; finalize both pins
-with the real registry lockfile after 0.1.0 publication.
+Register Config Composer 0.1.0 and Prompt Composer 0.1.0 once each in both plugin lists, in that order.
 Use the latest stable OpenCode V1 1.19.x within `package.json`'s supported range.
 Replace old `componentGroups`, `configurationPresets`, profile layers, shortcuts, and selection fields with central
 `groups`, native named patches, `profiles`, and `defaultProfile` in `config-composer.jsonc`.
