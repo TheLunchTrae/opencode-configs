@@ -2,6 +2,7 @@
 description: "GitLab CI developer for authoring, modifying, and fixing .gitlab-ci.yml pipelines, CI/CD components, includes, and child pipelines. Handles stages, rules-based job control, needs-based DAGs, protected/masked variables, cache vs artifacts semantics, services, environments, and OIDC-based cloud auth via id_tokens. Use for any GitLab CI/CD pipeline implementation task."
 mode: subagent
 color: "#8AF793"
+groups: [developers]
 ---
 
 {{include:implementation-standards.md}}

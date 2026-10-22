@@ -2,6 +2,7 @@
 description: "Documentation and codemap specialist. Updates codemaps, READMEs, guides, and documentation from current source."
 mode: subagent
 color: "#8AEEF7"
+groups: [documentation, developer-delegation]
 ---
 
 Keep codemaps and documentation current with source across languages and frameworks.

@@ -60,21 +60,22 @@ Connect an available provider with `/connect`; preserve your existing authentica
 
 ### Shipped profiles
 
-The configured default is `current`. These three profiles preserve the allocations observed with Config Composer 0.0.7:
+The configured default is `primary`. These three profiles preserve the allocations observed with Config Composer 0.0.7:
 
-| Role | `current` | `openai-latest` | `anthropic-latest` | Variant |
+| Role | `primary` | `openai-latest` | `anthropic-latest` | Variant |
 | --- | --- | --- | --- | --- |
 | Orchestration, planning, review | `openai/gpt-6-astra` | `openai/gpt-6-astra` | `anthropic/claude-opus-5-5` | `high` |
 | Development and refactoring | `openai/gpt-5.6-sol` | `openai/gpt-6.1-sol` | `anthropic/claude-sonnet-5-5` | `medium` |
 | Documentation and research | `openai/gpt-5.6-terra` | `openai/gpt-6-luna` | `anthropic/claude-haiku-5-5` | `medium` |
 
 `doctrine-developer`, `efcore-developer`, `implementation-lead`, and `performance-optimizer` use explicit named patches
-in all three profiles: Astra/high for current and OpenAI, Opus/high for Anthropic. Their old frontmatter model/variant
+in all three profiles: Astra/high for Primary and OpenAI, Opus/high for Anthropic. Their old frontmatter model/variant
 pairs are removed so final authored overrides do not block profile selection.
-`current` records concrete Astra rather than following the native global model by reference. Update that profile
+`primary` records concrete Astra rather than following the native global model by reference. Update that profile
 explicitly if its allocation should change; changing the native global model alone no longer changes it.
 Background agents, `small_model`, and the global `model` remain on their existing OpenAI settings in every shipped profile.
-Summary and compaction retain Terra/medium; title retains its native Luna 5.6/low model, variant, and reasoning option.
+Summary and compaction retain Terra/medium; title retains Luna 5.6/low through a shared named exception and keeps
+its native reasoning option.
 The Anthropic profile therefore still requires OpenAI access for background calls.
 No profile changes accounts, credentials, permissions, prompt content, or service tier.
 
@@ -90,7 +91,7 @@ Select an optional profile only after reviewing availability and cost. It is not
 
 ### Selection and retention
 
-`defaultProfile` is `"current"`.
+`defaultProfile` is `"primary"`.
 Choose **Follow configured default**, **Shared only**, or a named profile in `/profiles`.
 Definitions are shared by worktrees using this settings file.
 Choices are saved per worktree outside that file and survive server restarts.
@@ -98,7 +99,10 @@ Applying a profile changes only the current directory instance.
 Other loaded instances retain their applied configuration.
 A saved choice takes precedence over `defaultProfile`.
 
-**Shared only** keeps all central permission policies and system defaults. Task agents have no profile model or variant
+Before upgrading, choose **Follow configured default** in worktrees that explicitly selected the old `current` profile.
+That name is removed; following the configured default selects `primary` after restart.
+
+**Shared only** keeps all shared permission policies and system defaults. Task agents have no profile model or variant
 contributions, including the four migrated stronger allocations; native model fallback applies. This differs from the
 old fully inactive profile stack, which also disabled shared group settings.
 
@@ -121,20 +125,30 @@ Reconnecting the TUI is not a server restart.
 
 ### Configuration ownership
 
-Ten ordered root `groups` own membership and shared settings. Profiles use that membership for model/variant patches;
-their native named `agent` patches allocate the four stronger task agents. Root groups always apply.
-Native files retain prompts, modes, colors, unrelated metadata, and final authored overrides. The 22 shared permission
-blocks move into planning, developer, reviewer, refactoring, and the two delegation groups.
-`architecture-reviewer` and the four leads retain their complete frontmatter permission blocks in authored order.
-These whole fields are final; shortening them to partial exceptions would change the policy. Native general/explore
-policies and all global security rules stay in `opencode.jsonc`.
-Models and variants are concrete native values. Presets, model references, old frontmatter memberships, and profile
-layers are removed. Group or profile settings cannot replace an explicit authored native field.
+Each agent owns an ordered `groups` array: Markdown agents declare it in frontmatter, and native JSON agents use
+`agent.<name>.groups`. The twelve group definitions in `config-composer.jsonc` contain settings, never member lists.
+For each agent, apply its listed groups in order, combining each group's shared settings with the selected profile's
+patch. Later groups win overlapping settings. Shared named settings and profile named settings follow; explicit
+native frontmatter stays final. Group definition order does not control membership precedence.
+
+Shared `read-only` and `non-delegating-reviewer` groups hold reusable restrictions. General receives edit permission
+from `developers`; Explore receives its edit denial from `research`. The four leads retain complete ordered
+frontmatter permission blocks because each has a different delegation allowlist. These whole fields are final;
+shortening them to only the differing task rules would discard group contributions. Global security rules stay
+unchanged in `opencode.jsonc`.
+
+```yaml
+groups: [reviewers, non-delegating-reviewer]
+```
+
+Root/profile named agent patches keep deliberate model exceptions, including title's existing Luna 5.6/low allocation.
+Native files retain prompts, modes, colors, provider options, and final authored overrides. Membership edits, like other
+configuration edits, require a server restart. Group or profile settings cannot replace an explicit authored agent frontmatter field.
 See the [Config Composer reference](https://github.com/lunchbox-labs/opencode-config-composer/wiki/Configuration-Reference).
 
-The installed package supplies the pinned schema. Both plugin lists register Config Composer 0.1.0 before
-Prompt Composer 0.1.0 and downstream plugins. Use the latest stable OpenCode V1 1.19.x within `package.json`'s
-supported range. V2 requires a separate port.
+This layout requires Config Composer 0.2.0. The installed package supplies the schema. Both plugin lists register
+Config Composer before Prompt Composer and downstream plugins. Use the latest stable OpenCode V1 1.19.x within
+`package.json`'s supported range. V2 requires a separate port.
 Definition edits require filesystem access to the source files. Review profile previews before applying changes.
 
 ## Shared prompt composition

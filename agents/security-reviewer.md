@@ -2,6 +2,7 @@
 description: "Security vulnerability detection specialist. Use after writing code that handles user input, authentication, API endpoints, or sensitive data. Flags secrets, SSRF, injection, unsafe crypto, and OWASP Top 10 vulnerabilities. Reports findings only — remediation is the implementer's job."
 mode: subagent
 color: "#F78AB7"
+groups: [reviewers, delegating-reviewers]
 ---
 
 {{include:review-guidance.md}}

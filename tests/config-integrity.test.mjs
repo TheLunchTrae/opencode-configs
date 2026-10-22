@@ -30,41 +30,56 @@ const authoredAgents = Object.fromEntries(
       return [name.slice(0, -3), { ...document.toJS(), prompt: text.slice(header[0].length) }];
     }),
 );
-// Inspect only the shipped groups and named patches; the native suite exercises the packaged resolver.
+// These checks cover the concrete shipped policies; native tests exercise the packaged resolver.
+const ownedGroups = (name) => authoredAgents[name]?.groups ?? config.agent[name]?.groups ?? [];
 const shippedSettings = (name, profile = null) => {
-  let shared = {};
-  for (const group of composer.groups) {
-    if (group.members.agent?.includes(name)) {
-      shared = { ...shared, ...group.agent };
-    }
+  let settings = { ...config.agent[name] };
+  const apply = (patch = {}) => {
+    const permission =
+      patch.permission === undefined ? settings.permission : { ...settings.permission, ...patch.permission };
+    settings = { ...settings, ...patch, ...(permission === undefined ? {} : { permission }) };
+  };
+  for (const groupName of ownedGroups(name)) {
+    apply(composer.groups.find((group) => group.name === groupName)?.agent);
+    apply(
+      profile === null ? undefined : composer.profiles[profile].groups.find((group) => group.name === groupName)?.agent,
+    );
   }
-  if (profile !== null) {
-    for (const group of composer.profiles[profile].groups) {
-      if (composer.groups.find((entry) => entry.name === group.name).members.agent.includes(name)) {
-        shared = { ...shared, ...group.agent };
-      }
-    }
-    shared = { ...shared, ...composer.profiles[profile].agent[name] };
-  }
-  return { ...shared, ...config.agent[name], ...authoredAgents[name] };
+  apply(composer.agent?.[name]);
+  apply(profile === null ? undefined : composer.profiles[profile].agent?.[name]);
+  return { ...settings, ...authoredAgents[name] };
 };
 
-test('shared configuration uses ten central groups and one configured profile', () => {
-  assert.equal(composer.defaultProfile, 'current');
+test('agents own ordered memberships and twelve group definitions contain no member lists', () => {
+  assert.equal(composer.defaultProfile, 'primary');
   assert.deepEqual(
-    composer.groups.map(({ name, members }) => [name, members.agent]),
-    Object.entries(memberships),
+    composer.groups.map(({ name }) => name),
+    Object.keys(memberships),
   );
-  assert.deepEqual(Object.keys(composer.profiles), ['current', 'openai-latest', 'anthropic-latest']);
+  assert.deepEqual(Object.keys(composer.profiles), ['primary', 'openai-latest', 'anthropic-latest']);
+  for (const group of composer.groups) {
+    assert.equal(group.members, undefined, `${group.name}: membership belongs to each agent`);
+  }
   for (const key of ['componentGroups', 'configurationPresets', 'profileShortcuts', 'selection']) {
     assert.equal(composer[key], undefined, `${key}: old composition layout`);
   }
-  for (const [name, agent] of Object.entries({ ...config.agent, ...authoredAgents })) {
-    assert.equal(agent.groups, undefined, `${name}: membership belongs in central groups`);
+  for (const name of Object.keys(expectedPolicies)) {
+    assert.deepEqual(
+      ownedGroups(name),
+      Object.entries(memberships)
+        .filter(([, agents]) => agents.includes(name))
+        .map(([group]) => group),
+      name,
+    );
   }
+  assert.equal(config.agent.general.permission, undefined);
+  assert.equal(config.agent.explore.permission, undefined);
+  assert.equal(config.agent.title.model, undefined);
+  assert.equal(config.agent.title.variant, undefined);
+  assert.deepEqual(composer.agent.title, { model: 'openai/gpt-5.6-luna', variant: 'low' });
 });
 
-test('exact shared policies move while five complete ordered frontmatter exceptions remain', () => {
+test('reusable policies are shared while four complete lead exceptions remain', () => {
   assert.deepEqual(
     Object.keys(authoredAgents)
       .filter((name) => authoredAgents[name].permission === undefined)
@@ -97,7 +112,7 @@ test('four profile allocations replace frontmatter model and variant pairs', () 
 });
 
 test('all 32 allocations and complete ordered policies match in each profile and shared-only mode', () => {
-  for (const profile of ['current', 'openai-latest', 'anthropic-latest', null]) {
+  for (const profile of ['primary', 'openai-latest', 'anthropic-latest', null]) {
     const expected = expectedModels(profile);
     assert.equal(Object.keys(expected).length, 32);
     for (const [name, allocation] of Object.entries(expected)) {
@@ -346,7 +361,7 @@ const agents = Object.fromEntries(
 );
 const builtinAgents = Object.fromEntries(
   ['general', 'explore'].map((name) => {
-    const permission = config.agent[name].permission ?? {};
+    const permission = shippedSettings(name).permission ?? {};
     const task = permission.task;
     return [
       name,
@@ -380,7 +395,7 @@ test('the default and focused leads are selectable primary agents', () => {
 });
 
 test('Explore explicitly denies edits after global permissions are applied', () => {
-  assert.equal(config.agent.explore.permission?.edit, 'deny');
+  assert.equal(shippedSettings('explore').permission?.edit, 'deny');
 });
 
 test('only primary leads receive an explicit Question tool grant', () => {
@@ -667,12 +682,12 @@ test('published Composer registrations match locked dependencies and preserve na
   ]) {
     assert.equal(composer[legacy], undefined, `${legacy}: use native files and current configuration settings`);
   }
-  assert.equal(composer.defaultProfile, 'current');
+  assert.equal(composer.defaultProfile, 'primary');
   for (const { name, ...group } of composer.groups) {
     assert.equal(group.prompt, undefined, `${name}: shipped guidance belongs in explicit body includes`);
   }
   for (const [name, settings] of Object.entries(authoredAgents)) {
-    assert.equal(settings.groups, undefined, `${name}: membership belongs in central groups`);
+    assert.ok(Array.isArray(settings.groups), `${name}: membership belongs to each agent`);
     assert.equal(settings.agent_group, undefined, `${name}: legacy membership remains`);
   }
 });
@@ -778,7 +793,7 @@ test('specialists declare ordered response profiles and required guidance withou
       assert.ok(resources.indexOf('response-formats/common.md') >= 0);
       assert.ok(resources.indexOf('response-formats/common.md') < resources.indexOf(profile));
     }
-    const groups = composer.groups.filter((group) => group.members.agent.includes(name)).map((group) => group.name);
+    const groups = ownedGroups(name);
     const requirements = [
       ...(groups.some((group) => ['developers', 'refactoring'].includes(group)) ? ['implementation-standards'] : []),
       ...(groups.includes('reviewers') ? ['reviewer-standards', 'review-target', 'review-criteria'] : []),

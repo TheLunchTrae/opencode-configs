@@ -1,49 +1,15 @@
 {
   "$schema": "./node_modules/@lunchbox-labs/opencode-config-composer/schema.json",
-  "defaultProfile": "current",
+  "defaultProfile": "primary",
   "groups": [
     {
-      "name": "workflow",
-      "members": {
-        "agent": [
-          "workflow-lead"
-        ]
-      }
+      "name": "workflow"
     },
     {
-      "name": "planning",
-      "members": {
-        "agent": [
-          "architect",
-          "planner",
-          "planning-lead"
-        ]
-      },
-      "agent": {
-        "permission": {
-          "edit": "deny",
-          "bash": "deny"
-        }
-      }
+      "name": "planning"
     },
     {
       "name": "developers",
-      "members": {
-        "agent": [
-          "csharp-developer",
-          "doctrine-developer",
-          "efcore-developer",
-          "github-actions-developer",
-          "gitlab-ci-developer",
-          "go-developer",
-          "implementation-lead",
-          "laminas-developer",
-          "php-developer",
-          "react-developer",
-          "typescript-developer",
-          "general"
-        ]
-      },
       "agent": {
         "permission": {
           "edit": "allow"
@@ -51,35 +17,10 @@
       }
     },
     {
-      "name": "reviewers",
-      "members": {
-        "agent": [
-          "architecture-reviewer",
-          "code-reviewer",
-          "csharp-reviewer",
-          "go-reviewer",
-          "php-reviewer",
-          "review-lead",
-          "security-reviewer",
-          "typescript-reviewer"
-        ]
-      },
-      "agent": {
-        "permission": {
-          "edit": "deny",
-          "task": "deny"
-        }
-      }
+      "name": "reviewers"
     },
     {
       "name": "refactoring",
-      "members": {
-        "agent": [
-          "code-simplifier",
-          "performance-optimizer",
-          "refactor-cleaner"
-        ]
-      },
       "agent": {
         "permission": {
           "edit": "allow"
@@ -87,30 +28,18 @@
       }
     },
     {
-      "name": "documentation",
-      "members": {
-        "agent": [
-          "doc-updater"
-        ]
-      }
+      "name": "documentation"
     },
     {
       "name": "research",
-      "members": {
-        "agent": [
-          "explore"
-        ]
+      "agent": {
+        "permission": {
+          "edit": "deny"
+        }
       }
     },
     {
       "name": "system",
-      "members": {
-        "agent": [
-          "summary",
-          "compaction",
-          "title"
-        ]
-      },
       "agent": {
         "model": "openai/gpt-5.6-terra",
         "variant": "medium"
@@ -118,12 +47,6 @@
     },
     {
       "name": "developer-delegation",
-      "members": {
-        "agent": [
-          "doc-updater",
-          "refactor-cleaner"
-        ]
-      },
       "agent": {
         "permission": {
           "edit": "allow",
@@ -139,12 +62,6 @@
     },
     {
       "name": "delegating-reviewers",
-      "members": {
-        "agent": [
-          "code-reviewer",
-          "security-reviewer"
-        ]
-      },
       "agent": {
         "permission": {
           "edit": "deny",
@@ -157,10 +74,34 @@
           }
         }
       }
+    },
+    {
+      "name": "read-only",
+      "agent": {
+        "permission": {
+          "edit": "deny",
+          "bash": "deny"
+        }
+      }
+    },
+    {
+      "name": "non-delegating-reviewer",
+      "agent": {
+        "permission": {
+          "edit": "deny",
+          "task": "deny"
+        }
+      }
     }
   ],
+  "agent": {
+    "title": {
+      "model": "openai/gpt-5.6-luna",
+      "variant": "low"
+    }
+  },
   "profiles": {
-    "current": {
+    "primary": {
       "groups": [
         {
           "name": "workflow",

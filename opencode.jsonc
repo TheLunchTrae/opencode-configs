@@ -74,27 +74,24 @@
       "disable": true
     },
     "general": {
-      "color": "#8AF793",
-      "permission": {
-        "edit": "allow"
-      }
+      "groups": ["developers"],
+      "color": "#8AF793"
     },
     "explore": {
-      "color": "#8AEEF7",
-      "permission": {
-        "edit": "deny"
-      }
+      "groups": ["research"],
+      "color": "#8AEEF7"
     },
     "summary": {
+      "groups": ["system"]
     },
     "compaction": {
+      "groups": ["system"],
       "options": {
         "reasoningEffort": "medium"
       }
     },
     "title": {
-      "model": "openai/gpt-5.6-luna",
-      "variant": "low",
+      "groups": ["system"],
       "options": {
         "reasoningEffort": "low"
       }

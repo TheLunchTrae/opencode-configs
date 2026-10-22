@@ -2,6 +2,7 @@
 description: "React developer for implementing components, hooks, and app-level features in React, Next.js, Remix, or Gatsby codebases. Enforces hooks rules, Server / Client Component boundaries, Suspense and Error Boundary patterns, and deliberate memoization. Layers on top of typescript-developer for language-level concerns. Use for any React component, hook, route, or framework-specific implementation task."
 mode: subagent
 color: "#8AF793"
+groups: [developers]
 ---
 
 {{include:implementation-standards.md}}

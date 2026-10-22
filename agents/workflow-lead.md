@@ -32,6 +32,7 @@ permission:
     general: allow
     explore: allow
 color: "#F78AEE"
+groups: [workflow]
 ---
 
 Own the development task and user conversation through every applicable stage and final handoff.

@@ -5,9 +5,7 @@ description: >-
   review; does not propose alternative architectures or implement changes.
 mode: subagent
 color: "#EEF78A"
-permission:
-  edit: deny
-  bash: deny
+groups: [reviewers, read-only]
 ---
 
 {{include:review-guidance.md}}

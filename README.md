@@ -18,12 +18,12 @@ Select a focused lead when you want only planning, approved implementation, or a
 | [`references/agent/`](references/agent/) | Conditional guidance that agents read when needed. |
 | [`prompts/`](prompts/) | Shared fragments for native agent and skill bodies. |
 | [`plugins/`](plugins/) | Local plugins, including secret-path checks. |
-| `@lunchbox-labs/opencode-config-composer` | Config Composer: shared settings, central groups, and one worktree profile. |
+| `@lunchbox-labs/opencode-config-composer` | Config Composer: shared settings, agent-owned groups, and one worktree profile. |
 | `@lunchbox-labs/opencode-prompt-composer` | Prompt Composer: shared body includes and a read-only agent prompt and command template viewer. |
 | [`extensions/session-tools/`](extensions/session-tools/) | Config, context, bookmarks, and handoff panels. |
 | [`package.json`](package.json) | Pinned plugin dependencies and maintenance commands. |
 | [`opencode.jsonc`](opencode.jsonc) | Global models, permissions, MCP servers, shell, and plugin settings. |
-| [`config-composer.jsonc`](config-composer.jsonc) | Central memberships, shared policies, profile allocations, and configured default. |
+| [`config-composer.jsonc`](config-composer.jsonc) | Shared group settings, profile allocations, and configured default. |
 | [`tui.jsonc`](tui.jsonc) | TUI theme selection and plugin settings. |
 | [`themes/`](themes/) | Custom TUI themes. |
 | [`opencode-quota/quota-toast.jsonc`](opencode-quota/quota-toast.jsonc) | Quota display preferences. |
@@ -43,7 +43,7 @@ Select a focused lead when you want only planning, approved implementation, or a
 The global configuration directory is `~/.config/opencode` or `%USERPROFILE%\.config\opencode` on Windows.
 Install the pinned dependencies in this directory with `npm ci`.
 Config Composer's settings schema uses its installed package version. Local extensions do not import either Composer package.
-Both plugin lists pin Config Composer 0.1.0 before Prompt Composer 0.1.0 and downstream plugins.
+Both plugin lists register Config Composer before Prompt Composer and downstream plugins.
 
 Do not copy credentials, tokens, `node_modules`, `.idea`, or work-project checkpoints.
 The repository's `.opencode/` directory contains maintenance guidance and is not needed for global installation.
@@ -65,8 +65,9 @@ See the [V2 migration guide](https://opencode.ai/v2/docs/migrate-v1/).
 1. Set `shell` in `opencode.jsonc` to an installed shell.
    The supplied value is `C:/Program Files/Git/bin/bash.exe`; change it or remove it on other systems.
 2. Select models available from your authenticated provider. Global defaults are in `opencode.jsonc`.
-   Config Composer memberships, shared settings, and profile allocations are in `config-composer.jsonc`.
-   Explicit authored agent fields, including complete permission blocks, are final overrides.
+   Agents declare ordered `groups` in frontmatter; native JSON agents use `agent.<name>.groups`.
+   Shared settings and profile allocations are in `config-composer.jsonc`.
+   Explicit native frontmatter fields, including complete permission blocks, are final overrides.
    After launch, use `/profiles` to select a worktree profile and `/view-configs` to inspect settings and origins.
    Edit definitions externally in `config-composer.jsonc`.
    See [agent groups and models](USAGE.md#agent-groups-and-models) for precedence and configuration examples.
@@ -89,7 +90,7 @@ See [session tools](USAGE.md#session-tools) for use and individual opt-outs.
 
 Config Composer uses `/profiles` for selection and `/view-configs` for read-only definitions, configured and applied
 values, and origins. Explicit native frontmatter is final.
-The default `current` profile preserves the existing model allocation. The `openai-latest` and `anthropic-latest`
+The default `primary` profile preserves the existing model allocation. The `openai-latest` and `anthropic-latest`
 profiles are explicit opt-ins for task agents. They preserve the existing OpenAI background models and global defaults.
 Choose **Follow configured default**, **Shared only**, or a named profile. **Shared only** retains shared policies and
 system settings. Choices are saved per worktree outside the definitions file and survive server restarts.
@@ -109,8 +110,8 @@ Composer keeps loaded snippet text until the server restarts; OpenCode controls 
 The preview excludes the full model request: OpenCode system instructions, conversation history, tool schemas,
 and future skill output are outside its scope.
 Skill-derived slash commands do not expand includes.
-Native agent files retain prompts, roles, and five complete permission exceptions. Central groups supply the other
-22 agent policies. Commands and skills remain native files.
+Native agent files retain prompts, roles, ordered memberships, and four lead-specific permission exceptions.
+Shared groups supply reusable agent policies. Commands and skills remain native files.
 Conditional reads of `@agent-references` remain agent actions.
 Missing or invalid includes fail composition. A direct Read or raw file copy does not expand skill directives.
 See [shared prompt composition](USAGE.md#shared-prompt-composition).
@@ -214,10 +215,11 @@ from `extensions/session-tools/`. Keep the config, context, and bookmarks entrie
 Preserve existing bookmark data. Lead coordination and progress updates continue in the conversation.
 
 Merge existing dependencies and preserve unrelated extensions and personal provider settings.
-Register Config Composer 0.1.0 and Prompt Composer 0.1.0 once each in both plugin lists, in that order.
+Register Config Composer and Prompt Composer once each in both plugin lists, in that order.
 Use the latest stable OpenCode V1 1.19.x within `package.json`'s supported range.
-Replace old `componentGroups`, `configurationPresets`, profile layers, shortcuts, and selection fields with central
-`groups`, native named patches, `profiles`, and `defaultProfile` in `config-composer.jsonc`.
+Keep group settings, native named patches, `profiles`, and `defaultProfile` in `config-composer.jsonc`.
+Each agent owns its ordered `groups` array; later entries win overlapping settings. Central member lists are removed.
+This layout requires Config Composer 0.2.0.
 Preserve explicit `configFile` overrides and deliberate final native overrides. The four shipped stronger task-agent
 allocations now live in each profile; see the [allocation details](USAGE.md#shipped-profiles).
 

@@ -203,7 +203,7 @@ test(
       t.diagnostic(`Native reference discovery ready after ${reads} catalog read(s)`);
       return api<Agent[]>('/agent');
     };
-    assert.equal(settings.defaultProfile, 'current');
+    assert.equal(settings.defaultProfile, 'primary');
     const baseline = await snapshot();
     const original = new Map(baseline.map((agent) => [agent.name, agent]));
     const expectedSkillFiles = [
@@ -234,7 +234,7 @@ test(
     const catalog = await api<{
       all: { id: string; models: Record<string, { variants?: Record<string, unknown> }> }[];
     }>('/provider');
-    for (const profile of ['current', 'openai-latest', 'anthropic-latest']) {
+    for (const profile of ['primary', 'openai-latest', 'anthropic-latest']) {
       for (const allocation of Object.values(expectedModels(profile))) {
         assert.ok(allocation.model !== undefined && allocation.variant !== undefined);
         const [provider, id] = allocation.model.split('/');
@@ -331,6 +331,22 @@ test(
       assert.deepEqual(cfg.agent.title.options, { reasoningEffort: 'low' });
       assert.deepEqual(cfg.agent.compaction.options, { reasoningEffort: 'medium' });
       for (const agent of agents) {
+        assert.equal(Object.hasOwn(agent, 'groups'), false, `${label}/${agent.name}: runtime membership metadata`);
+        assert.equal(
+          Object.hasOwn(agent.options, 'groups'),
+          false,
+          `${label}/${agent.name}: provider membership metadata`,
+        );
+        assert.equal(
+          Object.hasOwn(cfg.agent[agent.name], 'groups'),
+          false,
+          `${label}/${agent.name}: config membership metadata`,
+        );
+        assert.equal(
+          Object.hasOwn(cfg.agent[agent.name].options ?? {}, 'groups'),
+          false,
+          `${label}/${agent.name}: config options membership metadata`,
+        );
         const allocation = expected[agent.name];
         const model = allocation.model?.split('/');
         assert.deepEqual(
@@ -390,7 +406,7 @@ test(
       }
       return marker;
     };
-    let marker = await verify('current', 'startup-current');
+    let marker = await verify('primary', 'startup-primary');
     for (const [step, [choice, restart]] of (
       [
         ['openai-latest', false],
@@ -430,7 +446,7 @@ test(
       }
       const previous = marker;
       marker = await verify(
-        choice === undefined ? 'current' : choice,
+        choice === undefined ? 'primary' : choice,
         `${step + 1}-${choice ?? (choice === null ? 'none' : 'default')}-${restart ? 'restart' : 'rebootstrap'}`,
       );
       assert.equal(marker.selection.choice, choice);

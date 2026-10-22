@@ -2,6 +2,7 @@
 description: "Expert code review specialist. Proactively reviews code for quality, security, and maintainability. Use immediately after writing or modifying code."
 mode: subagent
 color: "#EEF78A"
+groups: [reviewers, delegating-reviewers]
 ---
 
 {{include:review-guidance.md}}
