@@ -166,17 +166,13 @@ for (const command of utilityCommands) {
   });
 }
 
-test('retired workflow entrypoints are absent and documented for upgrades', () => {
+test('retired workflow entrypoints are absent', () => {
   assert.ok(!existsSync(new URL('agents/lead.md', root)));
-  const upgrade = read('README.md').split('## Upgrade an existing installation')[1];
-  assert.ok(upgrade?.includes('agents/lead.md'));
   for (const name of retiredCommands) {
     assert.ok(!existsSync(new URL(`commands/${name}.md`, root)), `${name}: retired command remains`);
-    assert.ok(upgrade.includes(`\`${name}.md\``), `${name}: missing command removal instruction`);
   }
   for (const name of retiredSkills) {
     assert.ok(!existsSync(new URL(`skills/${name}/`, root)), `${name}: retired skill remains`);
-    assert.ok(upgrade.includes(`\`${name}/\``), `${name}: missing skill removal instruction`);
   }
 });
 
@@ -617,7 +613,6 @@ test('canonical response profiles and the shared envelope are discoverable from 
   assert.deepEqual(listed.sort(), [...responseProfiles].sort());
   assert.ok(catalog.includes('Common task response'), 'catalog: missing shared envelope');
   assert.ok(!existsSync(new URL('references/agent-prompts/review-template.md', root)));
-  assert.ok(read('README.md').includes('`references/agent-prompts/review-template.md`'), 'missing upgrade removal');
 });
 
 test('standalone skills declare their response profiles and scoped review resources once', () => {

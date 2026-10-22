@@ -1,695 +1,102 @@
 # Usage guide
 
-Select a lead and describe the desired outcome in an ordinary message.
-The default `workflow-lead` coordinates a complete development task. Focused leads cover individual stages.
-
-## Contents
-
-- [Choose a lead](#choose-a-lead): select the scope and stopping point.
-- [Agent groups and models](#agent-groups-and-models): change models, defaults, and group membership in the TUI.
-- [Shared prompt composition](#shared-prompt-composition): include guidance and inspect it through Prompt Composer.
-- [Session tools](#session-tools): inspect workflow, configuration, and context; bookmark decisions and draft handoffs.
-- [Run a complete workflow](#run-a-complete-workflow): start once, resolve questions, and approve the plan.
-- [Move between focused stages](#move-between-focused-stages): reuse reviewed plans, approvals, and evidence.
-- [Command reference](#command-reference): utility shortcuts and the focused audit command.
-- [Supporting skills](#supporting-skills): reusable procedures selected by agents.
-- [Worked examples](#worked-examples): common development tasks.
-- [Test-suite audits](#audit-existing-test-suites): assess existing coverage and plan justified cleanup.
-- [End-to-end tests](#end-to-end-tests-during-feature-development): verify complete application journeys.
-- [Verification tests](#verification-tests-for-existing-code): build and reuse coverage for existing behavior.
-- [Limit verification](#limit-verification): accept impractical checks without blocking the requested implementation.
-- [Continue a long task](#continue-a-long-task): retain decisions and evidence between sessions.
-
-## Choose a lead
-
-Use Tab or the configured agent-switch key to select a primary agent in OpenCode.
-Selecting a primary lead changes the active role in the main conversation. An `@` subagent mention starts bounded
-specialist work; it does not replace primary lead selection.
-See [OpenCode agents](https://opencode.ai/docs/agents/).
-
-| Lead | Scope and result |
-| --- | --- |
-| `workflow-lead` | Default. Complete development process through reviewed and verified implementation. |
-| `planning-lead` | Requirements, design, and reviewed plans. No implementation or test execution. |
-| `implementation-lead` | Approved plan through implementation, docs, reviews, and verification. No new design scope. |
-| `review-lead` | Reviews or existing checks. Findings and evidence without repairs, generated tests, or shipping. |
-
-The workflow lead directly coordinates specialists. It does not delegate to the focused leads.
-All leads use the same applicable stage procedures, approval rules, review standards, and evidence requirements.
-Focused leads stop at their boundary even if an adjacent stage becomes useful.
-
-The planning lead cannot edit files or run shell commands. The review lead cannot edit files, but can run requested
-checks with ordinary tool approvals. Checks can produce normal build artifacts; verification does not apply repairs.
-Neither lead can delegate to writing agents. Configured permissions still apply to every task.
-
-Specialists use [canonical response formats](prompts/response-formats/catalog.md)
-for bounded tasks.
-Each response separates task completion, the result, evidence, and unresolved items. A completed task can still report
-failed checks or blocking findings. The selected lead validates the evidence and handles follow-up under its own scope.
-Specialists receive task inputs and constraints without needing the lead's identity or workflow instructions.
-
-## Agent groups and models
-
-Use `/compose-configs` to select profiles, inspect effective settings, and apply saved changes when the instance is idle.
-Use `/agent-models` and `/agent-groups` for focused edits. These controls do not send model requests.
-The editor checks choices against the running provider catalog. Catalog presence does not establish account entitlement.
-Connect an available provider with `/connect`; preserve your existing authentication setup.
-
-### Shipped profiles
-
-The default `current` profile preserves the existing allocation, global models, explicit pins, and permissions.
-The optional profiles change task-agent models only:
-
-| Preset role | `openai-latest` | `anthropic-latest` | Variant |
-| --- | --- | --- | --- |
-| Orchestration, planning, review | `openai/gpt-6-astra` | `anthropic/claude-opus-5-5` | `high` |
-| Development and refactoring | `openai/gpt-6.1-sol` | `anthropic/claude-sonnet-5-5` | `medium` |
-| Documentation and research | `openai/gpt-6-luna` | `anthropic/claude-haiku-5-5` | `medium` |
-
-The four existing stronger-model exceptions use the reasoning preset in each optional profile.
-Their native pins remain intact and return when `current` is selected or profiles are cleared.
-Background agents, `small_model`, and the global `model` remain on their existing OpenAI settings in every shipped profile.
-The Anthropic profile therefore still requires OpenAI access for background calls.
-No profile changes accounts, credentials, permissions, prompt content, or service tier.
-
-OpenCode supplies each selected variant's provider-specific reasoning options.
-The configuration does not duplicate those transforms or add sampling controls unsupported by these reasoning models.
-See [OpenCode variants](https://opencode.ai/docs/models/#variants),
-[OpenAI models](https://developers.openai.com/api/docs/models), and
-[Anthropic models](https://platform.claude.com/docs/en/models/overview).
-
-The preserved allocation still includes `openai/gpt-5.6-sol`, `openai/gpt-5.6-terra`, and `openai/gpt-5.6-luna`.
-Check their availability in your authenticated catalog before use. They are retained deliberately, not silently replaced.
-Select an optional profile only after reviewing availability and cost. It is not made the global default.
-
-### Selection and retention
-
-Select one shipped profile, or use its shortcut. The `roles` profile supplies shared membership for the other profiles;
-it is not a complete model allocation by itself. Multiple selections replay from left to right.
-
-`selection.defaultProfiles` is `["current"]`, and `selection.retainOnRestart` is `true`.
-Saved selections are independent per project and persist across server restarts.
-Sessions in the same project share the applied configuration.
-Use **Use configured defaults** to remove a saved selection. Use **Select no profiles** for native settings only.
-The latter also removes the shipped group model contributions, including the background group default.
-
-For a work project's default, add `.opencode/config-composer.jsonc`:
-
-```jsonc
-{
-  "selection": {
-    "defaultProfiles": ["openai-latest"],
-    "retainOnRestart": false
-  }
-}
-```
-
-This example resets to that project's configured defaults on a new server process.
-It does not erase a previously retained choice; enabling retention again can restore that choice.
-Project and local `.opencode/config-composer.local.jsonc` selection fields override shared fields independently.
-A saved selection overrides configured defaults. Changing defaults alone does not replace a saved selection.
-
-Switching profiles rebuilds configuration from native inputs and removes fields from the previous selection.
-Existing conversations can retain their selected model and variant. After applying a profile, use `/models`,
-then `/variants`, to select the destination settings for that conversation.
-Restart after editing native agent files or `opencode.jsonc`. Applying Composer settings does not reload those files.
-
-### Configuration ownership
-
-Native agent files own roles, ordered `groups`, permissions, and explicit model pins.
-`componentGroups` names reusable memberships; profile layers determine settings precedence.
-`configurationPresets` supplies model settings, and `profiles` selects groups before targeting them with presets.
-Explicit profile agent overrides replace the four native task-agent pins only while those profiles are selected.
-The shipped profiles leave all permission rules native to preserve behavior when profiles are cleared.
-
-Use `model` or `modelRef`, never both. A reference can use `opencode:model`, `opencode:small_model`, or `preset:NAME`.
-An explicit native agent pin takes precedence over group and preset defaults; an agent override can replace it.
-Changing a model binding clears inherited Composer variants and parameters before destination settings apply.
-See the [Config Composer reference](https://github.com/lunchbox-labs/opencode-config-composer/wiki/Configuration-Reference).
-
-The installed package supplies the pinned schema. Both plugin lists register Config Composer 0.0.7 before
-Prompt Composer 0.0.6 and downstream plugins. Use the latest stable OpenCode V1 1.19.x within `package.json`'s
-supported range. V2 requires a separate port.
-The editors need shared filesystem access. Review previews before saving, and apply changes explicitly while idle.
-
-## Shared prompt composition
-
-Prompt Composer discovers shared files under conventional `prompts/` directories. No source aliases or registry are needed.
-Native agents and commands expand includes at configuration load; skills expand when loaded through OpenCode's native loader.
-For example:
-
-```markdown
-{{include:implementation-standards.md}}
-
-Implement the assigned change.
-
-{{include:response-formats/common.md}}
-{{include:response-formats/implementation.md}}
-```
-
-Nested includes use the same discovered filenames. The shared reviewer guidance and research footer use this mechanism.
-Use `\{{include:lead-contract.md}}` for a literal directive.
-Conditional reads such as `Read @agent-references/testing-standards.md when tests change` remain instructions for the agent.
-Their conditions, native permissions, and role boundaries remain in force.
-
-Discovery follows native agent/command directories: global configuration, project `.opencode` directories up to the worktree,
-home `.opencode`, then `OPENCODE_CONFIG_DIR`. Later matching relative filenames win.
-`OPENCODE_DISABLE_PROJECT_CONFIG` disables project discovery. There are no custom source-directory mappings.
-
-The shipped guidance stays in explicit body includes. `prompt-composer.jsonc` only preserves primary-lead default opt-outs.
-Optional `defaults` and named `agents` rules can prepend or append text and includes; there are no group prompt rules.
-Composition order is default prepends, agent prepends, authored body, default appends, then agent appends.
-`inheritDefaults: false` skips both default lists. Built-ins without authored prompts retain their native fallback.
-Avoid including the same guidance twice; fragments are not deduplicated.
-
-Use `/compose-prompts` to inspect composed prompts, edit optional rules, and explicitly apply saved settings while idle.
-Restart after editing native agent or command bodies. Direct reads and raw copies do not expand skill includes.
-Missing, unsafe, or cyclic includes fail composition. Truncated native skill content also fails rather than losing guidance.
-Install skills with Prompt Composer and their supporting `prompts/` files.
-Config Composer is independent and does not select prompts through profiles.
-The [context inspector](#context-evidence) does not show exact assembled prompt text or token counts per fragment.
-
-## Session tools
-
-These three plugins use native TUI dialogs and the selected theme. Open the command palette or use these commands.
-Open a session first for context and bookmark actions. Inspectors do not send model requests.
-Choose **← Back** or press Escape to return to the previous view. Escape closes the panel at its first view.
-Prompts and handoff drafts return without saving when canceled. Completed bookmark changes remain saved.
-
-| Command | Action |
-| --- | --- |
-| `/inspect-config` | Inspect an agent's resolved configuration and recorded model. |
-| `/inspect-context` | Inspect recorded usage, file reads, skill loads, and compactions. |
-| `/bookmarks` | Manage session bookmarks and select notes for a handoff. |
-| `/bookmark` | Bookmark a recent message or create a manual note. |
-| `/session-handoff` | Build an editable draft from selected bookmarks. |
-
-### Effective configuration
-
-Choose an agent to compare its server-resolved model and variant, merged workspace default, global file default,
-and last recorded model for that agent in the current session.
-The inspector uses native OpenCode APIs only. It does not read plugin configuration files or interpret plugin options.
-Saved Composer group choices, source paths, prompt fragment counts, and inheritance opt-outs are not shown here.
-A matching model does not establish whether an agent inherited a group default or has an explicit pin.
-Use the standalone package's [agent groups and models](#agent-groups-and-models) controls for group and model settings.
-Use `/compose-prompts` for prompt settings; session-tools does not supply a separate Composer settings viewer.
-
-V1 exposes merged settings without exact file provenance. The inspector identifies that limit instead of naming
-an unverified source file. Recorded models describe past turns; they do not predict the next request's model.
-Permission rules retain runtime order. Saved session approvals can also affect access.
-MCP entries show names and status. The inspector does not display provider credentials, environment values,
-raw configuration, or tool output.
-
-### Context evidence
-
-The context inspector shows the latest completed, non-error request in loaded history. It keeps input, output,
-reasoning, cache reads, and cache writes separate because provider accounting differs.
-It also lists attachments, successful Read and Skill calls, compaction requests, and recorded summaries.
-Available skills are not treated as loaded. Failed reads are not treated as context evidence.
-
-The view covers at most 200 recent messages. It does not expose the exact assembled prompt or token counts per file.
-Old reads and attachments can remain in history after their content leaves the model context.
-Use **Refresh** after new activity; this inspector is a snapshot.
-
-### Bookmarks and handoffs
-
-Use `/bookmark` to select a recent message or write a manual note. Choose **Note**, **Plan**, **Decision**, or
-**Question**, then enter a label and an editable excerpt. Labels allow 120 characters; notes allow 2,000.
-The plugin stores up to 100 bookmarks per session in OpenCode's local TUI storage, keyed by project, workspace,
-directory, and session. The data survives TUI restarts on that installation. It does not sync between machines.
-Do not put credentials in bookmark notes.
-
-Use `/bookmarks` to edit, remove, or include notes in a handoff. **Open source session** checks linked messages
-before opening the conversation. It does not scroll to the exact message.
-A missing source does not erase the saved note.
-The plugin rejects malformed bookmark records instead of overwriting them with an empty list.
-
-Select at most 20 bookmarks, then choose **Build editable handoff draft** or run `/session-handoff`.
-Edit the draft and use **Ctrl+Y** or the copy action to copy a `/checkpoint` request.
-Paste it into the session composer, review it, then submit it under the active lead's permissions.
-The editor does not submit prompts or write a project file. Terminal clipboard support is required for the copy action.
-If the terminal blocks clipboard transfer, select and copy the draft manually and include it in a `/checkpoint` request.
-
-The draft retains source message IDs and the checkpoint's evidence fields. Branch, source hashes, test results,
-authorization, and the next action must be checked before saving or resuming. Bookmarks supply context, not authority.
-For an existing project handoff, **Prepare resume request** copies `/resume-work <handoff-path>`.
-Review the request before submission.
-See [continue a long task](#continue-a-long-task) for the lead's checkpoint and resume behavior.
-
-### Enable or disable panels
-
-Install `extensions/session-tools/` and the shared `extensions/tui/` directory.
-Session-tools has no Composer API dependency and works independently of its plugin registration.
-Keep Prompt Composer for body includes and Config Composer for model and group controls.
-The three TUI entries are independent:
-
-| Entry in `tui.jsonc` | Plugin |
-| --- | --- |
-| `./extensions/session-tools/config.ts` | Effective configuration inspector. |
-| `./extensions/session-tools/context.ts` | Context inspector. |
-| `./extensions/session-tools/bookmarks.tsx` | Bookmarks and handoff drafts. |
-
-Remove an entry to disable that panel, then restart OpenCode. Keep other plugin entries and the shared helper files.
-These plugins target OpenCode V1 1.19.x.
-V2 requires a separate port.
-
-## Run a complete workflow
-
-With `workflow-lead` selected, describe the task once. Include known constraints and observable acceptance examples:
-
-```text
-Add background report exports. Help me decide access rules, retries, and retention.
-```
-
-The lead coordinates applicable stages:
-
-| Stage | What happens |
-| --- | --- |
-| Inspect and clarify | Read source and prior decisions; resolve consequential missing requirements. |
-| Design and plan | Compare approaches and prepare the implementation plan. Add rollout phases when needed. |
-| Review and approve | Obtain independent design reviews, resolve blocking findings, and request your approval. |
-| Implement | Assign specialists, integrate the work, and update affected documentation within scope. |
-| Review and verify | Collect required reviews and check evidence; repair approved issues within the remaining budget. |
-| Hand off | Report changed behavior, observed checks, review findings, unresolved gaps, and the next action. |
-
-Answer questions and approve the reviewed plan in the same conversation. You can request changes or alternatives,
-or cancel. Approval covers its stated scope. The lead advances without additional commands or agent switches.
-Existing decisions and valid approvals carry forward. Material scope changes require affected reviews and renewed
-approval. Missing access, consequential unanswered questions, and exhausted repair budgets can require a pause.
-
-The route depends on the task. A known bug does not need a requirements interview. A small correction does not need
-every planning step. The lead selects test-first evidence for behavior changes, characterization checks for refactors,
-baseline verification tests for existing behavior, and comparable measurements for performance work.
-Existing tests and sufficient current reviews are reused.
-
-For substantial work, planning identifies consequential gaps in architecture guidance, domain invariants, verification
-commands, and access to relevant fixtures or runtime evidence. The plan separates blockers from optional improvements
-and proposes the smallest necessary correction using existing project documentation, tools, and tests.
-
-Primary agents and specialists use the [project learning procedure](references/agent/project-learning.md)
-for assigned failure-prevention assessments, evidenced recurring mistakes, or repeated attempts that stop at a blocker.
-Leads also invoke it when the repair budget is exhausted. Specialists return assessments in their existing task reports.
-The lead validates the evidence, combines duplicate recommendations, and selects at most one justified
-preventive change. The assessment does not authorize another repair or a broader scope.
-Persistent changes still require applicable approval.
-If no preventive change is justified, report the missing prerequisite or next bounded investigation.
-
-You can request a stopping point such as "design only" or "implement only phase 1 after approval."
-Read-only questions do not start implementation. A plan or reviewer verdict is not implementation approval.
-Commits, pushes, pull requests, merges, deployments, and other shipping actions require authorization for that action.
-Saving or committing task-process files also requires authorization.
-
-## Move between focused stages
-
-Use `planning-lead` to settle requirements or an approach before deciding to implement:
-
-```text
-Plan a background export feature. Compare our existing job runner with a separate worker.
-Include access rules, retry behavior, acceptance examples, and the existing checks we can reuse.
-```
-
-It coordinates the planner, architect when needed, and independent design reviewers. It returns the reviewed plan
-and stops. For a narrower result, say "specification only," "compare designs only," or "plan the rollout phases."
-
-When ready, select `implementation-lead` in the same conversation and give approval for the reviewed scope:
-
-```text
-Implement the reviewed plan above. The listed files, tests, and documentation changes are approved.
-```
-
-The implementation lead checks the plan, review evidence, source currency, and authorization before editing.
-If they remain valid, it reuses them. It asks for missing approval, refreshes affected review evidence when possible,
-and returns material design gaps to planning. It continues through integration, reviews, and verification.
-You can instead select `workflow-lead` to continue the full process from the first incomplete stage.
-
-Select `review-lead` for a separate assessment:
-
-```text
-Review the current branch against main. Focus on correctness, failure handling, and integration risks.
-```
-
-An untargeted code review defaults to local changes and states that scope. An explicit branch, PR, design, or file
-target takes precedence. Ask for a named specialty when you only need that assessment; its result covers that specialty.
-The review lead reports fixes as follow-up work. It does not apply them.
-
-For verification without a review:
-
-```text
-Run the existing checks for the current CLI changes. Report failures and coverage gaps without applying fixes.
-```
-
-For a final assessment, ask it to collect applicable reviews and final checks and report readiness.
-Missing or failing CI does not prevent review, but missing required evidence blocks readiness.
-Verification reports distinguish checks that passed, failed, were blocked, or were skipped.
-
-## Command reference
-
-`/test-audit [context]` runs a focused audit under `review-lead` in the main session.
-It explicitly selects that read-only lead and uses the existing `test-audit` skill.
-See [test-suite audits](#audit-existing-test-suites) for scope, focus, and examples.
-
-The utility commands below retain the active agent and cannot expand its role or permissions.
-For example, a planning or review lead cannot execute `/commit` or `/push`.
+Choose a lead using the [workflow overview](README.md#intended-workflows), describe the outcome and constraints,
+and let it coordinate the appropriate specialists. You can ask for a plan alone, implementation of an approved plan,
+or a review without edits. State any verification limits with the task; skipped checks are not passing checks.
+
+## Models and prompts
 
 | Command | Purpose |
 | --- | --- |
-| `/checkpoint <task-id>` | Save an authorized project handoff, or return it in chat if writing is blocked. |
-| `/resume-work <handoff-path>` | Revalidate evidence and identify the next action within the selected lead's scope. |
-| `/explain <feature>` | Explain current behavior from source. |
-| `/quiz <topic>` | Ask optional source-grounded learning questions and wait for answers. |
-| `/project-standards [context]` | Initialize or refresh project standards from KrishRVH/standards. |
-| `/init-docs [path] [notes]` | Add or update repository documentation rules and scoped technical vocabulary. |
-| `/commit [scope]` | Stage and commit authorized changes with secret checks. |
-| `/push` | Push the current branch with authorization. |
-| `/summarize-branch` | Summarize branch changes before a pull request. |
+| `/compose-configs` | Select profiles, inspect effective settings, save and explicitly apply changes while idle. |
+| `/agent-models` | Edit agent model settings. |
+| `/agent-groups` | Edit agent group membership. |
+| `/compose-prompts` | Inspect composed prompts and edit optional prompt rules. |
 
-The built-in `/resume` selects an OpenCode session. `/resume-work` reads a project handoff.
-Checkpoints stay in the work project. Learning questions and quiz scores are optional.
-See the [command definitions](commands/) for prompts.
-See [upgrade instructions](README.md#upgrade-an-existing-installation) for retired commands and skills.
+The default `current` profile preserves the existing allocation. `openai-latest` and `anthropic-latest` are optional
+model profiles; both preserve the OpenAI background models and global defaults. Check model availability with your
+connected provider. Saved profile selections persist per project; they do not change permissions or prompt content.
+Existing conversations can retain their selected model and variant: use `/models` and `/variants` after applying a profile.
+Restart after editing native agent files or `opencode.jsonc`; applying Composer settings does not reload those files.
 
-### Initialize project standards
+Prompt Composer expands shared `prompts/` includes in agent and command bodies at configuration load, and in skills
+when OpenCode loads them. Raw reads do not expand includes. Keep the supporting fragments when copying skills.
+Use the configuration files for the shipped settings rather than maintaining separate copies of model allocations.
 
-Run `/project-standards` from the work project to prepare its standard configuration and tooling.
-The command loads the [project-standards skill](skills/project-standards/SKILL.md),
-which uses [KrishRVH/standards](https://github.com/KrishRVH/standards/tree/main) as its default source catalog.
-Use `workflow-lead` for the complete setup or `planning-lead` for a proposal only.
-The command retains the selected lead and its permissions.
+## Inspectors
 
-For an existing project, the agent discovers its languages, frameworks, package managers, and current rules.
-For an empty repository or new project folder, supply the intended stack as context.
-The agent asks about consequential choices that it cannot discover.
-Arguments describe the current project and your preferences. They are not shell commands or destination paths.
+Open these through the command palette or their slash commands. They are read-only and do not send model requests.
+Choose **← Back** or press Escape to return; Escape at the first view closes the panel.
 
-```text
-/project-standards
-/project-standards New TypeScript Node.js library using npm.
-/project-standards New React app using Vite and npm.
-/project-standards Existing Go service. Preserve the current CI and package layout.
-```
+| Command | What you get | Limits |
+| --- | --- | --- |
+| `/inspect-config` | Choose an agent and compare server-resolved settings, workspace/global defaults, and its last recorded model. | Native APIs do not provide exact file provenance or explain Composer inheritance. Recorded models describe past turns. |
+| `/inspect-context` | Latest completed successful request usage, plus recorded attachments, successful Read/Skill calls, and compactions. | Requires an open session; at most 200 recent messages. History is not proof that content remains in the current model context. Use **Refresh** after activity. |
 
-The agent resolves the upstream `main` commit and reads its README, manifest, and selected files at that revision.
-It selects applicable files from `shared/` and relevant profiles, then adapts them to the actual project.
-It checks licenses and merges existing rules instead of copying the catalog wholesale or replacing local configuration.
-Catalog maintenance files and workstation setup remain outside the project baseline.
+The config view omits credentials and raw configuration. Use Composer commands for model/group or prompt settings.
+The context view does not show the exact assembled prompt or per-file token counts; available skills are not assumed loaded.
 
-The proposed plan identifies target files, dependencies, migrations, conflicts, upstream provenance,
-and validation commands.
-Approve that plan before changes. Tool migrations, such as adopting Mise or Bun, require inclusion
-in the approved scope.
-Upstream executable configuration and scripts require separate execution approval.
-A planning or review lead returns a proposal within its role and stops at its assigned boundary.
+## Bookmarks and handoff drafts
 
-Setup writes stay in the work project. The command does not initialize global OpenCode configuration or publish changes.
-Later runs preserve established rules and propose only supported updates or approved additions.
-Use `/init-docs` separately when you want repository documentation rules and technical terminology.
+Open a session, then:
 
-### Initialize repository documentation
+1. Run `/bookmark` to choose a recent message or create a manual note. Select **Note**, **Plan**, **Decision**, or
+   **Question**, then enter a label and editable excerpt.
+2. Use `/bookmarks` to edit or remove notes and choose which to include in a handoff.
+   **Open source session** checks the linked message and opens its conversation; it does not jump to that message.
+3. Choose **Build editable handoff draft** or run `/session-handoff`. Edit the draft and press **Ctrl+Y** to copy
+   a `/checkpoint` request. Paste it into the composer, review it, and submit it yourself.
 
-Run `/init-docs` from a work repository to prepare its documentation rules and technical terminology.
-By default, it updates the repository's `AGENTS.md` or creates that file when absent.
-Pass a file path to choose another destination. Pass a directory to use `AGENTS.md` inside that directory.
-Relative paths start at the repository root. Use a trailing slash for a new directory.
-All destinations must stay inside the work repository.
+Bookmarks persist in local TUI storage, scoped to project, workspace, directory, and session. They survive restarts
+on that installation but do not sync between machines. Limits: 100 bookmarks per session, 120-character labels,
+2,000-character notes, and 20 selected notes per handoff. Keep credentials out of notes.
 
-```text
-/init-docs
-/init-docs docs/documentation-rules.md
-/init-docs packages/api/ Focus on the public API and its existing terminology.
-```
+The draft supplies selected notes and source IDs alongside checkpoint prompts. It does not verify source state,
+tests, or approvals, submit a message, or save a project file. Clipboard copying depends on terminal support;
+otherwise copy the draft manually. **Prepare resume request** in `/bookmarks` asks for an existing handoff path
+and copies a `/resume-work` request; it does not load or validate the file itself.
 
-The command reads current instructions, manifests, source, and documentation.
-It proposes a concise documentation section while preserving existing standards and unrelated instructions.
-New terminology entries stay in the selected file unless an existing glossary already owns them.
-Each entry records its spelling, meaning, grammatical use, scope, usage, and supporting source.
-The list supplements ordinary English. It does not contain ASD's official dictionary or establish formal STE compliance.
+## Checkpoint and resume
 
-Repository documentation standards override the [shared STE defaults](references/agent/asd-ste100.md).
-The defaults apply to choices that the repository leaves unspecified.
-Rerunning `/init-docs` preserves established rules and terms while proposing supported updates.
-Review the setup under the active lead's approval policy before implementation.
-The command retains that lead. A planning lead can propose the setup but cannot write it.
+These agent commands are separate from the bookmark plugin:
 
-A custom file might need an explicit read instruction before agents use it.
-A nested `AGENTS.md` follows its directory scope. The command reports the applicable loading path.
-Initialization writes only to the work repository and does not publish the generated files.
+- `/checkpoint <task-id or context>` asks the active agent to save an authorized handoff in the work project,
+  preserving existing notes. It records scope, source state, decisions, evidence, blockers, and the next action.
+  A planning or review lead returns the handoff in chat when it cannot write files.
+- `/resume-work <handoff-path>` checks that saved handoff against current instructions, source state, ownership,
+  approvals, and review evidence before continuing within the selected lead's role.
 
-## Supporting skills
+Neither command switches agents or grants new authority. Saved approval text is not a new permission grant.
+`/resume-work` is distinct from OpenCode's built-in `/resume` session selector.
 
-Agents select reusable procedures as needed. You do not need to invoke a skill to start a workflow stage.
-Naming a skill never expands the current agent's role, permissions, or approval scope.
-Skills with include directives use Prompt Composer during native skill loading. Include the plugin and supporting
-`prompts/` files when installing them separately.
+## Other commands and skills
 
-| Skill | Purpose |
+| Command | Purpose |
 | --- | --- |
-| [test-first](skills/test-first/SKILL.md) | Observe a test fail, implement the approved change, and verify it. |
-| [test-audit](skills/test-audit/SKILL.md) | Assess existing suites and support approved, evidence-based cleanup. |
-| [end-to-end-tests](skills/end-to-end-tests/SKILL.md) | Verify journeys through real application boundaries. |
-| [verification-tests](skills/verification-tests/SKILL.md) | Design and generate coverage for established behavior. |
-| [measured-performance](skills/measured-performance/SKILL.md) | Compare performance under matching conditions. |
-| [verify](skills/verify/SKILL.md) | Run configured checks and report evidence without fixes. |
-| [checkpoint](skills/checkpoint/SKILL.md) | Save or resume an authorized task handoff. |
-| [code-learning](skills/code-learning/SKILL.md) | Explain source behavior and optionally ask learning questions. |
-| [project-standards](skills/project-standards/SKILL.md) | Propose deliberate convention, tooling, or CI changes. |
-| [commit](skills/commit/SKILL.md) | Stage, inspect, and commit authorized changes. |
-| [push](skills/push/SKILL.md) | Push an authorized branch. |
+| `/project-standards [context]` | Propose standards and tooling appropriate to the work project; approve changes before implementation. |
+| `/init-docs [path or context]` | Prepare repository documentation rules and terminology, normally in the work project's `AGENTS.md`. |
+| `/explain [context]` | Explain code behavior and relevant evidence. |
+| `/quiz [context]` | Ask learning questions about the code. |
+| `/test-audit [context]` | Select `review-lead` for an assessment of test value and gaps, without edits. |
+| `/summarize-branch` | Summarize branch changes. |
+| `/commit [context]` | Prepare and create an authorized commit. |
+| `/push [context]` | Push an authorized branch. |
 
-These procedures support more than one lead or specialist. Requirements interviews, phased planning, review routing,
-and completion procedures use internal [agent references](references/agent/) and
-[composition sources](prompts/).
-They are loaded by their owning agents and do not appear as separate skill entrypoints.
-Routine tests, verification, and fixes do not require the `project-standards` skill.
+Except for `/test-audit`, these utilities retain the selected agent and its permissions.
+[Supporting skills](skills/) cover test-first work, end-to-end and verification tests, test audits, performance measurement,
+check execution, code learning, standards, checkpoints, commits, and pushes. Agents choose them when useful;
+invoking a skill does not expand the task or the agent's permissions.
 
-## Worked examples
+## Optional panels and plugins
 
-Use `workflow-lead` for the examples below unless a focused lead is specified.
-State required behavior and known constraints. The agent selects relevant procedures and specialists.
+To disable a session panel, remove its entry from `tui.jsonc` and restart:
 
-### Small feature
+| Entry | Panel |
+| --- | --- |
+| `./extensions/session-tools/config.ts` | Configuration inspector |
+| `./extensions/session-tools/context.ts` | Context inspector |
+| `./extensions/session-tools/bookmarks.tsx` | Bookmarks and handoff drafts |
 
-```text
-Add a --json option to the existing list command. Keep the table output as the default.
-Return an array with --json and [] for an empty result. Preserve filtering and exit codes.
-```
-
-Expect a proportionate reviewed plan, approval before substantial implementation, meaningful tests, and verification.
-Select `planning-lead` for the plan alone.
-
-### Complex feature
-
-```text
-Add background report exports. Users should request an export, check progress, and download the result when ready.
-Help me decide access rules, cancellation, retries, retention, and behavior after a worker restart.
-Inspect our existing report and job infrastructure before asking questions.
-Compare extending our job runner with a separate worker if that choice matters.
-```
-
-The lead resolves consequential requirements, compares approaches when needed, and carries confirmed decisions into
-planning and design review. After approval it coordinates implementation, affected docs, reviews, and checks.
-
-### Staged migration
-
-```text
-Replace the report status field with a structured status object. The API and its consumers deploy independently.
-Preserve existing consumers during the transition. Include compatibility checks, removal criteria, and rollback limits.
-Plan the full migration, but implement only phase 1 after I approve it.
-```
-
-Expect independently usable phases with advancement and rollback conditions. Later phases remain outside the approved
-implementation scope. Select `planning-lead` when you only want rollout analysis.
-
-### Refactor and cleanup
-
-```text
-Separate report input validation from report generation. Preserve accepted inputs, error messages, ordering,
-side effects, and public interfaces. Add characterization checks for important uncovered behavior before refactoring.
-Keep unrelated cleanup out of scope.
-```
-
-For dead-code cleanup, specify removal boundaries and preserve uncertain candidates, public exports, and dynamically
-registered handlers. Public API removals need explicit authorization. The workflow includes final reviews and checks.
-Observed behavior can contain defects; confirm surprising behavior before preserving it as a requirement.
-
-### Bug fix
-
-```text
-Fix duplicate records on the second page of report results. Reproduce the overlap with a stable dataset.
-Adjacent pages must not repeat records under the documented sort order. Preserve the public pagination interface.
-```
-
-Expect meaningful failing-regression evidence before the fix and passing checks afterward when a test seam is available.
-A missing dependency or test syntax error is not evidence that the defect was reproduced.
-
-### Performance improvement
-
-```text
-Investigate and improve report generation for a large local fixture dataset.
-Record a repeatable baseline before selecting a bottleneck. Preserve report contents and ordering.
-Compare elapsed time and peak memory under matching conditions afterward.
-```
-
-Expect the workload, command, environment, baseline, candidate result, and measurement limits.
-If measurement is blocked, the result must identify the missing prerequisite instead of inventing a speedup.
-
-## Audit existing test suites
-
-Run `/test-audit [context]` to start the audit workflow under `review-lead`.
-The lead coordinates permitted reviewers with the `test-audit` skill and returns an assessment without edits.
-The context can identify a feature, module, source directory, test suite, or the current conversation's task.
-Relevant tests can live elsewhere in the repository. Explicit file restrictions still apply.
-
-```text
-/test-audit authentication
-/test-audit packages/cli - unit tests only
-/test-audit checkout - E2E only
-/test-audit the export feature we just implemented
-```
-
-Context and focus are natural-language instructions, not shell flags.
-The default assessment includes unit and end-to-end coverage, including unchanged tests.
-With no arguments, the command uses an unambiguous current task. Otherwise it inventories suites and asks for scope.
-It does not silently start a repository-wide audit. Ordinary diff reviews retain their narrower scope.
-You can also select `review-lead` and request the same assessment directly:
-
-```text
-Audit the existing tests for configuration loading, including tests outside the current diff.
-Identify useful coverage, duplicated assertions, misleading mocks, and missing important failure cases.
-Recommend what to retain, consolidate, rewrite, or remove, with evidence and remaining coverage for each change.
-Do not edit files.
-```
-
-Expect a coverage map, prioritized findings, candidate decisions, and a proposed improvement plan.
-Evidence includes test locations, protected behavior, actual failure modes, relevant history, remaining coverage,
-risk, and observed or proposed checks. Requested verification limits remain in effect.
-The command stops after assessment without edits or saved task reports.
-Uncertain candidates remain visible. Static tests and exact-value assertions can protect real
-contracts. A failing test can identify a product defect. Neither category is an automatic removal target.
-
-Use `workflow-lead` when you also want cleanup. It reviews and obtains approval for the proposed changes before
-assigning edits. An approved implementation plan can instead go to `implementation-lead`.
-Replacing tests requires preserving their useful assertions. Removing production support requires evidence about
-its real consumers and any applicable approval. The audit does not authorize a commit or pull request.
-
-## End-to-end tests during feature development
-
-Describe the feature and its observable outcome to `workflow-lead`. Planning selects end-to-end coverage when the
-journey's integration risks justify it. You can request `end-to-end-tests` explicitly without changing the lead's role.
-The skill supports browser, CLI, API, and worker journeys. It reuses the project's test runner and normal approval flow.
-
-```text
-Add background CSV exports. Users must be able to request an export, wait for completion, and download their file.
-Include end-to-end tests through the real API, worker, and persistence path using isolated synthetic data.
-Check the downloaded contents and prevent another user from downloading the export.
-Reuse the current test tooling. Include the coverage design in the feature plan before implementation.
-```
-
-The design maps each selected journey to requirements, existing coverage, real components, substituted external
-dependencies, fixtures, setup, cleanup, and execution commands. Tests verify outcomes and important failure paths.
-They do not seed the final result or mock the application's own behavior and then claim complete-path evidence.
-Browser tests use stable user-facing locators and bounded waiting. All journeys isolate mutable state and clean up
-owned resources. Detailed rule permutations stay at lower levels unless they expose another integration risk.
-
-For new behavior and bug fixes, `test-first` supplies meaningful failure and passing evidence when execution is
-available. An established-behavior baseline can pass immediately. Missing services or unrelated failures are not proof
-that the intended regression was detected.
-
-Authors and reviewers share the [testing standards](references/agent/testing-standards.md).
-Checks that cannot run and verification exclusions approved for the task remain explicit. They do not count as passes.
-New tools, CI changes, or infrastructure work must be in the approved scope.
-Use `planning-lead` for design alone and `review-lead` to assess or execute existing tests without repairs.
-
-## Verification tests for existing code
-
-Ask `workflow-lead` to establish reusable coverage when a feature has little coverage, a workflow is difficult to test,
-or a refactor needs a baseline. The lead uses `verification-tests` and the normal design, approval, and review process.
-Use `planning-lead` for a coverage design alone, `implementation-lead` for an approved design, or `review-lead` to run
-existing tests. A review lead does not generate a missing suite.
-
-```text
-Establish verification tests for the existing CLI configuration loading and error handling.
-Use documented precedence and validation rules as expected behavior. Cover valid files, missing optional files,
-malformed input, exit codes, and user-visible errors. Reuse the current runner and exercise the real CLI where needed.
-Preserve application behavior. Include isolated fixtures, cleanup, and repeatable run instructions.
-```
-
-The suite can include unit, integration, contract, CLI, API, or end-to-end tests according to the requested boundaries.
-Provide known interfaces, examples, commands, environment limits, and behavior to preserve.
-Baseline tests can pass on their first run. They do not need an artificial red/green cycle.
-Characterization records observed behavior; review surprising results before accepting them as requirements.
-
-Expect a coverage design before generation. It identifies expected behavior and its source, reused tests, new cases,
-fixtures, prerequisites, target files, execution commands, and remaining gaps. Requirements and public contracts should
-determine expected values independently of the implementation.
-
-For database behavior, ask for persisted-state assertions and transaction checks through the real database boundary
-using isolated synthetic data. A mocked dependency does not establish that the real integration works.
-New dependencies, CI changes, and testability refactors must be explicit in the approved scope.
-If infrastructure is unavailable, distinguish generated tests from checks that actually ran.
-
-The result includes test files, fixtures, necessary helpers, setup and cleanup instructions in the work repository,
-and source-linked execution evidence. A correct test that exposes an existing defect remains a failure.
-Missing services, skipped checks, and zero expected tests collected do not establish a passing baseline.
-See the [verification result statuses](skills/verify/SKILL.md#results).
-
-Reuse the suite through its documented commands, existing CI, or `review-lead`:
-
-```text
-Check the current CLI changes against the existing verification suite.
-Map changed behavior and affected integrations to actual assertions. Run relevant checks on this source state.
-Report uncovered behavior, stale expectations, and unavailable integration checks separately from test results.
-```
-
-An earlier pass is not evidence for a later source state or different environment. Extend coverage through an approved
-implementation assignment. Change expectations only for reviewed requirement changes, not merely changed code.
-You can name `verification-tests` explicitly in a lead request, but doing so does not expand its scope or permissions.
-
-## Limit verification
-
-You can limit agent verification for a task or establish a default in the work project's existing instructions.
-The [verification scope rules](references/agent/verification-scope.md) apply to primary agents and specialists.
-State whether the limit covers capability discovery, test generation, check execution, or infrastructure changes.
-An instruction to skip execution alone still permits requested test generation.
-
-For a large codebase with costly or inaccessible integration environments:
-
-```text
-Limit verification to existing focused checks that are practical here. Do not investigate broader verification
-capabilities, generate tests, or add infrastructure for this task. If the focused checks cannot reasonably run,
-report the limitation and continue the implementation. Do not ask again about that limitation.
-```
-
-To exclude agent verification entirely:
-
-```text
-Skip verification capability assessment, test generation, and check execution for this task.
-Implement the approved change and complete the required code reviews. Report the implementation as unverified.
-```
-
-The lead retains your boundary with the plan and passes it to specialists, reviews, and authorized handoffs.
-Accepted limits remain effective across stages, agent switches, and resumed work while their scope still applies.
-They do not trigger repeated approval requests, infrastructure work, or failure-prevention recommendations solely
-because checks remain absent. Repository size alone does not establish an exclusion.
-
-Excluded checks are reported as `SKIP`, with the decision source and unverified scope. Other unavailable required
-checks remain `BLOCKED`. Earlier attempts remain visible, and observed failures remain `FAIL`.
-An accepted limitation does not block completion of the requested implementation. It does not establish a passing
-check, a performance improvement, a resolved defect, or merge readiness. Required reviews, permission boundaries,
-and external CI or branch-protection requirements still apply.
-
-## Continue a long task
-
-Use `/checkpoint <task-id>` or ask the active lead to save a handoff before changing sessions.
-The handoff records the selected lead and stopping point, source state including relevant untracked changes, plan
-revision, approved scope, verification limits and their source, owners, checks, review findings, remaining budget,
-blockers, and the next bounded action.
-It belongs in the work project. A planning or review lead returns it in chat when its permissions prevent saving.
-
-In the next session, select the appropriate lead and use `/resume-work <handoff-path>`.
-The lead checks current instructions, source, ownership, evidence, and authorization before proceeding.
-It refreshes stale evidence without discarding valid decisions or restarting the repair budget.
-A saved agent name does not change the selected role. A saved approval claim is not a new permission grant.
-Do not reset files or change branches to make a handoff match.
-
-For the underlying procedures, see the [workflow lead](agents/workflow-lead.md),
-[lead contract](prompts/lead-contract.md), and [agent references](references/agent/).
+Keep shared helpers under `extensions/session-tools/` and `extensions/tui/` for the panels you retain.
+These panels use native APIs independently of Composer. Keep Prompt Composer for template includes and Config Composer
+for model/group controls. To disable quota reporting, remove its entries from both `opencode.jsonc` and `tui.jsonc`.
