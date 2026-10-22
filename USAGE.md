@@ -160,8 +160,12 @@ All guidance stays in explicit body includes at its intended position.
 Built-ins without authored prompts retain their native fallback.
 Avoid including the same guidance twice; fragments are not deduplicated.
 
-Use `/agent-prompts` to preview the complete composed agent prompt returned by the connected server for the active project,
-with includes expanded. The viewer is agent-only, read-only, and works without shared filesystem access.
+Use `/view-prompts`, choose **Agents** or **Commands**, then select a configured component and a page.
+The viewer shows complete loaded agent prompts and command templates returned by the connected server for the active project,
+with includes expanded. Pages preserve all text without truncation. Native fallback and disabled agents are labeled.
+Command arguments, shell expressions, and file references remain literal before invocation.
+The viewer is read-only and works without shared filesystem access.
+Skills are composed but omitted from this viewer because of API limitations.
 It does not show the full model request: OpenCode system instructions, conversation history, tool schemas, and future skill
 output are outside the preview. It does not execute commands or load skills.
 Restart after editing native agent or command bodies. Direct reads, raw copies, and skill-derived slash commands
@@ -194,7 +198,7 @@ The inspector uses native OpenCode APIs only. It does not read plugin configurat
 Saved Composer group choices, source paths, and prompt fragment counts are not shown here.
 A matching model does not establish whether an agent inherited a group default or has an explicit pin.
 Use the standalone package's [agent groups and models](#agent-groups-and-models) controls for group and model settings.
-Use `/agent-prompts` for the server-provided composed agent prompt; session-tools does not supply a prompt viewer.
+Use `/view-prompts` for server-provided loaded agent prompts and command templates; session-tools does not supply a prompt viewer.
 
 V1 exposes merged settings without exact file provenance. The inspector identifies that limit instead of naming
 an unverified source file. Recorded models describe past turns; they do not predict the next request's model.

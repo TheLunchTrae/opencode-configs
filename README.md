@@ -19,7 +19,7 @@ Select a focused lead when you want only planning, approved implementation, or a
 | [`prompts/`](prompts/) | Shared fragments for native agent and skill bodies. |
 | [`plugins/`](plugins/) | Local plugins, including secret-path checks. |
 | `@lunchbox-labs/opencode-config-composer` | Config Composer: model presets, groups, and project profiles. |
-| `@lunchbox-labs/opencode-prompt-composer` | Prompt Composer: shared body includes and a read-only agent prompt preview. |
+| `@lunchbox-labs/opencode-prompt-composer` | Prompt Composer: shared body includes and a read-only agent prompt and command template viewer. |
 | [`extensions/session-tools/`](extensions/session-tools/) | Config, context, bookmarks, and handoff panels. |
 | [`package.json`](package.json) | Pinned plugin dependencies and maintenance commands. |
 | [`opencode.jsonc`](opencode.jsonc) | Global models, permissions, MCP servers, shell, and plugin settings. |
@@ -93,9 +93,13 @@ profiles are explicit opt-ins for task agents. They preserve the existing OpenAI
 Saved selections persist independently for each project. See [agent groups and models](USAGE.md#agent-groups-and-models).
 
 Prompt Composer resolves explicit body includes from `prompts/` at configuration load and through the native `skill` tool.
-Use `/agent-prompts` for a read-only preview of the complete composed agent prompt returned by the connected server,
-with includes expanded. The preview excludes the full model request: OpenCode system instructions, conversation history,
-tool schemas, and future skill output are outside its scope.
+Use `/view-prompts`, choose **Agents** or **Commands**, then select a configured component and a page.
+The read-only viewer shows complete loaded agent prompts and command templates returned by the connected server,
+with includes expanded and pages that preserve all text. Native fallback and disabled agents are labeled.
+Command arguments, shell expressions, and file references remain literal before invocation.
+Skills are composed but omitted from this viewer because of API limitations.
+The preview excludes the full model request: OpenCode system instructions, conversation history, tool schemas,
+and future skill output are outside its scope.
 Skill-derived slash commands do not expand includes.
 Native agent files retain roles, permissions, and membership. Commands and skills remain native files.
 Conditional reads of `@agent-references` remain agent actions.
