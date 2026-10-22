@@ -19,7 +19,7 @@ Select a focused lead when you want only planning, approved implementation, or a
 | [`prompts/`](prompts/) | Shared fragments for native agent and skill bodies. |
 | [`plugins/`](plugins/) | Local plugins, including secret-path checks. |
 | `@lunchbox-labs/opencode-config-composer` | Config Composer: model presets, groups, and project profiles. |
-| `@lunchbox-labs/opencode-prompt-composer` | Prompt Composer: shared body includes and a loaded-text viewer. |
+| `@lunchbox-labs/opencode-prompt-composer` | Prompt Composer: shared body includes and a read-only agent prompt preview. |
 | [`extensions/session-tools/`](extensions/session-tools/) | Config, context, bookmarks, and handoff panels. |
 | [`package.json`](package.json) | Pinned plugin dependencies and maintenance commands. |
 | [`opencode.jsonc`](opencode.jsonc) | Global models, permissions, MCP servers, shell, and plugin settings. |
@@ -93,7 +93,9 @@ profiles are explicit opt-ins for task agents. They preserve the existing OpenAI
 Saved selections persist independently for each project. See [agent groups and models](USAGE.md#agent-groups-and-models).
 
 Prompt Composer resolves explicit body includes from `prompts/` at configuration load and through the native `skill` tool.
-Use `/compose-prompts` to read the connected server's loaded agent and command text.
+Use `/agent-prompts` for a read-only preview of the complete composed agent prompt returned by the connected server,
+with includes expanded. The preview excludes the full model request: OpenCode system instructions, conversation history,
+tool schemas, and future skill output are outside its scope.
 It has no settings file or editing controls. Skill-derived slash commands do not expand includes.
 Neither package requires the other. Profiles do not select prompt content.
 Native agent files retain roles, permissions, and membership. Commands and skills remain native files.

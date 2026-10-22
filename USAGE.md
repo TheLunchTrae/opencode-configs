@@ -160,8 +160,10 @@ All guidance stays in explicit body includes at its intended position. Prompt Co
 Built-ins without authored prompts retain their native fallback.
 Avoid including the same guidance twice; fragments are not deduplicated.
 
-Use `/compose-prompts` to read loaded agent and command text from the connected server for the active project.
-The viewer is read-only and works without shared filesystem access. It does not execute commands or load skills.
+Use `/agent-prompts` to preview the complete composed agent prompt returned by the connected server for the active project,
+with includes expanded. The viewer is agent-only, read-only, and works without shared filesystem access.
+It does not show the full model request: OpenCode system instructions, conversation history, tool schemas, and future skill
+output are outside the preview. It does not execute commands or load skills.
 Restart after editing native agent or command bodies. Direct reads, raw copies, and skill-derived slash commands
 do not expand skill includes; use the native `skill` tool for templated skills.
 Missing, unsafe, or cyclic includes fail composition. Ambiguous native skill framing is rejected when the output contains
@@ -194,7 +196,7 @@ The inspector uses native OpenCode APIs only. It does not read plugin configurat
 Saved Composer group choices, source paths, and prompt fragment counts are not shown here.
 A matching model does not establish whether an agent inherited a group default or has an explicit pin.
 Use the standalone package's [agent groups and models](#agent-groups-and-models) controls for group and model settings.
-Use `/compose-prompts` for loaded agent and command text; session-tools does not supply a prompt viewer.
+Use `/agent-prompts` for the server-provided composed agent prompt; session-tools does not supply a prompt viewer.
 
 V1 exposes merged settings without exact file provenance. The inspector identifies that limit instead of naming
 an unverified source file. Recorded models describe past turns; they do not predict the next request's model.

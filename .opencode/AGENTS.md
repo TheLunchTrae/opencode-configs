@@ -184,8 +184,11 @@ Keep their runtime metadata out of provider request options.
 Config Composer reads `config-composer.jsonc` by default. Preserve explicit `configFile` overrides for custom filenames.
 Prompt Composer discovers fragments in conventional `prompts/` directories and expands explicit body includes.
 Config Composer plugin options accept only `configFile` and the editor's `reloadToken`.
-Prompt Composer has no configuration options or settings schema. Its `/compose-prompts` viewer reads loaded agent and
-command text from the connected server; it does not write files, apply changes, execute commands, or load skills.
+Prompt Composer has no configuration options or settings schema. Its `/agent-prompts` viewer previews only the complete
+composed agent prompt returned by the connected server, with includes expanded. It does not expose the full model request,
+OpenCode system instructions, conversation history, tool schemas, or future skill output. Keep the preview read-only;
+it does not write files, apply changes, execute commands, or load skills. Server composition still covers command bodies
+and native skill-tool output.
 Use Config Composer's installed `schema.json` for its settings file, as in the committed configuration.
 Keep schemas, settings, references, and templated prompts compatible during upgrades. Preserve customized settings.
 Keep settings in their owning package's file. Reject legacy Config Composer `agent`, `command`, `skill`, and
