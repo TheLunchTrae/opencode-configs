@@ -1,26 +1,19 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { Agent, Config, Session } from '@opencode-ai/sdk/v2';
-import type { PluginInput } from '@opencode-ai/plugin';
-import type { ToolContext } from '@opencode-ai/plugin/tool';
 import type { TuiPluginApi } from '@opencode-ai/plugin/tui';
 import {
   type Bookmark,
   type Entry,
-  activity,
   bookmarkKey,
   clean,
   configFacts,
   contextRecords,
-  delegations,
   handoff,
   lastAssistant,
   readBookmarks,
-  stageReport,
 } from '../extensions/session-tools/model.ts';
 import { bookmarkStore } from '../extensions/session-tools/storage.ts';
-import { loadWorkflow } from '../extensions/session-tools/workflow-data.ts';
-import { WorkflowStatusPlugin } from '../extensions/session-tools/server.ts';
 import configPlugin from '../extensions/session-tools/config.ts';
 import contextPlugin from '../extensions/session-tools/context.ts';
 const session = (id = 'session-a', parentID?: string): Session => ({
@@ -52,16 +45,6 @@ const entry = (time: number, parts: unknown[] = [], info: Record<string, unknown
     },
     parts,
   }) as Entry;
-const reportPart = (stage = 'review', agent = 'lead', state = 'completed') => ({
-  type: 'tool',
-  tool: 'workflow_status',
-  state: {
-    status: state,
-    input: {},
-    time: { start: 1, end: 2 },
-    metadata: { workflowPanel: { version: 1, stage, summary: 'Current task', agent } },
-  },
-});
 const mark = (id = 'bookmark-a'): Bookmark => ({
   id,
   label: 'Output contract',
@@ -71,35 +54,6 @@ const mark = (id = 'bookmark-a'): Bookmark => ({
   messageID: 'message-1',
   created: 1,
   selected: true,
-});
-
-test('only completed, attributed workflow reports establish the latest recorded stage', () => {
-  const valid = entry(10, [reportPart('implementation')]);
-  const later = entry(20, [reportPart('review')]);
-  assert.equal(stageReport([later, valid])?.stage, 'review');
-  assert.equal(stageReport([valid, entry(30, [reportPart('complete', 'other')])])?.stage, 'implementation');
-  assert.equal(stageReport([entry(30, [reportPart('complete')], { role: 'user' })]), undefined);
-  assert.equal(stageReport([entry(30, [reportPart('complete', 'lead', 'error')])]), undefined);
-  assert.equal(stageReport([entry(30, [reportPart('fabricated')])]), undefined);
-});
-
-test('idle, waiting, and task completion remain distinct', () => {
-  assert.equal(activity({ type: 'idle' }, 0, 0), 'Idle');
-  assert.equal(activity({ type: 'busy' }, 1, 0), 'Question waiting');
-  assert.equal(activity({ type: 'busy' }, 0, 1), 'Permission waiting');
-  assert.equal(activity(undefined, 0, 0), 'Status unavailable');
-  const task = (state: string) => ({
-    type: 'tool',
-    tool: 'task',
-    state: {
-      status: state,
-      metadata: { sessionId: 'child' },
-      input: { subagent_type: 'reviewer', description: 'Check output' },
-      time: { start: 100, end: 800 },
-    },
-  });
-  assert.equal(delegations([entry(10, [task('completed')])])[0]?.duration, 700);
-  assert.equal(delegations([entry(10, [task('completed')]), entry(20, [task('running')])])[0]?.state, 'running');
 });
 
 test('context records require actual attachments and completed tool evidence', () => {
@@ -176,7 +130,12 @@ test('bookmarks persist by project, workspace, directory, and session without ov
       set: (key: string, value: unknown) => values.set(key, structuredClone(value)),
     },
   } as Pick<TuiPluginApi, 'kv'>;
+  const legacyKey = 'session-tools.bookmarks.v1:["project-a","","/project","session-a"]';
+  assert.equal(bookmarkKey(session()), legacyKey);
+  values.set(legacyKey, { version: 1, bookmarks: [mark('legacy')] });
   const store = bookmarkStore(api, { session: session() });
+  assert.equal(store.read()[0]?.id, 'legacy');
+  values.clear();
   store.write((items) => [...items, mark()]);
   assert.equal(bookmarkStore(api, { session: session() }).read()[0]?.label, 'Output contract');
   assert.deepEqual(bookmarkStore(api, { session: session('other') }).read(), []);
@@ -202,6 +161,9 @@ test('invalid and duplicate bookmarks are rejected rather than silently replaced
 test('handoff drafts include only selected notes and preserve checkpoint evidence requirements', () => {
   const text = handoff(session(), [mark(), { ...mark('excluded'), note: 'EXCLUDED_NOTE', selected: false }]);
   assert.match(text, /JSON only on stdout/);
+  assert.ok(!text.toLowerCase().includes('stage report'));
+  assert.match(text, /Confirm active lead and requested stopping point/);
+  assert.match(text, /Confirm current task state, dependencies, and ownership/);
   assert.ok(!text.includes('EXCLUDED_NOTE'));
   for (const field of [
     'Plan/spec location',
@@ -230,52 +192,6 @@ test('handoff drafts include only selected notes and preserve checkpoint evidenc
 test('metadata sanitizer strips terminal controls and enforces the length limit', () => {
   assert.equal(clean('before\x1b]52;c;SECRET\x07\x1b[31mafter\x00'), 'beforeafter');
   assert.equal(clean('hello\nworld', 7), 'hello\nw');
-});
-
-test('workflow status tool rejects subagents and emits persistent metadata for configured primary leads', async () => {
-  const hooks = await WorkflowStatusPlugin({} as PluginInput);
-  await hooks.config!({ agent: { lead: { mode: 'primary' }, reviewer: { mode: 'subagent' } } });
-  const context = { agent: 'lead', abort: new AbortController().signal } as ToolContext;
-  const tool = hooks.tool!.workflow_status;
-  const result = await tool.execute({ stage: 'review', summary: 'Reviewing output' }, context);
-  assert.equal(typeof result, 'object');
-  assert.deepEqual(typeof result === 'object' && result.metadata?.workflowPanel, {
-    version: 1,
-    stage: 'review',
-    summary: 'Reviewing output',
-    agent: 'lead',
-  });
-  await assert.rejects(
-    () => tool.execute({ stage: 'complete', summary: 'Done' }, { ...context, agent: 'reviewer' }),
-    /primary/,
-  );
-  await assert.rejects(() => tool.execute({ stage: 'review', summary: '\x00' }, context), /visible/);
-});
-
-test('workflow collection preserves partial results and never follows a child cycle', async () => {
-  const controller = new AbortController();
-  let statusAvailable = true;
-  const api = {
-    lifecycle: { signal: controller.signal },
-    client: {
-      session: {
-        get: async () => ({ data: session() }),
-        messages: async ({ sessionID }: { sessionID: string }) =>
-          sessionID === 'session-a' ? { data: [entry(1)] } : { error: 'deleted' },
-        status: async () => (statusAvailable ? { data: {} } : { error: 'unavailable' }),
-        children: async ({ sessionID }: { sessionID: string }) => ({
-          data: sessionID === 'session-a' ? [session('child', 'session-a')] : [session()],
-        }),
-      },
-    },
-  } as unknown as TuiPluginApi;
-  const result = await loadWorkflow(api, 'session-a', controller.signal);
-  assert.equal(result.rows.length, 2);
-  assert.equal(result.rows[1]?.unavailable, true);
-  assert.equal(result.partial, true);
-  assert.equal(result.statuses['session-a']?.type, 'idle');
-  statusAvailable = false;
-  assert.equal((await loadWorkflow(api, 'session-a', controller.signal)).statuses['session-a'], undefined);
 });
 
 test('config and context register commands and open mocked menus with completed-request usage', async () => {

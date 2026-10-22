@@ -62,13 +62,12 @@ try {
       'tests/block-secrets.test.ts',
       'tests/session-tools.test.ts',
       'tests/tui-navigation.test.ts',
-      'tests/workflow-timeline.test.ts',
     ]);
     run(process.env.BUN_BIN ?? 'bun', [
       'test',
       '--preload',
       '@opentui/solid/preload',
-      './tests/workflow-view.native.ts',
+      './tests/bookmarks-view.native.ts',
     ]);
   } finally {
     await rename(unavailablePackage, packageDirectory);

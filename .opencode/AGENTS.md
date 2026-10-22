@@ -198,9 +198,9 @@ Use the provider API for model and variant choices. Do not synthesize model IDs 
 Keep apply/reload explicit and its current-instance busy check intact. Config Composer applies to the current instance;
 native configuration and agent-file changes require a restart. Do not infer that apply reloaded those native files.
 
-Session tool entrypoints are in `extensions/session-tools/`. Register each TUI panel separately in `tui.jsonc`
-and the status tool in `opencode.jsonc`. Share helpers without placing them in auto-discovered plugin directories.
-Keep workflow stages attributed to completed tool records. Never infer completion or approval from idle status.
+Session tool entrypoints are in `extensions/session-tools/`. Register the config, context, and bookmarks TUI panels
+separately in `tui.jsonc`. Share helpers without placing them in auto-discovered plugin directories.
+Keep lead progress and completion updates in the conversation; these plugins do not track workflow stages.
 Keep config and context views read-only. Show evidence limits instead of inventing provenance or prompt contents.
 Bookmark storage must remain scoped by project, workspace, directory, and session. Preserve invalid data on errors.
 Handoff drafts reuse checkpoint fields and require an explicit copy action; never submit a prompt automatically.
@@ -226,11 +226,11 @@ npm run test:native
   Registry or installation failures stop the run. Existing `OPENCODE_BIN`, PATH hosts, and npm caches are not fallbacks.
   The installer supports x64 Linux and Windows. Run `npm run test:native:minimum` for the oldest published
   compatible version as additional coverage. Direct native test invocation requires the runner's verified host.
-  They use temporary configuration and a synthetic local provider, with no real credentials or paid model calls.
-  They verify inheritance, provider dispatch, live reload, workflow tool loading, and report persistence after restart.
-  They do not render terminal dialogs. Use a native TUI check for JSX loading, command discovery,
-  and dialog interaction.
-  Set `SESSION_TOOLS_KEEP_FIXTURE=1` to retain the session-tools fixture for that check; the test prints its location.
+  Composer fixtures use temporary configuration, with no real credentials or paid model calls.
+  They verify shipped prompt and profile discovery and preserve permission assertions.
+  They do not render terminal dialogs. Use a native TUI check for JSX loading and command discovery,
+  and the rendered bookmark test for dialog interaction.
+  The source-panel TUI smoke test uses Linux `script` and skips other platforms or hosts without that command.
 - Report unavailable dependencies and checks explicitly. Do not install unrelated tooling to hide a missing check.
 - Check internal links, moved-file consumers, command routing, and unchanged model and permission fields.
   After runtime configuration changes, restart OpenCode and test the relevant discovery and permission behavior
@@ -249,14 +249,14 @@ npm install --package-lock-only --ignore-scripts
 npm run test:package
 ```
 
-Use Node 22.18 or newer and Bun for the rendered workflow test.
+Use Node 22.18 or newer and Bun for the rendered bookmark test.
 Set `BUN_BIN` if Bun is not on PATH. The native runner installs OpenCode from the supported range.
 Set `npm_config_cache` to a writable directory if the default cache is unavailable.
 This procedure does not publish or install anything into live settings.
 
 `test:package` copies the consumer into a temporary directory without Git metadata or existing dependencies.
 It installs the committed registry lockfile, then removes Composer from module resolution while running local checks
-and the rendered workflow test. It restores the package for native server tests through OpenCode's plugin loader.
+and the rendered bookmark test. It restores the package for native server tests through OpenCode's plugin loader.
 Native fixtures register the installed package directory.
 Committed configuration uses the selected npm name and pinned version.
 Passing fixtures do not prove registry installation.

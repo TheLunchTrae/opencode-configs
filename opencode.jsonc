@@ -3,8 +3,7 @@
   "plugin": [
     "@lunchbox-labs/opencode-config-composer@0.0.7",
     "@lunchbox-labs/opencode-prompt-composer@0.0.6",
-    "@slkiser/opencode-quota@4.9.0",
-    "./extensions/session-tools/server.ts"
+    "@slkiser/opencode-quota@4.9.0"
   ],
   "shell": "C:/Program Files/Git/bin/bash.exe",
   "disabled_providers": ["opencode"],

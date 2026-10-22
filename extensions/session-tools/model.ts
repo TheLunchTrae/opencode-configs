@@ -1,19 +1,10 @@
-import type { Agent, AssistantMessage, Config, Message, Part, Session, SessionStatus } from '@opencode-ai/sdk/v2';
+import type { Agent, AssistantMessage, Config, Message, Part, Session } from '@opencode-ai/sdk/v2';
 
 export interface Entry {
   info: Message;
   parts: Part[];
 }
 export class PanelError extends Error {}
-export const stages = ['planning', 'implementation', 'review', 'verification', 'blocked', 'complete'] as const;
-export type Stage = (typeof stages)[number];
-export interface StageReport {
-  stage: Stage;
-  summary: string;
-  agent: string;
-  messageID: string;
-  time: number;
-}
 export const historyLimit = 200;
 
 export function record(value: unknown): value is Record<string, unknown> {
@@ -64,92 +55,6 @@ export function lastAssistant(entries: readonly Entry[], agent?: string): Assist
       (info): info is AssistantMessage =>
         info.role === 'assistant' && (agent === undefined || agent === '' || info.agent === agent),
     );
-}
-
-function isStage(value: unknown): value is Stage {
-  return stages.some((stage) => stage === value);
-}
-
-export function stageReport(entries: readonly Entry[]): StageReport | undefined {
-  let report: StageReport | undefined;
-  for (const entry of ordered(entries)) {
-    if (entry.info.role !== 'assistant') {
-      continue;
-    }
-    for (const part of entry.parts) {
-      if (part.type !== 'tool' || part.tool !== 'workflow_status' || part.state.status !== 'completed') {
-        continue;
-      }
-      const data = part.state.metadata.workflowPanel;
-      if (
-        !record(data) ||
-        data.version !== 1 ||
-        !isStage(data.stage) ||
-        typeof data.summary !== 'string' ||
-        data.agent !== entry.info.agent
-      ) {
-        continue;
-      }
-      report = {
-        stage: data.stage,
-        summary: clean(data.summary),
-        agent: clean(data.agent),
-        messageID: entry.info.id,
-        time: part.state.time.end,
-      };
-    }
-  }
-  return report;
-}
-
-export function activity(status: SessionStatus | undefined, questions: number, permissions: number): string {
-  if (nonzero(questions)) {
-    return 'Question waiting';
-  }
-  if (nonzero(permissions)) {
-    return 'Permission waiting';
-  }
-  if (status?.type === 'busy') {
-    return 'Running';
-  }
-  if (status?.type === 'retry') {
-    return `Retry ${status.attempt}`;
-  }
-  return status?.type === 'idle' ? 'Idle' : 'Status unavailable';
-}
-
-export interface Delegation {
-  sessionID: string;
-  agent: string;
-  description: string;
-  state: string;
-  duration?: number;
-}
-export function delegations(entries: readonly Entry[]): Delegation[] {
-  const found = new Map<string, Delegation>();
-  for (const entry of ordered(entries)) {
-    for (const part of entry.parts) {
-      if (part.type !== 'tool' || part.tool !== 'task' || part.state.status === 'pending') {
-        continue;
-      }
-      const metadata = part.state.metadata;
-      if (!record(metadata) || typeof metadata.sessionId !== 'string') {
-        continue;
-      }
-      const state = part.state;
-      found.set(metadata.sessionId, {
-        sessionID: metadata.sessionId,
-        agent: cleanOr(state.input.subagent_type, 'Subagent'),
-        description: cleanOr(state.input.description, 'Delegated task'),
-        state: state.status,
-        duration:
-          state.status === 'completed' || state.status === 'error'
-            ? Math.max(0, state.time.end - state.time.start)
-            : undefined,
-      });
-    }
-  }
-  return [...found.values()];
 }
 
 export interface ContextRecord {
@@ -322,7 +227,7 @@ export function readBookmarks(value: unknown, sessionID: string): Bookmark[] {
   });
 }
 
-export function handoff(session: Session, bookmarks: readonly Bookmark[], report?: StageReport): string {
+export function handoff(session: Session, bookmarks: readonly Bookmark[]): string {
   const selected = bookmarks.filter((item) => item.selected);
   if (selected.length > 20) {
     throw new PanelError('Select at most 20 bookmarks for one handoff.');
@@ -332,7 +237,7 @@ export function handoff(session: Session, bookmarks: readonly Bookmark[], report
     clean(session.title, 500),
     '',
     'Active lead and requested stopping point:',
-    `${report?.agent ?? 'Confirm active lead'}; confirm stopping point.`,
+    'Confirm active lead and requested stopping point.',
     '',
     'Project root; branch; HEAD (or non-Git baseline):',
     clean(session.directory, 1000),
@@ -360,10 +265,7 @@ export function handoff(session: Session, bookmarks: readonly Bookmark[], report
     'Capture current evidence. Git HEAD alone does not identify dirty or untracked content.',
     '',
     'Current task state, dependencies, and file owners:',
-    report !== undefined
-      ? `Last reported stage: ${report.stage}. ${report.summary}`
-      : 'No stage report in loaded history.',
-    'Confirm current dependencies and ownership.',
+    'Confirm current task state, dependencies, and ownership from the conversation.',
     '',
     'Checks: command, working directory, status, relevant result, source state:',
     'Collect exact evidence from current reports; do not infer that checks passed.',
