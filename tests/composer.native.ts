@@ -31,7 +31,7 @@ test(
     for (const path of ['agents', 'commands', 'skills', 'references', 'prompts', 'node_modules']) {
       await cp(new URL(`../${path}`, import.meta.url), join(installation, path), { recursive: true });
     }
-    for (const path of ['config-composer.jsonc', 'prompt-composer.jsonc', 'package.json', 'package-lock.json']) {
+    for (const path of ['config-composer.jsonc', 'package.json', 'package-lock.json']) {
       await cp(new URL(`../${path}`, import.meta.url), join(installation, path));
     }
     const config = parse(await readFile(new URL('../opencode.jsonc', import.meta.url), 'utf8')) as Record<

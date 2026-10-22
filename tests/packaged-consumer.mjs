@@ -1,12 +1,15 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { cp, mkdtemp, readFile, rename, rm } from 'node:fs/promises';
+import { cp, mkdtemp, readFile, realpath, rename, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { basename, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-// Install the shipped lockfile from npm in disposable state, without replacing package dependencies.
+// Install the shipped lockfile, with an optional candidate overlay only in disposable state.
 const repository = fileURLToPath(new URL('../', import.meta.url));
+const candidateTarball =
+  process.env.PROMPT_COMPOSER_TARBALL === undefined ? undefined : await realpath(process.env.PROMPT_COMPOSER_TARBALL);
+const expectedPromptVersion = '0.1.0';
 const root = await mkdtemp(join(tmpdir(), 'opencode-packaged-consumer-'));
 const consumer = join(root, 'consumer');
 const run = (command, args) => {
@@ -19,11 +22,26 @@ try {
     recursive: true,
     filter: (path) => !['.git', 'node_modules'].includes(basename(path)),
   });
-  const manifest = JSON.parse(await readFile(join(consumer, 'package.json'), 'utf8'));
+  const manifestText = await readFile(join(consumer, 'package.json'), 'utf8');
+  const lockText = await readFile(join(consumer, 'package-lock.json'), 'utf8');
+  const manifest = JSON.parse(manifestText);
   assert.equal(manifest.dependencies['@lunchbox-labs/opencode-config-composer'], '0.0.7');
-  assert.equal(manifest.dependencies['@lunchbox-labs/opencode-prompt-composer'], '0.0.6');
+  assert.equal(manifest.dependencies['@lunchbox-labs/opencode-prompt-composer'], '0.1.0');
   assert.equal(manifest.dependencies['opencode-config-composer'], undefined);
   run('npm', ['ci', '--ignore-scripts', '--no-audit', '--no-fund']);
+  if (candidateTarball !== undefined) {
+    run('npm', [
+      'install',
+      '--no-save',
+      '--package-lock=false',
+      '--ignore-scripts',
+      '--no-audit',
+      '--no-fund',
+      candidateTarball,
+    ]);
+  }
+  assert.equal(await readFile(join(consumer, 'package.json'), 'utf8'), manifestText);
+  assert.equal(await readFile(join(consumer, 'package-lock.json'), 'utf8'), lockText);
   const installed = JSON.parse(
     await readFile(join(consumer, 'node_modules/@lunchbox-labs/opencode-config-composer/package.json'), 'utf8'),
   );
@@ -32,8 +50,12 @@ try {
   const prompt = JSON.parse(
     await readFile(join(consumer, 'node_modules/@lunchbox-labs/opencode-prompt-composer/package.json'), 'utf8'),
   );
-  assert.equal(prompt.version, '0.0.6');
-  assert.equal(prompt.dependencies[installed.name], undefined, 'Prompt Composer must remain independent');
+  assert.equal(prompt.name, '@lunchbox-labs/opencode-prompt-composer');
+  assert.equal(prompt.version, expectedPromptVersion);
+  assert.equal(prompt.dependencies?.[installed.name], undefined, 'Prompt Composer must remain independent');
+  assert.deepEqual(prompt.dependencies ?? {}, {}, 'Include-only Prompt Composer has no runtime dependencies');
+  assert.equal(prompt.exports['./schema.json'], undefined);
+  assert.equal(prompt.exports['./editor'], undefined);
   assert.equal(installed.dependencies[prompt.name], undefined, 'Config Composer must remain independent');
   assert.equal(installed.license, 'MIT');
   assert.match(
@@ -76,7 +98,7 @@ try {
   run('npm', ['run', 'check']);
   run('npm', ['run', 'test:native']);
   console.log(
-    'Published Config Composer 0.0.7 and Prompt Composer 0.0.6 passed together in an isolated registry consumer.',
+    `Published Config Composer 0.0.7 and ${candidateTarball === undefined ? 'published' : 'candidate'} Prompt Composer ${expectedPromptVersion} passed together in an isolated consumer.`,
   );
 } finally {
   await rm(root, { recursive: true, force: true });

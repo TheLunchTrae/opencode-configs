@@ -9,7 +9,6 @@ const root = new URL('../', import.meta.url);
 const read = (path) => readFileSync(new URL(path, root), 'utf8');
 const config = JSON.parse(read('opencode.jsonc'));
 const composer = parse(read('config-composer.jsonc'));
-const promptComposer = parse(read('prompt-composer.jsonc'));
 const authoredAgents = Object.fromEntries(
   readdirSync(new URL('agents/', root))
     .filter((name) => name.endsWith('.md'))
@@ -120,15 +119,6 @@ const promptReferences = (text) => [
   ...includeReferences(text),
 ];
 const sourceDirectory = (alias) => (alias === 'prompts' ? './prompts' : config.references[alias]?.path);
-const configuredFragments = (name) => {
-  const overrides = promptComposer.agents[name] ?? {};
-  const operations = [];
-  if (overrides.inheritDefaults !== false) {
-    operations.push(promptComposer.defaults ?? {});
-  }
-  operations.push(overrides);
-  return operations.flatMap((operation) => [...(operation.prepend ?? []), ...(operation.append ?? [])]);
-};
 
 // This checks our flat command/skill metadata, not arbitrary YAML or runtime loading.
 const metadata = (path) => {
@@ -529,7 +519,7 @@ test('published Composer registrations match locked dependencies and preserve na
   const lock = JSON.parse(read('package-lock.json'));
   for (const [name, version] of [
     ['config', '0.0.7'],
-    ['prompt', '0.0.6'],
+    ['prompt', '0.1.0'],
   ]) {
     const dependency = `@lunchbox-labs/opencode-${name}-composer`;
     const spec = `${dependency}@${version}`;
@@ -542,7 +532,7 @@ test('published Composer registrations match locked dependencies and preserve na
   }
   assert.deepEqual(config.plugin.slice(0, 2), [
     '@lunchbox-labs/opencode-config-composer@0.0.7',
-    '@lunchbox-labs/opencode-prompt-composer@0.0.6',
+    '@lunchbox-labs/opencode-prompt-composer@0.1.0',
   ]);
   assert.equal(composer.$schema, './node_modules/@lunchbox-labs/opencode-config-composer/schema.json');
   assert.equal(lock.packages['node_modules/opencode-config-composer'], undefined);
@@ -551,8 +541,6 @@ test('published Composer registrations match locked dependencies and preserve na
     assert.equal(composer[legacy], undefined, `${legacy}: use native files and current configuration settings`);
   }
   assert.deepEqual(composer.selection, { defaultProfiles: ['current'], retainOnRestart: true });
-  assert.equal(promptComposer.defaults, undefined, 'shipped guidance belongs in explicit body includes');
-  assert.deepEqual(promptComposer.agents, Object.fromEntries(leads.map((name) => [name, { inheritDefaults: false }])));
   for (const [name, group] of Object.entries(composer.componentGroups)) {
     assert.equal(group.prompt, undefined, `${name}: shipped guidance belongs in explicit body includes`);
   }
@@ -599,13 +587,9 @@ const sharedReferences = (path, visited = new Set()) => {
     return visited;
   }
   visited.add(path);
-  const name = /^agents\/(.+)\.md$/.exec(path)?.[1];
-  const sources = name === undefined ? [read(path)] : [read(path), ...configuredFragments(name)];
-  for (const source of sources) {
-    for (const [, alias, file] of promptReferences(source)) {
-      if (['prompts', 'agent-references'].includes(alias)) {
-        sharedReferences(`${sourceDirectory(alias).replace(/^\.\//, '').replace(/\/$/, '')}/${file}`, visited);
-      }
+  for (const [, alias, file] of promptReferences(read(path))) {
+    if (['prompts', 'agent-references'].includes(alias)) {
+      sharedReferences(`${sourceDirectory(alias).replace(/^\.\//, '').replace(/\/$/, '')}/${file}`, visited);
     }
   }
   return visited;
@@ -706,6 +690,7 @@ test('every delegating agent declares the canonical response catalog in its sour
 });
 
 test('runtime consumers use composition sources only through explicit includes', () => {
+  assert.ok(!existsSync(new URL('prompt-composer.jsonc', root)), 'body includes require no Prompt Composer settings');
   for (const path of promptPaths) {
     const runtime = read(path).replace(/\\?\{\{include:[\w./-]+\.md\}\}/g, '');
     assert.ok(!runtime.includes('@agent-prompts/'), `${path}: runtime read of a composition source`);

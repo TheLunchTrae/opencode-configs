@@ -128,14 +128,14 @@ Changing a model binding clears inherited Composer variants and parameters befor
 See the [Config Composer reference](https://github.com/lunchbox-labs/opencode-config-composer/wiki/Configuration-Reference).
 
 The installed package supplies the pinned schema. Both plugin lists register Config Composer 0.0.7 before
-Prompt Composer 0.0.6 and downstream plugins. Use the latest stable OpenCode V1 1.19.x within `package.json`'s
+Prompt Composer 0.1.0 and downstream plugins. Use the latest stable OpenCode V1 1.19.x within `package.json`'s
 supported range. V2 requires a separate port.
 The editors need shared filesystem access. Review previews before saving, and apply changes explicitly while idle.
 
 ## Shared prompt composition
 
-Prompt Composer discovers shared files under conventional `prompts/` directories. No source aliases or registry are needed.
-Native agents and commands expand includes at configuration load; skills expand when loaded through OpenCode's native loader.
+Prompt Composer discovers shared files under conventional `prompts/` directories.
+Native agents and commands expand includes at configuration load; skills expand when loaded through OpenCode's native `skill` tool.
 For example:
 
 ```markdown
@@ -154,20 +154,29 @@ Their conditions, native permissions, and role boundaries remain in force.
 
 Discovery follows native agent/command directories: global configuration, project `.opencode` directories up to the worktree,
 home `.opencode`, then `OPENCODE_CONFIG_DIR`. Later matching relative filenames win.
-`OPENCODE_DISABLE_PROJECT_CONFIG` disables project discovery. There are no custom source-directory mappings.
+`OPENCODE_DISABLE_PROJECT_CONFIG` disables project discovery.
 
-The shipped guidance stays in explicit body includes. `prompt-composer.jsonc` only preserves primary-lead default opt-outs.
-Optional `defaults` and named `agents` rules can prepend or append text and includes; there are no group prompt rules.
-Composition order is default prepends, agent prepends, authored body, default appends, then agent appends.
-`inheritDefaults: false` skips both default lists. Built-ins without authored prompts retain their native fallback.
+All guidance stays in explicit body includes at its intended position.
+Built-ins without authored prompts retain their native fallback.
 Avoid including the same guidance twice; fragments are not deduplicated.
 
-Use `/compose-prompts` to inspect composed prompts, edit optional rules, and explicitly apply saved settings while idle.
-Restart after editing native agent or command bodies. Direct reads and raw copies do not expand skill includes.
-Missing, unsafe, or cyclic includes fail composition. Truncated native skill content also fails rather than losing guidance.
+Use `/view-prompts`, choose **Agents** or **Commands**, then select a configured component and a page.
+The viewer shows complete loaded agent prompts and command templates returned by the connected server for the active project,
+with includes expanded. Pages preserve all text without truncation. Native fallback and disabled agents are labeled.
+Command arguments, shell expressions, and file references remain literal before invocation.
+The viewer is read-only and works without shared filesystem access.
+Skills are composed but omitted from this viewer because of API limitations.
+It does not show the full model request: OpenCode system instructions, conversation history, tool schemas, and future skill
+output are outside the preview. It does not execute commands or load skills.
+Restart OpenCode after editing `prompts/` snippets or native agent, command, or skill definitions.
+Composer keeps loaded snippet text until the server restarts; OpenCode controls native skill loading.
+OpenCode can log composition errors and return unexpanded text; check loaded prompts and server diagnostics after restart.
+Direct reads, raw copies, and skill-derived slash commands do not expand skill includes;
+use the native `skill` tool for templated skills.
+Missing, unsafe, or cyclic includes fail composition. Ambiguous native skill framing is rejected when the output contains
+an include marker. Output without include markers passes through unchanged unless the host reports truncation.
+Host-reported truncation always fails composition.
 Install skills with Prompt Composer and their supporting `prompts/` files.
-Config Composer is independent and does not select prompts through profiles.
-The [context inspector](#context-evidence) does not show exact assembled prompt text or token counts per fragment.
 
 ## Session tools
 
@@ -189,10 +198,10 @@ Prompts and handoff drafts return without saving when canceled. Completed bookma
 Choose an agent to compare its server-resolved model and variant, merged workspace default, global file default,
 and last recorded model for that agent in the current session.
 The inspector uses native OpenCode APIs only. It does not read plugin configuration files or interpret plugin options.
-Saved Composer group choices, source paths, prompt fragment counts, and inheritance opt-outs are not shown here.
+Saved Composer group choices, source paths, and prompt fragment counts are not shown here.
 A matching model does not establish whether an agent inherited a group default or has an explicit pin.
 Use the standalone package's [agent groups and models](#agent-groups-and-models) controls for group and model settings.
-Use `/compose-prompts` for prompt settings; session-tools does not supply a separate Composer settings viewer.
+Use `/view-prompts` for server-provided loaded agent prompts and command templates; session-tools does not supply a prompt viewer.
 
 V1 exposes merged settings without exact file provenance. The inspector identifies that limit instead of naming
 an unverified source file. Recorded models describe past turns; they do not predict the next request's model.
@@ -438,8 +447,8 @@ Initialization writes only to the work repository and does not publish the gener
 
 Agents select reusable procedures as needed. You do not need to invoke a skill to start a workflow stage.
 Naming a skill never expands the current agent's role, permissions, or approval scope.
-Skills with include directives use Prompt Composer during native skill loading. Include the plugin and supporting
-`prompts/` files when installing them separately.
+Skills with include directives use Prompt Composer through the native `skill` tool. Include the plugin and supporting
+`prompts/` files when installing them separately. Skill-derived slash commands do not expand includes.
 
 | Skill | Purpose |
 | --- | --- |
