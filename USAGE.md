@@ -164,7 +164,9 @@ Use `/compose-prompts` to read loaded agent and command text from the connected 
 The viewer is read-only and works without shared filesystem access. It does not execute commands or load skills.
 Restart after editing native agent or command bodies. Direct reads, raw copies, and skill-derived slash commands
 do not expand skill includes; use the native `skill` tool for templated skills.
-Missing, unsafe, or cyclic includes fail composition. Ambiguous or truncated native skill output also fails rather than losing guidance.
+Missing, unsafe, or cyclic includes fail composition. Ambiguous native skill framing is rejected when the output contains
+an include marker. Output without include markers passes through unchanged unless the host reports truncation.
+Host-reported truncation always fails composition.
 Install skills with Prompt Composer and their supporting `prompts/` files.
 Config Composer is independent and does not select prompts through profiles.
 The [context inspector](#context-evidence) does not show exact assembled prompt text or token counts per fragment.
