@@ -19,12 +19,11 @@ Select a focused lead when you want only planning, approved implementation, or a
 | [`prompts/`](prompts/) | Shared fragments for native agent and skill bodies. |
 | [`plugins/`](plugins/) | Local plugins, including secret-path checks. |
 | `@lunchbox-labs/opencode-config-composer` | Config Composer: model presets, groups, and project profiles. |
-| `@lunchbox-labs/opencode-prompt-composer` | Prompt Composer: shared body includes and prompt editing. |
+| `@lunchbox-labs/opencode-prompt-composer` | Prompt Composer: shared body includes and a loaded-text viewer. |
 | [`extensions/session-tools/`](extensions/session-tools/) | Config, context, bookmarks, and handoff panels. |
 | [`package.json`](package.json) | Pinned plugin dependencies and maintenance commands. |
 | [`opencode.jsonc`](opencode.jsonc) | Global models, permissions, MCP servers, shell, and plugin settings. |
 | [`config-composer.jsonc`](config-composer.jsonc) | Config Composer groups, presets, profiles, and selection policy. |
-| [`prompt-composer.jsonc`](prompt-composer.jsonc) | Prompt Composer primary-lead inheritance exceptions. |
 | [`tui.jsonc`](tui.jsonc) | TUI theme selection and plugin settings. |
 | [`themes/`](themes/) | Custom TUI themes. |
 | [`opencode-quota/quota-toast.jsonc`](opencode-quota/quota-toast.jsonc) | Quota display preferences. |
@@ -35,7 +34,7 @@ Select a focused lead when you want only planning, approved implementation, or a
 2. Authenticate your provider through `/connect` when supported.
 3. Back up your existing global configuration directory.
 4. Obtain a checkout or download of this repository.
-5. Copy `README.md`, `USAGE.md`, `AGENTS.md`, `opencode.jsonc`, `config-composer.jsonc`, `prompt-composer.jsonc`, `tui.jsonc`, `themes/`,
+5. Copy `README.md`, `USAGE.md`, `AGENTS.md`, `opencode.jsonc`, `config-composer.jsonc`, `tui.jsonc`, `themes/`,
    `agents/`, `commands/`, `skills/`, `references/`, `prompts/`, `plugins/`, `extensions/`, `package.json`,
    `package-lock.json`, and `opencode-quota/`
    into the global configuration directory.
@@ -43,14 +42,15 @@ Select a focused lead when you want only planning, approved implementation, or a
 
 The global configuration directory is `~/.config/opencode` or `%USERPROFILE%\.config\opencode` on Windows.
 Install the pinned dependencies in this directory with `npm ci`.
-Each settings schema uses its installed package version. Local extensions do not import either Composer package.
+Config Composer's settings schema uses its installed package version. Local extensions do not import either Composer package.
 Both plugin lists pin Config Composer 0.0.7 before Prompt Composer 0.0.6 and downstream plugins.
 
 Do not copy credentials, tokens, `node_modules`, `.idea`, or work-project checkpoints.
 The repository's `.opencode/` directory contains maintenance guidance and is not needed for global installation.
 When copying selected skills, include their supporting files, applicable license notices, references, and
 composition sources. Skills with include directives also require Prompt Composer and `prompts/`.
-Load these templates through native skill loading under an agent whose role and permissions permit the procedure.
+Load these templates through the native `skill` tool under an agent whose role and permissions permit the procedure.
+Skill-derived slash commands do not expand their includes.
 
 For local editing of `plugins/` and `extensions/`, run `npm ci` from the checkout root.
 Select the workspace TypeScript version in your editor. If types remain unresolved, reopen the project or restart
@@ -92,8 +92,9 @@ The default `current` profile preserves the existing model allocation. The `open
 profiles are explicit opt-ins for task agents. They preserve the existing OpenAI background models and global defaults.
 Saved selections persist independently for each project. See [agent groups and models](USAGE.md#agent-groups-and-models).
 
-Prompt Composer resolves shared body includes from `prompts/` at configuration load and during native skill loading.
-Use `/compose-prompts` to inspect composed prompts and edit optional prompt rules.
+Prompt Composer resolves explicit body includes from `prompts/` at configuration load and through the native `skill` tool.
+Use `/compose-prompts` to read the connected server's loaded agent and command text.
+It has no settings file or editing controls. Skill-derived slash commands do not expand includes.
 Neither package requires the other. Profiles do not select prompt content.
 Native agent files retain roles, permissions, and membership. Commands and skills remain native files.
 Conditional reads of `@agent-references` remain agent actions.
@@ -188,7 +189,7 @@ Check an approval prompt's scope before saving an approval.
 ## Upgrade an existing installation
 
 Back up the configuration first. Update `README.md`, `USAGE.md`, `AGENTS.md`, `agents/`, `commands/`, `skills/`,
-`references/`, `prompts/`, `plugins/`, `opencode.jsonc`, `config-composer.jsonc`, `prompt-composer.jsonc`, `tui.jsonc`, and `themes/`
+`references/`, `prompts/`, `plugins/`, `opencode.jsonc`, `config-composer.jsonc`, `tui.jsonc`, and `themes/`
 together, preserving local overrides and license notices.
 
 Install `extensions/`, `package.json`, and `package-lock.json` with the configuration files.
@@ -208,8 +209,7 @@ Preserve explicit `configFile` overrides and deliberate native agent model pins.
 Move custom prompt fragments into `prompts/`, and replace source-alias directives with relative filenames.
 For example, the new syntax is `{{include:reviewer-standards.md}}`.
 Remove obsolete `config-composer/agent/prompts/` copies after updating all consumers.
-Keep optional prompt defaults and agent rules in `prompt-composer.jsonc`; group prompt layers are unsupported.
-The four primary leads retain their default-prompt opt-outs. Do not duplicate body includes in configured appends.
+Keep prompt guidance in explicit body includes at the intended positions. No Prompt Composer settings file is needed.
 Install templated skills with Prompt Composer and their snippets. Conditional native references stay in `references/agent/`.
 Resolve includes before disabling Prompt Composer. Restore explicit model choices before disabling Config Composer.
 
