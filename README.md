@@ -96,8 +96,7 @@ Prompt Composer resolves explicit body includes from `prompts/` at configuration
 Use `/agent-prompts` for a read-only preview of the complete composed agent prompt returned by the connected server,
 with includes expanded. The preview excludes the full model request: OpenCode system instructions, conversation history,
 tool schemas, and future skill output are outside its scope.
-It has no settings file or editing controls. Skill-derived slash commands do not expand includes.
-Neither package requires the other. Profiles do not select prompt content.
+Skill-derived slash commands do not expand includes.
 Native agent files retain roles, permissions, and membership. Commands and skills remain native files.
 Conditional reads of `@agent-references` remain agent actions.
 Missing or invalid includes fail composition. A direct Read or raw file copy does not expand skill directives.
@@ -211,7 +210,7 @@ Preserve explicit `configFile` overrides and deliberate native agent model pins.
 Move custom prompt fragments into `prompts/`, and replace source-alias directives with relative filenames.
 For example, the new syntax is `{{include:reviewer-standards.md}}`.
 Remove obsolete `config-composer/agent/prompts/` copies after updating all consumers.
-Keep prompt guidance in explicit body includes at the intended positions. No Prompt Composer settings file is needed.
+Keep prompt guidance in explicit body includes at the intended positions.
 Install templated skills with Prompt Composer and their snippets. Conditional native references stay in `references/agent/`.
 Resolve includes before disabling Prompt Composer. Restore explicit model choices before disabling Config Composer.
 

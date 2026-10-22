@@ -134,7 +134,7 @@ The editors need shared filesystem access. Review previews before saving, and ap
 
 ## Shared prompt composition
 
-Prompt Composer discovers shared files under conventional `prompts/` directories. No source aliases or registry are needed.
+Prompt Composer discovers shared files under conventional `prompts/` directories.
 Native agents and commands expand includes at configuration load; skills expand when loaded through OpenCode's native `skill` tool.
 For example:
 
@@ -154,9 +154,9 @@ Their conditions, native permissions, and role boundaries remain in force.
 
 Discovery follows native agent/command directories: global configuration, project `.opencode` directories up to the worktree,
 home `.opencode`, then `OPENCODE_CONFIG_DIR`. Later matching relative filenames win.
-`OPENCODE_DISABLE_PROJECT_CONFIG` disables project discovery. There are no custom source-directory mappings.
+`OPENCODE_DISABLE_PROJECT_CONFIG` disables project discovery.
 
-All guidance stays in explicit body includes at its intended position. Prompt Composer has no settings file or prompt rules.
+All guidance stays in explicit body includes at its intended position.
 Built-ins without authored prompts retain their native fallback.
 Avoid including the same guidance twice; fragments are not deduplicated.
 
@@ -170,8 +170,6 @@ Missing, unsafe, or cyclic includes fail composition. Ambiguous native skill fra
 an include marker. Output without include markers passes through unchanged unless the host reports truncation.
 Host-reported truncation always fails composition.
 Install skills with Prompt Composer and their supporting `prompts/` files.
-Config Composer is independent and does not select prompts through profiles.
-The [context inspector](#context-evidence) does not show exact assembled prompt text or token counts per fragment.
 
 ## Session tools
 

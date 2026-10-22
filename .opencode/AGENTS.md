@@ -35,7 +35,7 @@ Check the installed version against the [V1 documentation](https://opencode.ai/d
   Preserve explicit exceptions and native pins. Profile layers determine settings precedence.
   Keep permission rules native; do not introduce Composer permission contributions during documentation cleanup.
 - Agent Markdown bodies are prompts. Declare shared fragments with explicit includes at their intended positions.
-  Keep the shipped guidance in those bodies. Prompt Composer has no settings file or prompt policy layers.
+  Keep the shipped guidance in those bodies.
   Do not add a separate `prompt` frontmatter field.
 - `workflow-lead` is the default primary agent. Focused leads are alternative primary entrypoints, never children.
   Built-in `build` and `plan` are disabled; custom `planner` is a separate subagent.
@@ -63,7 +63,6 @@ Check the installed version against the [V1 documentation](https://opencode.ai/d
   approval procedures.
   [Planner](../agents/planner.md) owns planning procedure. Each specialist owns its scope and stopping conditions.
 - Composition fragments belong in `prompts/`. Prompt Composer discovers them by relative filename.
-  Do not add source aliases or custom source-directory mappings.
   Keep conditional guidance in `references/agent/`, registered as the hidden native `agent-references` reference.
   Use full include paths such as `{{include:reviewer-standards.md}}`.
   Verify every included or referenced file exists.
@@ -79,7 +78,6 @@ Check the installed version against the [V1 documentation](https://opencode.ai/d
   Supply required unconditional agent prompt fragments through explicit body includes.
   Invalid includes must fail composition at configuration or native skill loading, as applicable.
   Skill templates require Prompt Composer, their supporting `prompts/` files, and the native `skill` tool.
-  Config Composer is independent and does not select prompt content through profiles.
   A direct Read or raw file copy does not compile their includes.
   Preserve role and permission checks for every consumer.
   Avoid include cycles and duplicate fragments.
@@ -184,7 +182,7 @@ Keep their runtime metadata out of provider request options.
 Config Composer reads `config-composer.jsonc` by default. Preserve explicit `configFile` overrides for custom filenames.
 Prompt Composer discovers fragments in conventional `prompts/` directories and expands explicit body includes.
 Config Composer plugin options accept only `configFile` and the editor's `reloadToken`.
-Prompt Composer has no configuration options or settings schema. Its `/agent-prompts` viewer previews only the complete
+Prompt Composer's `/agent-prompts` viewer previews only the complete
 composed agent prompt returned by the connected server, with includes expanded. It does not expose the full model request,
 OpenCode system instructions, conversation history, tool schemas, or future skill output. Keep the preview read-only;
 it does not write files, apply changes, execute commands, or load skills. Server composition still covers command bodies
@@ -192,8 +190,8 @@ and native skill-tool output.
 Use Config Composer's installed `schema.json` for its settings file, as in the committed configuration.
 Keep schemas, settings, references, and templated prompts compatible during upgrades. Preserve customized settings.
 Keep settings in their owning package's file. Reject legacy Config Composer `agent`, `command`, `skill`, and
-`sourceDirectories` layouts. Do not move prompt rules into configuration profiles.
-Built-in agents without authored prompts must retain native prompts. Do not add prompt defaults to them.
+`sourceDirectories` layouts.
+Built-in agents without authored prompts must retain native prompts.
 The settings editor must preserve unrelated configuration, prompts, comments, explicit exceptions, and permissions.
 Group names and membership are discovered from configuration; do not hardcode a group inventory in the UI.
 Use the provider API for model and variant choices. Do not synthesize model IDs from display names.
