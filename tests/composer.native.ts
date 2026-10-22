@@ -8,7 +8,7 @@ import { setTimeout } from 'node:timers/promises';
 import { test } from 'node:test';
 import { parse } from 'jsonc-parser';
 import { nativeBinary } from './native-host.ts';
-import { waitForNativeReferences } from './native-references.ts';
+import { establishNativeReferenceBaseline, waitForNativeReferences } from './native-references.ts';
 
 interface Agent {
   name: string;
@@ -104,29 +104,32 @@ test(
       await setTimeout(100);
     }
     assert.ok(baseURL !== undefined && baseURL !== '', output);
-    const api = async <T>(path: string, method = 'GET'): Promise<T> => {
+    const api = async <T>(path: string, method = 'GET', signal = AbortSignal.timeout(30_000)): Promise<T> => {
       const response = await fetch(`${baseURL}${path}`, {
         method,
         headers: { 'x-opencode-directory': project },
-        signal: AbortSignal.timeout(30_000),
+        signal,
       }).catch((error: unknown) => {
         throw new Error(`${path}: ${String(error)}\n${output.slice(-6000)}`);
       });
       assert.ok(response.ok, `${path}: ${await response.clone().text()}\n${output.slice(-3000)}`);
       return (await response.json()) as T;
     };
-    const snapshot = async () => {
+    const snapshot = async (signal?: AbortSignal) => {
       // Native reference discovery finishes after its plugin is marked active.
-      // Wait before Agent caches its defaults; keep every permission assertion below.
       let reads = 0;
       await waitForNativeReferences(() => {
         reads++;
-        return api<{ data: { name: string; path: string }[] }>('/api/reference');
+        return api<{ data: { name: string; path: string }[] }>('/api/reference', 'GET', signal);
       }, [{ name: 'agent-references', path: join(installation, 'references', 'agent') }]);
       t.diagnostic(`Native reference discovery ready after ${reads} catalog read(s)`);
-      return api<Agent[]>('/agent');
+      return api<Agent[]>('/agent', 'GET', signal);
     };
-    const baseline = await snapshot();
+    const baseline = await establishNativeReferenceBaseline(
+      snapshot,
+      (signal) => api('/global/dispose', 'POST', signal),
+      join(installation, 'references', 'agent'),
+    );
     const original = new Map(baseline.map((agent) => [agent.name, agent]));
     // Native skill discovery can reorder disjoint trusted-directory grants on restart.
     // Preserve the order of every other rule, including overlapping authored rules.
