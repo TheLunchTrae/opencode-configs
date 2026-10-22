@@ -3,7 +3,7 @@
   "theme": "pink",
   "plugin": [
     "@lunchbox-labs/opencode-config-composer@0.0.7",
-    "@lunchbox-labs/opencode-prompt-composer@0.0.6",
+    "@lunchbox-labs/opencode-prompt-composer@0.1.0",
     "@slkiser/opencode-quota@4.9.0",
     "./extensions/session-tools/config.ts",
     "./extensions/session-tools/context.ts",

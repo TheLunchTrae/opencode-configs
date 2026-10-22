@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 const repository = fileURLToPath(new URL('../', import.meta.url));
 const candidateTarball =
   process.env.PROMPT_COMPOSER_TARBALL === undefined ? undefined : await realpath(process.env.PROMPT_COMPOSER_TARBALL);
-const expectedPromptVersion = candidateTarball === undefined ? '0.0.6' : '0.1.0';
+const expectedPromptVersion = '0.1.0';
 const root = await mkdtemp(join(tmpdir(), 'opencode-packaged-consumer-'));
 const consumer = join(root, 'consumer');
 const run = (command, args) => {
@@ -26,7 +26,7 @@ try {
   const lockText = await readFile(join(consumer, 'package-lock.json'), 'utf8');
   const manifest = JSON.parse(manifestText);
   assert.equal(manifest.dependencies['@lunchbox-labs/opencode-config-composer'], '0.0.7');
-  assert.equal(manifest.dependencies['@lunchbox-labs/opencode-prompt-composer'], '0.0.6');
+  assert.equal(manifest.dependencies['@lunchbox-labs/opencode-prompt-composer'], '0.1.0');
   assert.equal(manifest.dependencies['opencode-config-composer'], undefined);
   run('npm', ['ci', '--ignore-scripts', '--no-audit', '--no-fund']);
   if (candidateTarball !== undefined) {
@@ -53,11 +53,9 @@ try {
   assert.equal(prompt.name, '@lunchbox-labs/opencode-prompt-composer');
   assert.equal(prompt.version, expectedPromptVersion);
   assert.equal(prompt.dependencies?.[installed.name], undefined, 'Prompt Composer must remain independent');
-  if (expectedPromptVersion === '0.1.0') {
-    assert.deepEqual(prompt.dependencies ?? {}, {}, 'Include-only Prompt Composer has no runtime dependencies');
-    assert.equal(prompt.exports['./schema.json'], undefined);
-    assert.equal(prompt.exports['./editor'], undefined);
-  }
+  assert.deepEqual(prompt.dependencies ?? {}, {}, 'Include-only Prompt Composer has no runtime dependencies');
+  assert.equal(prompt.exports['./schema.json'], undefined);
+  assert.equal(prompt.exports['./editor'], undefined);
   assert.equal(installed.dependencies[prompt.name], undefined, 'Config Composer must remain independent');
   assert.equal(installed.license, 'MIT');
   assert.match(

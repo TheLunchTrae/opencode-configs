@@ -519,7 +519,7 @@ test('published Composer registrations match locked dependencies and preserve na
   const lock = JSON.parse(read('package-lock.json'));
   for (const [name, version] of [
     ['config', '0.0.7'],
-    ['prompt', '0.0.6'],
+    ['prompt', '0.1.0'],
   ]) {
     const dependency = `@lunchbox-labs/opencode-${name}-composer`;
     const spec = `${dependency}@${version}`;
@@ -532,7 +532,7 @@ test('published Composer registrations match locked dependencies and preserve na
   }
   assert.deepEqual(config.plugin.slice(0, 2), [
     '@lunchbox-labs/opencode-config-composer@0.0.7',
-    '@lunchbox-labs/opencode-prompt-composer@0.0.6',
+    '@lunchbox-labs/opencode-prompt-composer@0.1.0',
   ]);
   assert.equal(composer.$schema, './node_modules/@lunchbox-labs/opencode-config-composer/schema.json');
   assert.equal(lock.packages['node_modules/opencode-config-composer'], undefined);

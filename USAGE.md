@@ -128,7 +128,7 @@ Changing a model binding clears inherited Composer variants and parameters befor
 See the [Config Composer reference](https://github.com/lunchbox-labs/opencode-config-composer/wiki/Configuration-Reference).
 
 The installed package supplies the pinned schema. Both plugin lists register Config Composer 0.0.7 before
-Prompt Composer 0.0.6 and downstream plugins. Use the latest stable OpenCode V1 1.19.x within `package.json`'s
+Prompt Composer 0.1.0 and downstream plugins. Use the latest stable OpenCode V1 1.19.x within `package.json`'s
 supported range. V2 requires a separate port.
 The editors need shared filesystem access. Review previews before saving, and apply changes explicitly while idle.
 
