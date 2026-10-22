@@ -40,25 +40,30 @@ const shippedSettings = (name, profile = null) => {
     settings = { ...settings, ...patch, ...(permission === undefined ? {} : { permission }) };
   };
   for (const groupName of ownedGroups(name)) {
-    apply(composer.groups.find((group) => group.name === groupName)?.agent);
-    apply(
-      profile === null ? undefined : composer.profiles[profile].groups.find((group) => group.name === groupName)?.agent,
-    );
+    apply(composer.groups[groupName]?.agent);
+    apply(profile === null ? undefined : composer.profiles[profile].groups[groupName]?.agent);
   }
   apply(composer.agent?.[name]);
   apply(profile === null ? undefined : composer.profiles[profile].agent?.[name]);
   return { ...settings, ...authoredAgents[name] };
 };
 
-test('agents own ordered memberships and twelve group definitions contain no member lists', () => {
+test('agents own ordered memberships and twelve name-keyed group definitions contain settings only', () => {
   assert.equal(composer.defaultProfile, 'primary');
-  assert.deepEqual(
-    composer.groups.map(({ name }) => name),
-    Object.keys(memberships),
-  );
+  assert.equal(Array.isArray(composer.groups), false);
+  assert.deepEqual(Object.keys(composer.groups).sort(), Object.keys(memberships).sort());
   assert.deepEqual(Object.keys(composer.profiles), ['primary', 'openai-latest', 'anthropic-latest']);
-  for (const group of composer.groups) {
-    assert.equal(group.members, undefined, `${group.name}: membership belongs to each agent`);
+  for (const [name, group] of Object.entries(composer.groups)) {
+    assert.equal(group.name, undefined, `${name}: the map key names the group`);
+    assert.equal(group.members, undefined, `${name}: membership belongs to each agent`);
+  }
+  for (const [profile, settings] of Object.entries(composer.profiles)) {
+    assert.equal(Array.isArray(settings.groups), false, `${profile}: group patches are name-keyed`);
+    for (const [name, group] of Object.entries(settings.groups)) {
+      assert.ok(Object.hasOwn(composer.groups, name), `${profile}/${name}: unknown group`);
+      assert.equal(group.name, undefined, `${profile}/${name}: the map key names the group`);
+      assert.equal(group.members, undefined, `${profile}/${name}: membership belongs to each agent`);
+    }
   }
   for (const key of ['componentGroups', 'configurationPresets', 'profileShortcuts', 'selection']) {
     assert.equal(composer[key], undefined, `${key}: old composition layout`);
@@ -683,7 +688,7 @@ test('published Composer registrations match locked dependencies and preserve na
     assert.equal(composer[legacy], undefined, `${legacy}: use native files and current configuration settings`);
   }
   assert.equal(composer.defaultProfile, 'primary');
-  for (const { name, ...group } of composer.groups) {
+  for (const [name, group] of Object.entries(composer.groups)) {
     assert.equal(group.prompt, undefined, `${name}: shipped guidance belongs in explicit body includes`);
   }
   for (const [name, settings] of Object.entries(authoredAgents)) {

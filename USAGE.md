@@ -126,7 +126,8 @@ Reconnecting the TUI is not a server restart.
 ### Configuration ownership
 
 Each agent owns an ordered `groups` array: Markdown agents declare it in frontmatter, and native JSON agents use
-`agent.<name>.groups`. The twelve group definitions in `config-composer.jsonc` contain settings, never member lists.
+`agent.<name>.groups`. In `config-composer.jsonc`, `groups` and profile `groups` are maps keyed by group name;
+their values contain settings, never member lists or a `name` field.
 For each agent, apply its listed groups in order, combining each group's shared settings with the selected profile's
 patch. Later groups win overlapping settings. Shared named settings and profile named settings follow; explicit
 native frontmatter stays final. Group definition order does not control membership precedence.
