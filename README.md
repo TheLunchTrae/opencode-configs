@@ -10,23 +10,13 @@ Select a focused lead when you want only planning, approved implementation, or a
 
 | Path | Purpose |
 | --- | --- |
-| [`USAGE.md`](USAGE.md) | Workflow guide, command and skill reference, and practical task examples. |
-| [`AGENTS.md`](AGENTS.md) | Shared instructions for all sessions. |
-| [`agents/`](agents/) | Agent prompts, modes, and final authored overrides. |
-| [`commands/`](commands/) | Utility shortcuts and the focused test-audit entrypoint. |
-| [`skills/`](skills/) | Reusable task procedures. |
-| [`references/agent/`](references/agent/) | Conditional guidance that agents read when needed. |
-| [`prompts/`](prompts/) | Shared fragments for native agent and skill bodies. |
-| [`plugins/`](plugins/) | Local plugins, including secret-path checks. |
-| `@lunchbox-labs/opencode-config-composer` | Config Composer: shared settings, agent-owned groups, and one worktree profile. |
-| `@lunchbox-labs/opencode-prompt-composer` | Prompt Composer: shared body includes and a read-only agent prompt and command template viewer. |
-| [`extensions/session-tools/`](extensions/session-tools/) | Config, context, bookmarks, and handoff panels. |
-| [`package.json`](package.json) | Pinned plugin dependencies and maintenance commands. |
-| [`opencode.jsonc`](opencode.jsonc) | Global models, permissions, MCP servers, shell, and plugin settings. |
-| [`config-composer.jsonc`](config-composer.jsonc) | Shared group settings, profile allocations, and configured default. |
-| [`tui.jsonc`](tui.jsonc) | TUI theme selection and plugin settings. |
-| [`themes/`](themes/) | Custom TUI themes. |
-| [`opencode-quota/quota-toast.jsonc`](opencode-quota/quota-toast.jsonc) | Quota display preferences. |
+| [`USAGE.md`](USAGE.md) | Workflow and command guide. |
+| [`AGENTS.md`](AGENTS.md), [`agents/`](agents/) | Shared instructions and agent definitions. |
+| [`commands/`](commands/), [`skills/`](skills/) | Shortcuts and reusable procedures. |
+| [`prompts/`](prompts/), [`references/agent/`](references/agent/) | Shared prompt fragments and conditional guidance. |
+| [`opencode.jsonc`](opencode.jsonc), [`config-composer.jsonc`](config-composer.jsonc) | Runtime settings and profile allocations. |
+| [`tui.jsonc`](tui.jsonc), [`themes/`](themes/) | TUI settings and themes. |
+| [`package.json`](package.json) | Dependencies and maintenance commands. |
 
 ## Setup
 
@@ -82,43 +72,6 @@ Configure GitHub authentication in your local environment, then set `enabled` to
 The supplied GitHub entry has OAuth disabled; configure a supported authentication method when enabling it.
 Keep tokens out of version control.
 
-The quota plugin is configured for OpenAI. To opt out, remove its entries from both `opencode.jsonc` and `tui.jsonc`.
-
-The session tools add read-only configuration and context inspectors, and session bookmarks with editable handoff drafts.
-Open them through the command palette or `/inspect-config`, `/inspect-context`, and `/bookmarks`.
-See [session tools](USAGE.md#session-tools) for use and individual opt-outs.
-
-Config Composer uses `/profiles` for selection and `/view-configs` for read-only definitions, configured and applied
-values, and origins. Explicit native frontmatter is final.
-The default `primary` profile preserves the existing model allocation. The `openai-latest` and `anthropic-latest`
-profiles are explicit opt-ins for task agents. They preserve the existing OpenAI background models and global defaults.
-Choose **Follow configured default**, **Shared only**, or a named profile. **Shared only** retains shared policies and
-system settings. Choices are saved per worktree outside the definitions file and survive server restarts.
-Switching uses loaded definitions, with preview and Apply confirmation.
-Definitions load when each project directory first loads in the OpenCode server process.
-Edit definitions externally, then restart that process to load changes.
-See [agent groups and models](USAGE.md#agent-groups-and-models).
-
-Prompt Composer resolves explicit body includes from `prompts/` at configuration load and through the native `skill` tool.
-Use `/view-prompts`, choose **Agents** or **Commands**, then select a configured component and a page.
-The read-only viewer shows complete loaded agent prompts and command templates returned by the connected server,
-with includes expanded and pages that preserve all text. Native fallback and disabled agents are labeled.
-Command arguments, shell expressions, and file references remain literal before invocation.
-Skills are composed but omitted from this viewer because of API limitations.
-Restart OpenCode after editing `prompts/` snippets or native agent, command, or skill definitions.
-Composer keeps loaded snippet text until the server restarts; OpenCode controls native skill loading.
-The preview excludes the full model request: OpenCode system instructions, conversation history, tool schemas,
-and future skill output are outside its scope.
-Skill-derived slash commands do not expand includes.
-Native agent files retain prompts, roles, ordered memberships, and four lead-specific permission exceptions.
-Shared groups supply reusable agent policies. Commands and skills remain native files.
-Conditional reads of `@agent-references` remain agent actions.
-Missing or invalid includes fail composition. A direct Read or raw file copy does not expand skill directives.
-See [shared prompt composition](USAGE.md#shared-prompt-composition).
-
-Session-tools uses native OpenCode APIs in `/inspect-config`; it does not interpret Composer settings.
-The shared `extensions/tui/` directory supports the remaining session-tools panels.
-
 The selected `pink` theme uses pink accents, pastel syntax and status colors, and neutral dark backgrounds.
 It keeps the same dark appearance in both terminal modes. Install `themes/` with `tui.jsonc` so OpenCode can find it.
 To select another theme, change `theme` in `tui.jsonc`. See the [theme documentation](https://opencode.ai/docs/themes/).
@@ -132,6 +85,19 @@ Delegation remains denied by default, with exact targets in each coordinating ag
 External-directory access uses OpenCode's V1 defaults. Ordinary external paths require approval.
 OpenCode permits its configured skill and reference directories and designated temporary and tool-output locations.
 Read and edit permissions still apply to those paths.
+
+## Plugins
+
+- [Config Composer](https://github.com/lunchbox-labs/opencode-config-composer)
+- [Prompt Composer](https://github.com/lunchbox-labs/opencode-prompt-composer)
+- [OpenCode Quota](https://github.com/slkiser/opencode-quota): configured for OpenAI in [quota-toast.jsonc](opencode-quota/quota-toast.jsonc).
+  Remove its entries from both plugin lists to opt out.
+- [Session tools](USAGE.md#session-tools): configuration/context inspectors, bookmarks, and handoff drafts.
+- [Secret-path checks](#secret-path-protection): local sensitive-path protection.
+
+The default `primary` profile preserves the model allocation. Optional `openai-latest` and `anthropic-latest`
+profiles retain the OpenAI background models and global defaults. See [local profile settings](USAGE.md#agent-groups-and-models)
+and [prompt composition](USAGE.md#shared-prompt-composition) for this configuration's usage.
 
 ## Quick start
 
