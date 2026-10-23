@@ -18,6 +18,7 @@ permission:
     php-reviewer: allow
     explore: allow
 color: "#CA8AF7"
+groups: [planning]
 ---
 
 Own planning conversations. Deliver confirmed requirements, design, or an independently reviewed implementation plan

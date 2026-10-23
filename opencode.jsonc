@@ -1,8 +1,8 @@
 {
   "$schema": "https://opencode.ai/config.json",
   "plugin": [
-    "@lunchbox-labs/opencode-config-composer@0.1.0",
-    "@lunchbox-labs/opencode-prompt-composer@0.1.0",
+    "@lunchbox-labs/opencode-config-composer@0.2.0",
+    "@lunchbox-labs/opencode-prompt-composer@0.1.1",
     "@slkiser/opencode-quota@4.9.0"
   ],
   "shell": "C:/Program Files/Git/bin/bash.exe",
@@ -74,27 +74,24 @@
       "disable": true
     },
     "general": {
-      "color": "#8AF793",
-      "permission": {
-        "edit": "allow"
-      }
+      "groups": ["developers"],
+      "color": "#8AF793"
     },
     "explore": {
-      "color": "#8AEEF7",
-      "permission": {
-        "edit": "deny"
-      }
+      "groups": ["research"],
+      "color": "#8AEEF7"
     },
     "summary": {
+      "groups": ["system"]
     },
     "compaction": {
+      "groups": ["system"],
       "options": {
         "reasoningEffort": "medium"
       }
     },
     "title": {
-      "model": "openai/gpt-5.6-luna",
-      "variant": "low",
+      "groups": ["system"],
       "options": {
         "reasoningEffort": "low"
       }

@@ -1,129 +1,39 @@
 {
   "$schema": "./node_modules/@lunchbox-labs/opencode-config-composer/schema.json",
-  "defaultProfile": "current",
-  "groups": [
-    {
-      "name": "workflow",
-      "members": {
-        "agent": [
-          "workflow-lead"
-        ]
-      }
-    },
-    {
-      "name": "planning",
-      "members": {
-        "agent": [
-          "architect",
-          "planner",
-          "planning-lead"
-        ]
-      },
-      "agent": {
-        "permission": {
-          "edit": "deny",
-          "bash": "deny"
-        }
-      }
-    },
-    {
-      "name": "developers",
-      "members": {
-        "agent": [
-          "csharp-developer",
-          "doctrine-developer",
-          "efcore-developer",
-          "github-actions-developer",
-          "gitlab-ci-developer",
-          "go-developer",
-          "implementation-lead",
-          "laminas-developer",
-          "php-developer",
-          "react-developer",
-          "typescript-developer",
-          "general"
-        ]
-      },
+  "defaultProfile": "primary",
+  "groups": {
+    "workflow": {},
+    "planning": {},
+    "developers": {
       "agent": {
         "permission": {
           "edit": "allow"
         }
       }
     },
-    {
-      "name": "reviewers",
-      "members": {
-        "agent": [
-          "architecture-reviewer",
-          "code-reviewer",
-          "csharp-reviewer",
-          "go-reviewer",
-          "php-reviewer",
-          "review-lead",
-          "security-reviewer",
-          "typescript-reviewer"
-        ]
-      },
-      "agent": {
-        "permission": {
-          "edit": "deny",
-          "task": "deny"
-        }
-      }
-    },
-    {
-      "name": "refactoring",
-      "members": {
-        "agent": [
-          "code-simplifier",
-          "performance-optimizer",
-          "refactor-cleaner"
-        ]
-      },
+    "reviewers": {},
+    "refactoring": {
       "agent": {
         "permission": {
           "edit": "allow"
         }
       }
     },
-    {
-      "name": "documentation",
-      "members": {
-        "agent": [
-          "doc-updater"
-        ]
+    "documentation": {},
+    "research": {
+      "agent": {
+        "permission": {
+          "edit": "deny"
+        }
       }
     },
-    {
-      "name": "research",
-      "members": {
-        "agent": [
-          "explore"
-        ]
-      }
-    },
-    {
-      "name": "system",
-      "members": {
-        "agent": [
-          "summary",
-          "compaction",
-          "title"
-        ]
-      },
+    "system": {
       "agent": {
         "model": "openai/gpt-5.6-terra",
         "variant": "medium"
       }
     },
-    {
-      "name": "developer-delegation",
-      "members": {
-        "agent": [
-          "doc-updater",
-          "refactor-cleaner"
-        ]
-      },
+    "developer-delegation": {
       "agent": {
         "permission": {
           "edit": "allow",
@@ -137,14 +47,7 @@
         }
       }
     },
-    {
-      "name": "delegating-reviewers",
-      "members": {
-        "agent": [
-          "code-reviewer",
-          "security-reviewer"
-        ]
-      },
+    "delegating-reviewers": {
       "agent": {
         "permission": {
           "edit": "deny",
@@ -157,61 +60,76 @@
           }
         }
       }
+    },
+    "read-only": {
+      "agent": {
+        "permission": {
+          "edit": "deny",
+          "bash": "deny"
+        }
+      }
+    },
+    "non-delegating-reviewer": {
+      "agent": {
+        "permission": {
+          "edit": "deny",
+          "task": "deny"
+        }
+      }
     }
-  ],
+  },
+  "agent": {
+    "title": {
+      "model": "openai/gpt-5.6-luna",
+      "variant": "low"
+    }
+  },
   "profiles": {
-    "current": {
-      "groups": [
-        {
-          "name": "workflow",
+    "primary": {
+      "groups": {
+        "workflow": {
           "agent": {
             "model": "openai/gpt-6-astra",
             "variant": "high"
           }
         },
-        {
-          "name": "planning",
+        "planning": {
           "agent": {
             "model": "openai/gpt-6-astra",
             "variant": "high"
           }
         },
-        {
-          "name": "developers",
+        "developers": {
           "agent": {
             "model": "openai/gpt-5.6-sol",
             "variant": "medium"
           }
         },
-        {
-          "name": "reviewers",
+        "reviewers": {
           "agent": {
             "model": "openai/gpt-6-astra",
             "variant": "high"
           }
         },
-        {
-          "name": "refactoring",
+        "refactoring": {
           "agent": {
             "model": "openai/gpt-5.6-sol",
             "variant": "medium"
           }
         },
-        {
-          "name": "documentation",
+        "documentation": {
           "agent": {
             "model": "openai/gpt-5.6-terra",
             "variant": "medium"
           }
         },
-        {
-          "name": "research",
+        "research": {
           "agent": {
             "model": "openai/gpt-5.6-terra",
             "variant": "medium"
           }
         }
-      ],
+      },
       "agent": {
         "doctrine-developer": {
           "model": "openai/gpt-6-astra",
@@ -232,57 +150,50 @@
       }
     },
     "openai-latest": {
-      "groups": [
-        {
-          "name": "workflow",
+      "groups": {
+        "workflow": {
           "agent": {
             "model": "openai/gpt-6-astra",
             "variant": "high"
           }
         },
-        {
-          "name": "planning",
+        "planning": {
           "agent": {
             "model": "openai/gpt-6-astra",
             "variant": "high"
           }
         },
-        {
-          "name": "developers",
+        "developers": {
           "agent": {
             "model": "openai/gpt-6.1-sol",
             "variant": "medium"
           }
         },
-        {
-          "name": "reviewers",
+        "reviewers": {
           "agent": {
             "model": "openai/gpt-6-astra",
             "variant": "high"
           }
         },
-        {
-          "name": "refactoring",
+        "refactoring": {
           "agent": {
             "model": "openai/gpt-6.1-sol",
             "variant": "medium"
           }
         },
-        {
-          "name": "documentation",
+        "documentation": {
           "agent": {
             "model": "openai/gpt-6-luna",
             "variant": "medium"
           }
         },
-        {
-          "name": "research",
+        "research": {
           "agent": {
             "model": "openai/gpt-6-luna",
             "variant": "medium"
           }
         }
-      ],
+      },
       "agent": {
         "doctrine-developer": {
           "model": "openai/gpt-6-astra",
@@ -303,57 +214,50 @@
       }
     },
     "anthropic-latest": {
-      "groups": [
-        {
-          "name": "workflow",
+      "groups": {
+        "workflow": {
           "agent": {
             "model": "anthropic/claude-opus-5-5",
             "variant": "high"
           }
         },
-        {
-          "name": "planning",
+        "planning": {
           "agent": {
             "model": "anthropic/claude-opus-5-5",
             "variant": "high"
           }
         },
-        {
-          "name": "developers",
+        "developers": {
           "agent": {
             "model": "anthropic/claude-sonnet-5-5",
             "variant": "medium"
           }
         },
-        {
-          "name": "reviewers",
+        "reviewers": {
           "agent": {
             "model": "anthropic/claude-opus-5-5",
             "variant": "high"
           }
         },
-        {
-          "name": "refactoring",
+        "refactoring": {
           "agent": {
             "model": "anthropic/claude-sonnet-5-5",
             "variant": "medium"
           }
         },
-        {
-          "name": "documentation",
+        "documentation": {
           "agent": {
             "model": "anthropic/claude-haiku-5-5",
             "variant": "medium"
           }
         },
-        {
-          "name": "research",
+        "research": {
           "agent": {
             "model": "anthropic/claude-haiku-5-5",
             "variant": "medium"
           }
         }
-      ],
+      },
       "agent": {
         "doctrine-developer": {
           "model": "anthropic/claude-opus-5-5",

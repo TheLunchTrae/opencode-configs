@@ -33,9 +33,12 @@ export const memberships: Record<string, string[]> = {
   system: ['summary', 'compaction', 'title'],
   'developer-delegation': ['doc-updater', 'refactor-cleaner'],
   'delegating-reviewers': ['code-reviewer', 'security-reviewer'],
+  'read-only': ['architect', 'planner', 'architecture-reviewer'],
+  'non-delegating-reviewer': ['csharp-reviewer', 'go-reviewer', 'php-reviewer', 'typescript-reviewer'],
 };
 export const movedPermissions = [
   'architect',
+  'architecture-reviewer',
   'code-reviewer',
   'code-simplifier',
   'csharp-developer',
@@ -60,7 +63,6 @@ export const movedPermissions = [
 ];
 export const movedModels = ['doctrine-developer', 'efcore-developer', 'implementation-lead', 'performance-optimizer'];
 export const retainedPolicies: Record<string, Permission> = {
-  'architecture-reviewer': { edit: 'deny', bash: 'deny' },
   'implementation-lead': {
     edit: 'allow',
     question: 'allow',
@@ -158,6 +160,7 @@ export const retainedPolicies: Record<string, Permission> = {
   },
 };
 export const expectedPolicies: Record<string, Permission> = {
+  'architecture-reviewer': { edit: 'deny', bash: 'deny' },
   ...Object.fromEntries(
     [
       'csharp-developer',
@@ -250,7 +253,7 @@ export function expectedModels(profile: string | null): Record<string, { model?:
     [...new Set(Object.values(memberships).flat())].map((name) => [name, {}]),
   );
   const allocations: Record<string, string[]> = {
-    current: ['openai/gpt-6-astra', 'openai/gpt-5.6-sol', 'openai/gpt-5.6-terra'],
+    primary: ['openai/gpt-6-astra', 'openai/gpt-5.6-sol', 'openai/gpt-5.6-terra'],
     'openai-latest': ['openai/gpt-6-astra', 'openai/gpt-6.1-sol', 'openai/gpt-6-luna'],
     'anthropic-latest': ['anthropic/claude-opus-5-5', 'anthropic/claude-sonnet-5-5', 'anthropic/claude-haiku-5-5'],
   };

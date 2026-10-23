@@ -2,6 +2,7 @@
 description: "Senior TypeScript/JavaScript developer for implementing features, fixing bugs, and modifying .ts / .tsx / .js / .jsx code. Writes type-safe, async-correct, idiomatic code across React, Next.js, and Node.js. Use for any TypeScript or JavaScript implementation task."
 mode: subagent
 color: "#8AF793"
+groups: [developers]
 ---
 
 {{include:implementation-standards.md}}

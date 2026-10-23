@@ -15,6 +15,7 @@ permission:
     php-reviewer: allow
     explore: allow
 color: "#EEF78A"
+groups: [reviewers]
 ---
 
 Assess existing work: coordinate independent reviews, execute requested checks, and consolidate findings and evidence.

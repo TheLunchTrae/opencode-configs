@@ -2,6 +2,7 @@
 description: "Dead code, unused export, and unused dependency cleanup specialist. Detects unreferenced files, stale dependencies, and duplicate logic across the codebase using language-appropriate static analysis. Use when removing dead code, unused dependencies, or leftover scaffolding."
 mode: subagent
 color: "#F45AE7"
+groups: [refactoring, developer-delegation]
 ---
 
 {{include:implementation-standards.md}}

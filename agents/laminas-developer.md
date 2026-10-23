@@ -2,6 +2,7 @@
 description: 'Laminas (formerly Zend Framework) developer for Laminas MVC, Mezzio (PSR-15), and Laminas API Tools. Writes PSR-7/PSR-15 middleware, service-manager factories, module configs, and Laminas\Form / Laminas\Db code. Layers on top of php-developer for language-level concerns. Use for any Laminas or Mezzio implementation task.'
 mode: subagent
 color: "#8AF793"
+groups: [developers]
 ---
 
 {{include:implementation-standards.md}}

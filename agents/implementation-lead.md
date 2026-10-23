@@ -30,6 +30,7 @@ permission:
     general: allow
     explore: allow
 color: "#8AF793"
+groups: [developers]
 ---
 
 Execute an existing reviewed, approved plan. Integrate implementation, documentation, independent

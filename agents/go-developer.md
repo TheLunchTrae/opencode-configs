@@ -2,6 +2,7 @@
 description: "Senior Go developer for implementing features, fixing bugs, and modifying .go code. Writes idiomatic Go with explicit error handling, proper context propagation, and safe goroutine/channel patterns. Use for any Go implementation task."
 mode: subagent
 color: "#8AF793"
+groups: [developers]
 ---
 
 {{include:implementation-standards.md}}
