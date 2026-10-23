@@ -27,14 +27,16 @@ Check the installed version against the [V1 documentation](https://opencode.ai/d
 
 ## Agents and model settings
 
-- Central group membership and profile model/variant allocations belong in `config-composer.jsonc`.
+- Agents own ordered group membership in their native files. Profile model aliases belong in `config-composer.jsonc`.
   Root `opencode.jsonc` owns global defaults, server plugin registrations, and built-in overrides.
-  `config-composer.jsonc` owns ordered `groups`, native named patches, `profiles`, and `defaultProfile`.
+  `config-composer.jsonc` owns name-keyed `groups`, native named patches, `profiles`, and `defaultProfile`.
   Keep the shipped agent, command, and skill definitions in their native files. The shipped groups target agents only.
-  Explicit authored native fields always win. Preserve all five complete frontmatter permission exceptions and their
-  ordered rules; the other 22 agent policies come from shared groups. Keep native global security policy unchanged.
-  The four stronger task-agent model/variant pairs belong in every profile, with no permanent frontmatter pins.
-  **Shared only** retains shared policies and system defaults while omitting task-profile allocations.
+  Explicit authored native fields always win. Preserve all four complete lead frontmatter permission exceptions and
+  their ordered rules. Native global edit and Task denials provide the fallback; shared groups grant required access.
+  Keep the system edit approval, read-only shell denial, secret read guards, and ordered global shell rules.
+  Profiles bind `reasoning`, `coding`, and `support`; groups and four root named reasoning overrides consume them.
+  Keep task model choices out of permanent frontmatter pins. Profile-only aliases have no effect in **Shared only**,
+  including variants; shared policies and the fixed system/title choices remain active.
 - Agent Markdown bodies are prompts. Declare shared fragments with explicit includes at their intended positions.
   Keep the shipped guidance in those bodies.
   Do not add a separate `prompt` frontmatter field.

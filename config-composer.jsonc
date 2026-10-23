@@ -2,35 +2,54 @@
   "$schema": "./node_modules/@lunchbox-labs/opencode-config-composer/schema.json",
   "defaultProfile": "primary",
   "groups": {
-    "workflow": {},
-    "planning": {},
+    "workflow": {
+      "agent": {
+        "modelRef": "reasoning"
+      }
+    },
+    "planning": {
+      "agent": {
+        "modelRef": "reasoning"
+      }
+    },
     "developers": {
       "agent": {
+        "modelRef": "coding",
         "permission": {
           "edit": "allow"
         }
       }
     },
-    "reviewers": {},
+    "reviewers": {
+      "agent": {
+        "modelRef": "reasoning"
+      }
+    },
     "refactoring": {
       "agent": {
+        "modelRef": "coding",
         "permission": {
           "edit": "allow"
         }
       }
     },
-    "documentation": {},
+    "documentation": {
+      "agent": {
+        "modelRef": "support"
+      }
+    },
     "research": {
       "agent": {
-        "permission": {
-          "edit": "deny"
-        }
+        "modelRef": "support"
       }
     },
     "system": {
       "agent": {
         "model": "openai/gpt-5.6-terra",
-        "variant": "medium"
+        "variant": "medium",
+        "permission": {
+          "edit": "ask"
+        }
       }
     },
     "developer-delegation": {
@@ -38,7 +57,6 @@
         "permission": {
           "edit": "allow",
           "task": {
-            "*": "deny",
             "typescript-developer": "allow",
             "go-developer": "allow",
             "csharp-developer": "allow",
@@ -50,9 +68,7 @@
     "delegating-reviewers": {
       "agent": {
         "permission": {
-          "edit": "deny",
           "task": {
-            "*": "deny",
             "typescript-reviewer": "allow",
             "go-reviewer": "allow",
             "csharp-reviewer": "allow",
@@ -64,16 +80,7 @@
     "read-only": {
       "agent": {
         "permission": {
-          "edit": "deny",
           "bash": "deny"
-        }
-      }
-    },
-    "non-delegating-reviewer": {
-      "agent": {
-        "permission": {
-          "edit": "deny",
-          "task": "deny"
         }
       }
     }
@@ -82,198 +89,66 @@
     "title": {
       "model": "openai/gpt-5.6-luna",
       "variant": "low"
+    },
+    "doctrine-developer": {
+      "modelRef": "reasoning"
+    },
+    "efcore-developer": {
+      "modelRef": "reasoning"
+    },
+    "implementation-lead": {
+      "modelRef": "reasoning"
+    },
+    "performance-optimizer": {
+      "modelRef": "reasoning"
     }
   },
   "profiles": {
     "primary": {
-      "groups": {
-        "workflow": {
-          "agent": {
-            "model": "openai/gpt-6-astra",
-            "variant": "high"
-          }
-        },
-        "planning": {
-          "agent": {
-            "model": "openai/gpt-6-astra",
-            "variant": "high"
-          }
-        },
-        "developers": {
-          "agent": {
-            "model": "openai/gpt-5.6-sol",
-            "variant": "medium"
-          }
-        },
-        "reviewers": {
-          "agent": {
-            "model": "openai/gpt-6-astra",
-            "variant": "high"
-          }
-        },
-        "refactoring": {
-          "agent": {
-            "model": "openai/gpt-5.6-sol",
-            "variant": "medium"
-          }
-        },
-        "documentation": {
-          "agent": {
-            "model": "openai/gpt-5.6-terra",
-            "variant": "medium"
-          }
-        },
-        "research": {
-          "agent": {
-            "model": "openai/gpt-5.6-terra",
-            "variant": "medium"
-          }
-        }
-      },
-      "agent": {
-        "doctrine-developer": {
+      "models": {
+        "reasoning": {
           "model": "openai/gpt-6-astra",
           "variant": "high"
         },
-        "efcore-developer": {
-          "model": "openai/gpt-6-astra",
-          "variant": "high"
+        "coding": {
+          "model": "openai/gpt-5.6-sol",
+          "variant": "medium"
         },
-        "implementation-lead": {
-          "model": "openai/gpt-6-astra",
-          "variant": "high"
-        },
-        "performance-optimizer": {
-          "model": "openai/gpt-6-astra",
-          "variant": "high"
+        "support": {
+          "model": "openai/gpt-5.6-terra",
+          "variant": "medium"
         }
       }
     },
     "openai-latest": {
-      "groups": {
-        "workflow": {
-          "agent": {
-            "model": "openai/gpt-6-astra",
-            "variant": "high"
-          }
-        },
-        "planning": {
-          "agent": {
-            "model": "openai/gpt-6-astra",
-            "variant": "high"
-          }
-        },
-        "developers": {
-          "agent": {
-            "model": "openai/gpt-6.1-sol",
-            "variant": "medium"
-          }
-        },
-        "reviewers": {
-          "agent": {
-            "model": "openai/gpt-6-astra",
-            "variant": "high"
-          }
-        },
-        "refactoring": {
-          "agent": {
-            "model": "openai/gpt-6.1-sol",
-            "variant": "medium"
-          }
-        },
-        "documentation": {
-          "agent": {
-            "model": "openai/gpt-6-luna",
-            "variant": "medium"
-          }
-        },
-        "research": {
-          "agent": {
-            "model": "openai/gpt-6-luna",
-            "variant": "medium"
-          }
-        }
-      },
-      "agent": {
-        "doctrine-developer": {
+      "models": {
+        "reasoning": {
           "model": "openai/gpt-6-astra",
           "variant": "high"
         },
-        "efcore-developer": {
-          "model": "openai/gpt-6-astra",
-          "variant": "high"
+        "coding": {
+          "model": "openai/gpt-6.1-sol",
+          "variant": "medium"
         },
-        "implementation-lead": {
-          "model": "openai/gpt-6-astra",
-          "variant": "high"
-        },
-        "performance-optimizer": {
-          "model": "openai/gpt-6-astra",
-          "variant": "high"
+        "support": {
+          "model": "openai/gpt-6-luna",
+          "variant": "medium"
         }
       }
     },
     "anthropic-latest": {
-      "groups": {
-        "workflow": {
-          "agent": {
-            "model": "anthropic/claude-opus-5-5",
-            "variant": "high"
-          }
-        },
-        "planning": {
-          "agent": {
-            "model": "anthropic/claude-opus-5-5",
-            "variant": "high"
-          }
-        },
-        "developers": {
-          "agent": {
-            "model": "anthropic/claude-sonnet-5-5",
-            "variant": "medium"
-          }
-        },
-        "reviewers": {
-          "agent": {
-            "model": "anthropic/claude-opus-5-5",
-            "variant": "high"
-          }
-        },
-        "refactoring": {
-          "agent": {
-            "model": "anthropic/claude-sonnet-5-5",
-            "variant": "medium"
-          }
-        },
-        "documentation": {
-          "agent": {
-            "model": "anthropic/claude-haiku-5-5",
-            "variant": "medium"
-          }
-        },
-        "research": {
-          "agent": {
-            "model": "anthropic/claude-haiku-5-5",
-            "variant": "medium"
-          }
-        }
-      },
-      "agent": {
-        "doctrine-developer": {
+      "models": {
+        "reasoning": {
           "model": "anthropic/claude-opus-5-5",
           "variant": "high"
         },
-        "efcore-developer": {
-          "model": "anthropic/claude-opus-5-5",
-          "variant": "high"
+        "coding": {
+          "model": "anthropic/claude-sonnet-5-5",
+          "variant": "medium"
         },
-        "implementation-lead": {
-          "model": "anthropic/claude-opus-5-5",
-          "variant": "high"
-        },
-        "performance-optimizer": {
-          "model": "anthropic/claude-opus-5-5",
-          "variant": "high"
+        "support": {
+          "model": "anthropic/claude-haiku-5-5",
+          "variant": "medium"
         }
       }
     }

@@ -132,22 +132,25 @@ For each agent, apply its listed groups in order, combining each group's shared 
 patch. Later groups win overlapping settings. Shared named settings and profile named settings follow; explicit
 native frontmatter stays final. Group definition order does not control membership precedence.
 
-Shared `read-only` and `non-delegating-reviewer` groups hold reusable restrictions. General receives edit permission
-from `developers`; Explore receives its edit denial from `research`. The four leads retain complete ordered
+Native global permissions deny edits and delegation by default. General receives edit permission from `developers`;
+Explore and reviewers inherit the edit denial. The shared `read-only` group also denies shell access, while the
+`system` group restores edit approval for internal agents. The four leads retain complete ordered
 frontmatter permission blocks because each has a different delegation allowlist. These whole fields are final;
-shortening them to only the differing task rules would discard group contributions. Global security rules stay
-unchanged in `opencode.jsonc`.
+shortening them to only the differing task rules would discard group contributions. Secret read guards and ordered
+shell rules stay in `opencode.jsonc`.
 
 ```yaml
-groups: [reviewers, non-delegating-reviewer]
+groups: [reviewers, read-only]
 ```
 
-Root/profile named agent patches keep deliberate model exceptions, including title's existing Luna 5.6/low allocation.
+Each profile binds `reasoning`, `coding`, and `support` aliases to model/variant pairs. Shared groups and the four
+root named reasoning exceptions consume those aliases. Profile-only references have no effect in **Shared only**,
+including their variants. The shared system and title model choices stay fixed, including title's Luna 5.6/low allocation.
 Native files retain prompts, modes, colors, provider options, and final authored overrides. Membership edits, like other
 configuration edits, require a server restart. Group or profile settings cannot replace an explicit authored agent frontmatter field.
 See the [Config Composer reference](https://github.com/lunchbox-labs/opencode-config-composer/wiki/Configuration-Reference).
 
-This layout requires Config Composer 0.2.0. The installed package supplies the schema. Both plugin lists register
+This layout requires Config Composer 0.3.0. The installed package supplies the schema. Both plugin lists register
 Config Composer before Prompt Composer and downstream plugins. Use the latest stable OpenCode V1 1.19.x within
 `package.json`'s supported range. V2 requires a separate port.
 Definition edits require filesystem access to the source files. Review profile previews before applying changes.

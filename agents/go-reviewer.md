@@ -2,7 +2,7 @@
 description: "Senior Go code reviewer. Reviews for idiomatic patterns, error handling, concurrency safety, and security. Use for all Go code changes."
 mode: subagent
 color: "#EEF78A"
-groups: [reviewers, non-delegating-reviewer]
+groups: [reviewers]
 ---
 
 {{include:review-guidance.md}}

@@ -62,6 +62,31 @@ const matches = (pattern: string, value: string) =>
 const outcome = (agent: Agent, tool: string, target: string) =>
   agent.permission.findLast((rule) => matches(rule.permission, tool) && matches(rule.pattern, target))?.action ?? 'ask';
 
+// The pre-migration policies remain a frozen behavioral oracle. Only edit/Task fallback
+// relocation may change their arrays; other tools and their ordering stay exact.
+const unchangedPolicy = (policy: Permission) =>
+  Object.fromEntries(Object.entries(policy).filter(([tool]) => !['edit', 'task'].includes(tool)));
+const policyRules = (policy: Permission) =>
+  Object.entries(policy).flatMap(([permission, value]) =>
+    Object.entries(typeof value === 'string' ? { '*': value } : value).map(([pattern, action]) => ({
+      permission,
+      pattern,
+      action,
+    })),
+  );
+const effectiveToolRules = (rules: Agent['permission'], tool: string) => {
+  const relevant = rules.filter((rule) => matches(rule.permission, tool));
+  assert.ok(relevant.every((rule) => rule.pattern === '*' || !/[*?]/.test(rule.pattern)));
+  const lastFallback = relevant.findLastIndex((rule) => rule.pattern === '*');
+  assert.ok(lastFallback >= 0, `${tool}: missing fallback`);
+  return relevant.slice(lastFallback).map(({ pattern, action }) => ({ pattern, action }));
+};
+const toolDisabled = (agent: Agent, tool: string) => {
+  const permission = ['edit', 'write', 'apply_patch'].includes(tool) ? 'edit' : tool;
+  const last = agent.permission.findLast((rule) => matches(rule.permission, permission));
+  return last?.pattern === '*' && last.action === 'deny';
+};
+
 // /config validates agent permissions in native schema order. Keep nested authored pattern order exact.
 const nativeAgentPolicy = (policy: Permission) =>
   Object.fromEntries(
@@ -69,7 +94,10 @@ const nativeAgentPolicy = (policy: Permission) =>
   );
 // This is the /config transport projection, not the authored or /agent evaluation order.
 const nativeGlobalPermission = Object.fromEntries(
-  ['read', 'edit', 'bash', 'task', 'github_*', 'playwright_*'].map((key) => [key, globalPermission[key]]),
+  ['read', 'edit', 'bash', 'task', 'github_*', 'playwright_*'].map((key) => [
+    key,
+    key === 'edit' ? { '*': 'deny' } : globalPermission[key],
+  ]),
 );
 
 test(
@@ -295,6 +323,8 @@ test(
         profile,
         selection: marker.selection.choice,
         runtimeStatus: marker.status,
+        fullConfig: cfg,
+        fullAgents: agents,
         globals: {
           model: cfg.model,
           small_model: cfg.small_model,
@@ -359,10 +389,18 @@ test(
         );
         assert.equal(agent.variant ?? undefined, allocation.variant, `${label}/${agent.name}: variant`);
         assert.equal(
-          JSON.stringify(cfg.agent[agent.name].permission ?? {}),
-          JSON.stringify(nativeAgentPolicy(expectedPolicies[agent.name])),
-          `${label}/${agent.name}: ordered authored policy`,
+          JSON.stringify(unchangedPolicy(cfg.agent[agent.name].permission ?? {})),
+          JSON.stringify(nativeAgentPolicy(unchangedPolicy(expectedPolicies[agent.name]))),
+          `${label}/${agent.name}: unchanged ordered authored policy`,
         );
+        const frozenRules = [...policyRules(globalPermission), ...policyRules(expectedPolicies[agent.name])];
+        for (const tool of ['edit', 'task']) {
+          assert.deepEqual(
+            effectiveToolRules(agent.permission, tool),
+            effectiveToolRules(frozenRules, tool),
+            `${label}/${agent.name}/${tool}: exhaustive ordered behavior partitions`,
+          );
+        }
         const previous = original.get(agent.name);
         assert.ok(previous !== undefined);
         if (JSON.stringify(agent.permission) !== JSON.stringify(previous.permission)) {
@@ -376,6 +414,13 @@ test(
           permissionSnapshot(previous),
           `${label}/${agent.name}: ordered native permissions`,
         );
+        for (const tool of ['edit', 'write', 'apply_patch', 'task']) {
+          assert.equal(
+            toolDisabled(agent, tool),
+            toolDisabled(previous, tool),
+            `${label}/${agent.name}/${tool}: visibility`,
+          );
+        }
         assert.deepEqual(agent.options, previous.options, `${label}/${agent.name}: retained options`);
         assert.equal(agent.prompt, previous.prompt, `${label}/${agent.name}: prompt`);
         assert.notEqual(agent.prompt?.includes('{{include:'), true, `${agent.name}: unresolved directive`);

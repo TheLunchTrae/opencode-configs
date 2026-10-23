@@ -58,7 +58,7 @@
       "rm -rf*": "deny"
     },
     "edit": {
-      "*": "ask"
+      "*": "deny"
     },
     "task": {
       "*": "deny"

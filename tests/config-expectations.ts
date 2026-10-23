@@ -34,7 +34,6 @@ export const memberships: Record<string, string[]> = {
   'developer-delegation': ['doc-updater', 'refactor-cleaner'],
   'delegating-reviewers': ['code-reviewer', 'security-reviewer'],
   'read-only': ['architect', 'planner', 'architecture-reviewer'],
-  'non-delegating-reviewer': ['csharp-reviewer', 'go-reviewer', 'php-reviewer', 'typescript-reviewer'],
 };
 export const movedPermissions = [
   'architect',
