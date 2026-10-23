@@ -22,8 +22,8 @@ try {
   const manifestText = await readFile(join(consumer, 'package.json'), 'utf8');
   const lockText = await readFile(join(consumer, 'package-lock.json'), 'utf8');
   const manifest = JSON.parse(manifestText);
-  assert.equal(manifest.dependencies['@lunchbox-labs/opencode-config-composer'], '0.1.0');
-  assert.equal(manifest.dependencies['@lunchbox-labs/opencode-prompt-composer'], '0.1.0');
+  assert.equal(manifest.dependencies['@lunchbox-labs/opencode-config-composer'], '0.2.0');
+  assert.equal(manifest.dependencies['@lunchbox-labs/opencode-prompt-composer'], '0.1.1');
   assert.equal(manifest.dependencies['opencode-config-composer'], undefined);
   run('npm', ['ci', '--ignore-scripts', '--no-audit', '--no-fund']);
   assert.equal(await readFile(join(consumer, 'package.json'), 'utf8'), manifestText);
@@ -32,12 +32,12 @@ try {
     await readFile(join(consumer, 'node_modules/@lunchbox-labs/opencode-config-composer/package.json'), 'utf8'),
   );
   assert.equal(installed.name, '@lunchbox-labs/opencode-config-composer');
-  assert.equal(installed.version, '0.1.0');
+  assert.equal(installed.version, '0.2.0');
   const prompt = JSON.parse(
     await readFile(join(consumer, 'node_modules/@lunchbox-labs/opencode-prompt-composer/package.json'), 'utf8'),
   );
   assert.equal(prompt.name, '@lunchbox-labs/opencode-prompt-composer');
-  assert.equal(prompt.version, '0.1.0');
+  assert.equal(prompt.version, '0.1.1');
   assert.equal(prompt.dependencies?.[installed.name], undefined, 'Prompt Composer must remain independent');
   assert.deepEqual(prompt.dependencies ?? {}, {}, 'Include-only Prompt Composer has no runtime dependencies');
   assert.equal(prompt.exports['./schema.json'], undefined);
@@ -93,7 +93,7 @@ try {
   assert.equal(await readFile(join(consumer, 'package.json'), 'utf8'), manifestText);
   assert.equal(await readFile(join(consumer, 'package-lock.json'), 'utf8'), lockText);
   console.log(
-    'Published Config Composer 0.1.0 and Prompt Composer 0.1.0 passed together at the minimum and current native versions; manifest and lock bytes are unchanged.',
+    'Published Config Composer 0.2.0 and Prompt Composer 0.1.1 passed together at the minimum and current native versions; manifest and lock bytes are unchanged.',
   );
 } finally {
   await rm(root, { recursive: true, force: true });

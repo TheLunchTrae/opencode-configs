@@ -76,7 +76,10 @@ test(
   'OpenCode 1.19 discovers shipped prompts and profiles without provider requests',
   { timeout: 120_000 },
   async (t) => {
-    for (const name of ['config', 'prompt']) {
+    for (const [name, version] of [
+      ['config', '0.2.0'],
+      ['prompt', '0.1.1'],
+    ]) {
       const installed = JSON.parse(
         await readFile(
           new URL(`../node_modules/@lunchbox-labs/opencode-${name}-composer/package.json`, import.meta.url),
@@ -85,8 +88,8 @@ test(
       ) as { version: string };
       assert.equal(
         installed.version,
-        '0.1.0',
-        'Install the published Composer 0.1.0 packages from the committed lockfile with npm ci.',
+        version,
+        'Install the published Composer packages from the committed lockfile with npm ci.',
       );
     }
     const root = await mkdtemp(join(tmpdir(), 'opencode-configs-native-'));
