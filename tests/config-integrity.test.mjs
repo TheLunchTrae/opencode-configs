@@ -30,7 +30,8 @@ const authoredAgents = Object.fromEntries(
       return [name.slice(0, -3), { ...document.toJS(), prompt: text.slice(header[0].length) }];
     }),
 );
-// These checks cover the concrete shipped policies; native tests exercise the packaged resolver.
+// This fixture projection checks the concrete shipped contributions, not general Composer merging.
+// Native tests exercise additive fallback/pattern composition through the installed package.
 const ownedGroups = (name) => authoredAgents[name]?.groups ?? config.agent[name]?.groups ?? [];
 const shippedSettings = (name, profile = null) => {
   let settings = { ...config.agent[name] };
@@ -736,7 +737,7 @@ test('published Composer registrations match locked dependencies and preserve na
   const dependencies = JSON.parse(read('package.json')).dependencies;
   const lock = JSON.parse(read('package-lock.json'));
   for (const [name, version] of [
-    ['config', '0.2.0'],
+    ['config', '0.3.0'],
     ['prompt', '0.1.1'],
   ]) {
     const dependency = `@lunchbox-labs/opencode-${name}-composer`;
@@ -749,7 +750,7 @@ test('published Composer registrations match locked dependencies and preserve na
     assert.match(lock.packages[`node_modules/${dependency}`].resolved, /^https:\/\/registry\.npmjs\.org\//);
   }
   assert.deepEqual(config.plugin.slice(0, 2), [
-    '@lunchbox-labs/opencode-config-composer@0.2.0',
+    '@lunchbox-labs/opencode-config-composer@0.3.0',
     '@lunchbox-labs/opencode-prompt-composer@0.1.1',
   ]);
   assert.equal(composer.$schema, './node_modules/@lunchbox-labs/opencode-config-composer/schema.json');

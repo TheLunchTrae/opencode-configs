@@ -10,6 +10,7 @@ import { parse } from 'jsonc-parser';
 import { nativeBinary } from './native-host.ts';
 import { waitForNativeReferences } from './native-references.ts';
 import { orderedSkillPermissions } from './native-skill-permissions.ts';
+import { effectivePatterns } from './permission-equivalence.ts';
 import {
   type Permission,
   expectedModels,
@@ -62,10 +63,8 @@ const matches = (pattern: string, value: string) =>
 const outcome = (agent: Agent, tool: string, target: string) =>
   agent.permission.findLast((rule) => matches(rule.permission, tool) && matches(rule.pattern, target))?.action ?? 'ask';
 
-// The pre-migration policies remain a frozen behavioral oracle. Only edit/Task fallback
-// relocation may change their arrays; other tools and their ordering stay exact.
-const unchangedPolicy = (policy: Permission) =>
-  Object.fromEntries(Object.entries(policy).filter(([tool]) => !['edit', 'task'].includes(tool)));
+// Pre-migration policies stay frozen. Compare ordered effective patterns rather
+// than duplicated native fallback rules materialized by the released Composer.
 const policyRules = (policy: Permission) =>
   Object.entries(policy).flatMap(([permission, value]) =>
     Object.entries(typeof value === 'string' ? { '*': value } : value).map(([pattern, action]) => ({
@@ -87,11 +86,6 @@ const toolDisabled = (agent: Agent, tool: string) => {
   return last?.pattern === '*' && last.action === 'deny';
 };
 
-// /config validates agent permissions in native schema order. Keep nested authored pattern order exact.
-const nativeAgentPolicy = (policy: Permission) =>
-  Object.fromEntries(
-    ['edit', 'bash', 'task', 'question'].filter((key) => Object.hasOwn(policy, key)).map((key) => [key, policy[key]]),
-  );
 // This is the /config transport projection, not the authored or /agent evaluation order.
 const nativeGlobalPermission = Object.fromEntries(
   ['read', 'edit', 'bash', 'task', 'github_*', 'playwright_*'].map((key) => [
@@ -105,7 +99,7 @@ test(
   { timeout: 120_000 },
   async (t) => {
     for (const [name, version] of [
-      ['config', '0.2.0'],
+      ['config', '0.3.0'],
       ['prompt', '0.1.1'],
     ]) {
       const installed = JSON.parse(
@@ -388,12 +382,24 @@ test(
           `${label}/${agent.name}: model`,
         );
         assert.equal(agent.variant ?? undefined, allocation.variant, `${label}/${agent.name}: variant`);
-        assert.equal(
-          JSON.stringify(unchangedPolicy(cfg.agent[agent.name].permission ?? {})),
-          JSON.stringify(nativeAgentPolicy(unchangedPolicy(expectedPolicies[agent.name]))),
-          `${label}/${agent.name}: unchanged ordered authored policy`,
-        );
         const frozenRules = [...policyRules(globalPermission), ...policyRules(expectedPolicies[agent.name])];
+        const configuredRules = [
+          ...policyRules(cfg.permission),
+          ...policyRules(cfg.agent[agent.name].permission ?? {}),
+        ];
+        const tools = [...new Set(frozenRules.map((rule) => rule.permission))].sort();
+        assert.deepEqual(
+          [...new Set(configuredRules.map((rule) => rule.permission))].sort(),
+          tools,
+          `${label}/${agent.name}: exact configured tool policy inventory`,
+        );
+        for (const tool of tools) {
+          assert.deepEqual(
+            effectivePatterns(configuredRules.filter((rule) => rule.permission === tool)),
+            effectivePatterns(frozenRules.filter((rule) => rule.permission === tool)),
+            `${label}/${agent.name}/${tool}: complete ordered configured behavior`,
+          );
+        }
         for (const tool of ['edit', 'task']) {
           assert.deepEqual(
             effectiveToolRules(agent.permission, tool),

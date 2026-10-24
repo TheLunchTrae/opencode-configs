@@ -22,7 +22,7 @@ try {
   const manifestText = await readFile(join(consumer, 'package.json'), 'utf8');
   const lockText = await readFile(join(consumer, 'package-lock.json'), 'utf8');
   const manifest = JSON.parse(manifestText);
-  assert.equal(manifest.dependencies['@lunchbox-labs/opencode-config-composer'], '0.2.0');
+  assert.equal(manifest.dependencies['@lunchbox-labs/opencode-config-composer'], '0.3.0');
   assert.equal(manifest.dependencies['@lunchbox-labs/opencode-prompt-composer'], '0.1.1');
   assert.equal(manifest.dependencies['opencode-config-composer'], undefined);
   run('npm', ['ci', '--ignore-scripts', '--no-audit', '--no-fund']);
@@ -32,7 +32,7 @@ try {
     await readFile(join(consumer, 'node_modules/@lunchbox-labs/opencode-config-composer/package.json'), 'utf8'),
   );
   assert.equal(installed.name, '@lunchbox-labs/opencode-config-composer');
-  assert.equal(installed.version, '0.2.0');
+  assert.equal(installed.version, '0.3.0');
   const prompt = JSON.parse(
     await readFile(join(consumer, 'node_modules/@lunchbox-labs/opencode-prompt-composer/package.json'), 'utf8'),
   );
@@ -59,6 +59,8 @@ try {
   assert.ok(schema.properties.command);
   assert.ok(schema.properties.groups);
   assert.ok(schema.properties.defaultProfile);
+  assert.ok(schema.properties.models);
+  assert.ok(schema.$defs.agent.properties.modelRef);
   for (const legacy of ['componentGroups', 'configurationPresets', 'profileShortcuts', 'selection']) {
     assert.equal(schema.properties[legacy], undefined, legacy);
   }
@@ -93,7 +95,7 @@ try {
   assert.equal(await readFile(join(consumer, 'package.json'), 'utf8'), manifestText);
   assert.equal(await readFile(join(consumer, 'package-lock.json'), 'utf8'), lockText);
   console.log(
-    'Published Config Composer 0.2.0 and Prompt Composer 0.1.1 passed together at the minimum and current native versions; manifest and lock bytes are unchanged.',
+    'Published Config Composer 0.3.0 and Prompt Composer 0.1.1 passed together at the minimum and current native versions; manifest and lock bytes are unchanged.',
   );
 } finally {
   await rm(root, { recursive: true, force: true });

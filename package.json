@@ -18,7 +18,7 @@
     "opencode": "1.19.x"
   },
   "dependencies": {
-    "@lunchbox-labs/opencode-config-composer": "0.2.0",
+    "@lunchbox-labs/opencode-config-composer": "0.3.0",
     "@lunchbox-labs/opencode-prompt-composer": "0.1.1",
     "@opencode-ai/plugin": "1.19.0",
     "jsonc-parser": "3.3.1",

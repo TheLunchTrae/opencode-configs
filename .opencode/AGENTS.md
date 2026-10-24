@@ -31,8 +31,9 @@ Check the installed version against the [V1 documentation](https://opencode.ai/d
   Root `opencode.jsonc` owns global defaults, server plugin registrations, and built-in overrides.
   `config-composer.jsonc` owns name-keyed `groups`, native named patches, `profiles`, and `defaultProfile`.
   Keep the shipped agent, command, and skill definitions in their native files. The shipped groups target agents only.
-  Explicit authored native fields always win. Preserve all four complete lead frontmatter permission exceptions and
-  their ordered rules. Native global edit and Task denials provide the fallback; shared groups grant required access.
+  Explicit authored native fields apply last; permissions combine distinct patterns and append exact replacements.
+  Updated tool blocks move last with retained rules. Preserve all four complete lead frontmatter permission exceptions
+  and their ordered rules. Native global edit and Task denials provide the fallback; shared groups grant required access.
   Keep the system edit approval, read-only shell denial, secret read guards, and ordered global shell rules.
   Profiles bind `reasoning`, `coding`, and `support`; groups and four root named reasoning overrides consume them.
   Keep task model choices out of permanent frontmatter pins. Profile-only aliases have no effect in **Shared only**,
@@ -206,10 +207,10 @@ Edit definitions externally in the shared settings file. `/profiles` selects **F
 Choices are saved per worktree outside the definitions file and survive server restarts.
 **Follow configured default** follows `defaultProfile`; **Shared only** keeps shared settings.
 The current profile stores a concrete allocation. `/view-configs` shows read-only definitions, configured and applied
-values, and origins. Explicit native frontmatter is final.
+values, and origins. Explicit native frontmatter applies last, including its permission rules.
 Built-in agents without authored prompts must retain native prompts.
 Preserve unrelated configuration, prompts, comments, explicit exceptions, and permissions when editing definitions.
-Keep group names and membership in the shared definitions.
+Keep group settings in the shared definitions and ordered membership in native agent files.
 Definitions load when each project directory first loads in the server process; profile switches use that capture.
 Restart that process after editing definitions or native files.
 

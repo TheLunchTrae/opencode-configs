@@ -57,7 +57,7 @@ See the [V2 migration guide](https://opencode.ai/v2/docs/migrate-v1/).
 2. Select models available from your authenticated provider. Global defaults are in `opencode.jsonc`.
    Agents declare ordered `groups` in frontmatter; native JSON agents use `agent.<name>.groups`.
    Shared settings and profile allocations are in `config-composer.jsonc`.
-   Explicit native frontmatter fields, including complete permission blocks, are final overrides.
+   Explicit native frontmatter applies last; permission rules combine with earlier contributions.
    After launch, use `/profiles` to select a worktree profile and `/view-configs` to inspect settings and origins.
    Edit definitions externally in `config-composer.jsonc`.
    See [agent groups and models](USAGE.md#agent-groups-and-models) for precedence and configuration examples.
@@ -185,7 +185,7 @@ Register Config Composer and Prompt Composer once each in both plugin lists, in 
 Use the latest stable OpenCode V1 1.19.x within `package.json`'s supported range.
 Keep group settings, native named patches, `profiles`, and `defaultProfile` in `config-composer.jsonc`.
 Each agent owns its ordered `groups` array; later entries win overlapping settings. Central member lists are removed.
-This layout requires Config Composer 0.2.0.
+This layout requires Config Composer 0.3.0.
 Preserve explicit `configFile` overrides and deliberate final native overrides. The four shipped stronger task-agent
 allocations now live in each profile; see the [allocation details](USAGE.md#shipped-profiles).
 

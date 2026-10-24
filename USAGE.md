@@ -52,7 +52,7 @@ Specialists receive task inputs and constraints without needing the lead's ident
 
 Use `/profiles` to select one worktree profile, with a preview and Apply confirmation while the instance is idle.
 Use `/view-configs` for read-only shared and profile definitions, configured and applied values, and origins.
-Explicit native frontmatter is final. Definitions load when each project directory first loads in the server process.
+Explicit native frontmatter applies last, including its permission rules. Definitions load when each project directory first loads in the server process.
 Edit definitions externally in `config-composer.jsonc`, then restart the server process to load changes.
 These controls do not send model requests. Check model availability in the running provider catalog;
 catalog presence does not establish account entitlement.
@@ -135,9 +135,10 @@ native frontmatter stays final. Group definition order does not control membersh
 Native global permissions deny edits and delegation by default. General receives edit permission from `developers`;
 Explore and reviewers inherit the edit denial. The shared `read-only` group also denies shell access, while the
 `system` group restores edit approval for internal agents. The four leads retain complete ordered
-frontmatter permission blocks because each has a different delegation allowlist. These whole fields are final;
-shortening them to only the differing task rules would discard group contributions. Secret read guards and ordered
-shell rules stay in `opencode.jsonc`.
+frontmatter permission blocks because each has a different delegation allowlist. Their rules apply last. Permission
+patterns combine: a later layer moves each touched tool block last with its retained rules, and replaces exact
+duplicate patterns by appending the new action. The leads' Task catch-alls keep their allowlists explicit.
+Secret read guards and ordered shell rules stay in `opencode.jsonc`.
 
 ```yaml
 groups: [reviewers, read-only]
@@ -147,7 +148,8 @@ Each profile binds `reasoning`, `coding`, and `support` aliases to model/variant
 root named reasoning exceptions consume those aliases. Profile-only references have no effect in **Shared only**,
 including their variants. The shared system and title model choices stay fixed, including title's Luna 5.6/low allocation.
 Native files retain prompts, modes, colors, provider options, and final authored overrides. Membership edits, like other
-configuration edits, require a server restart. Group or profile settings cannot replace an explicit authored agent frontmatter field.
+configuration edits, require a server restart. Group or profile settings cannot override authored frontmatter;
+distinct permission patterns remain combined.
 See the [Config Composer reference](https://github.com/lunchbox-labs/opencode-config-composer/wiki/Configuration-Reference).
 
 This layout requires Config Composer 0.3.0. The installed package supplies the schema. Both plugin lists register
