@@ -2,7 +2,7 @@
 description: "Senior C# and .NET code reviewer. Reviews for security, async patterns, type safety, and idiomatic .NET conventions. Use for all C# code changes."
 mode: subagent
 color: "#EEF78A"
-groups: [reviewers, non-delegating-reviewer]
+groups: [reviewers]
 ---
 
 {{include:review-guidance.md}}

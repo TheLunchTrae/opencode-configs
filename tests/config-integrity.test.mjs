@@ -30,25 +30,32 @@ const authoredAgents = Object.fromEntries(
       return [name.slice(0, -3), { ...document.toJS(), prompt: text.slice(header[0].length) }];
     }),
 );
-// These checks cover the concrete shipped policies; native tests exercise the packaged resolver.
+// This fixture projection checks the concrete shipped contributions, not general Composer merging.
+// Native tests exercise additive fallback/pattern composition through the installed package.
 const ownedGroups = (name) => authoredAgents[name]?.groups ?? config.agent[name]?.groups ?? [];
 const shippedSettings = (name, profile = null) => {
   let settings = { ...config.agent[name] };
   const apply = (patch = {}) => {
+    if (patch.modelRef !== undefined) {
+      const allocation =
+        (profile === null ? undefined : composer.profiles[profile].models?.[patch.modelRef]) ??
+        composer.models?.[patch.modelRef];
+      patch = { ...patch, ...allocation };
+    }
     const permission =
       patch.permission === undefined ? settings.permission : { ...settings.permission, ...patch.permission };
     settings = { ...settings, ...patch, ...(permission === undefined ? {} : { permission }) };
   };
   for (const groupName of ownedGroups(name)) {
     apply(composer.groups[groupName]?.agent);
-    apply(profile === null ? undefined : composer.profiles[profile].groups[groupName]?.agent);
+    apply(profile === null ? undefined : composer.profiles[profile].groups?.[groupName]?.agent);
   }
   apply(composer.agent?.[name]);
   apply(profile === null ? undefined : composer.profiles[profile].agent?.[name]);
   return { ...settings, ...authoredAgents[name] };
 };
 
-test('agents own ordered memberships and twelve name-keyed group definitions contain settings only', () => {
+test('agents own ordered memberships and eleven name-keyed group definitions contain settings only', () => {
   assert.equal(composer.defaultProfile, 'primary');
   assert.equal(Array.isArray(composer.groups), false);
   assert.deepEqual(Object.keys(composer.groups).sort(), Object.keys(memberships).sort());
@@ -59,7 +66,7 @@ test('agents own ordered memberships and twelve name-keyed group definitions con
   }
   for (const [profile, settings] of Object.entries(composer.profiles)) {
     assert.equal(Array.isArray(settings.groups), false, `${profile}: group patches are name-keyed`);
-    for (const [name, group] of Object.entries(settings.groups)) {
+    for (const [name, group] of Object.entries(settings.groups ?? {})) {
       assert.ok(Object.hasOwn(composer.groups, name), `${profile}/${name}: unknown group`);
       assert.equal(group.name, undefined, `${profile}/${name}: the map key names the group`);
       assert.equal(group.members, undefined, `${profile}/${name}: membership belongs to each agent`);
@@ -100,19 +107,66 @@ test('reusable policies are shared while four complete lead exceptions remain', 
   for (const [name, permission] of Object.entries(retainedPolicies)) {
     assert.equal(JSON.stringify(authoredAgents[name].permission), JSON.stringify(permission), name);
   }
-  assert.equal(JSON.stringify(config.permission), JSON.stringify(globalPermission));
+  assert.equal(JSON.stringify(config.permission), JSON.stringify({ ...globalPermission, edit: { '*': 'deny' } }));
 });
 
-test('four profile allocations replace frontmatter model and variant pairs', () => {
+test('profile aliases preserve allocations and shared-only model exceptions remain dormant', () => {
   for (const [name, agent] of Object.entries(authoredAgents)) {
     assert.equal(agent.model, undefined, `${name}: unexpected permanent model pin`);
     assert.equal(agent.variant, undefined, `${name}: unexpected permanent variant pin`);
   }
+  assert.equal(composer.models, undefined, 'task allocations belong to profiles');
+  for (const [group, alias] of Object.entries({
+    workflow: 'reasoning',
+    planning: 'reasoning',
+    developers: 'coding',
+    reviewers: 'reasoning',
+    refactoring: 'coding',
+    documentation: 'support',
+    research: 'support',
+  })) {
+    assert.equal(composer.groups[group].agent.modelRef, alias, group);
+  }
+  for (const name of movedModels) {
+    assert.deepEqual(composer.agent[name], { modelRef: 'reasoning' }, name);
+  }
   for (const [profile, settings] of Object.entries(composer.profiles)) {
-    assert.deepEqual(Object.keys(settings.agent), movedModels, profile);
-    for (const name of movedModels) {
-      assert.deepEqual(settings.agent[name], expectedModels(profile)[name], `${profile}/${name}`);
+    assert.deepEqual(Object.keys(settings.models), ['reasoning', 'coding', 'support'], profile);
+    assert.equal(settings.agent, undefined, 'common named overrides belong at the root');
+    assert.equal(settings.groups, undefined, 'groups consume the profile aliases');
+    const expected = expectedModels(profile);
+    for (const [alias, name] of [
+      ['reasoning', 'architect'],
+      ['coding', 'general'],
+      ['support', 'explore'],
+    ]) {
+      assert.deepEqual(settings.models[alias], expected[name], `${profile}/${alias}`);
     }
+  }
+});
+
+test('native fallbacks replace only redundant shared denials', () => {
+  assert.deepEqual(composer.groups.system.agent, {
+    model: 'openai/gpt-5.6-terra',
+    variant: 'medium',
+    permission: { edit: 'ask' },
+  });
+  assert.deepEqual(composer.groups.research.agent, { modelRef: 'support' });
+  assert.deepEqual(composer.groups['read-only'].agent.permission, { bash: 'deny' });
+  assert.equal(composer.groups['non-delegating-reviewer'], undefined);
+  for (const [group, name] of [
+    ['developer-delegation', 'doc-updater'],
+    ['delegating-reviewers', 'code-reviewer'],
+  ]) {
+    const { '*': fallback, ...grants } = expectedPolicies[name].task;
+    assert.equal(fallback, 'deny');
+    assert.equal(
+      JSON.stringify(composer.groups[group].agent.permission),
+      JSON.stringify({
+        ...(group === 'developer-delegation' ? { edit: 'allow' } : {}),
+        task: grants,
+      }),
+    );
   }
 });
 
@@ -128,17 +182,24 @@ test('all 32 allocations and complete ordered policies match in each profile and
         `${profile}/${name}`,
       );
       assert.equal(
-        JSON.stringify(actual.permission ?? {}),
-        JSON.stringify(expectedPolicies[name]),
-        `${profile}/${name}: policy order`,
+        JSON.stringify(unchangedPolicy(actual.permission ?? {})),
+        JSON.stringify(unchangedPolicy(expectedPolicies[name])),
+        `${profile}/${name}: unchanged policy order`,
       );
+      for (const tool of ['edit', 'task']) {
+        assert.deepEqual(
+          effectiveToolRules([config.permission, actual.permission ?? {}], tool),
+          effectiveToolRules([globalPermission, expectedPolicies[name]], tool),
+          `${profile}/${name}/${tool}: complete ordered behavior partitions`,
+        );
+      }
     }
   }
 });
 
 test('shared policies retain delegate, read, and shell outcomes without widening', () => {
   for (const name of Object.keys(expectedPolicies)) {
-    const policy = { ...config.permission, ...shippedSettings(name).permission };
+    const policy = [config.permission, shippedSettings(name).permission ?? {}];
     assert.equal(configuredAction('task', 'unlisted-agent', policy), 'deny', name);
     assert.equal(configuredAction('read', 'secrets/token', policy), 'deny', name);
     assert.equal(configuredAction('bash', 'git reset --hard HEAD', policy), 'deny', name);
@@ -154,7 +215,7 @@ test('shared policies retain delegate, read, and shell outcomes without widening
     ['planning-lead', 'planner'],
   ]) {
     assert.equal(
-      configuredAction('task', target, { ...config.permission, ...shippedSettings(name).permission }),
+      configuredAction('task', target, [config.permission, shippedSettings(name).permission ?? {}]),
       'allow',
       name,
     );
@@ -172,7 +233,7 @@ const matchesPolicyPattern = (pattern, input) => {
 };
 const configuredAction = (permission, input, policy = config.permission) => {
   let action;
-  for (const [name, rules] of Object.entries(policy)) {
+  for (const [name, rules] of (Array.isArray(policy) ? policy : [policy]).flatMap(Object.entries)) {
     if (!matchesPolicyPattern(name, permission)) {
       continue;
     }
@@ -188,6 +249,22 @@ const configuredAction = (permission, input, policy = config.permission) => {
   }
   return action;
 };
+
+// Edit and Task contain only wildcard fallbacks and literal names. Everything before the
+// final wildcard is shadowed for every input; keep the entire ordered suffix exact.
+const effectiveToolRules = (policies, tool) => {
+  const rules = policies.flatMap((policy) =>
+    Object.entries(policy).flatMap(([permission, value]) =>
+      permission === tool ? Object.entries(typeof value === 'string' ? { '*': value } : value) : [],
+    ),
+  );
+  assert.ok(rules.every(([pattern]) => pattern === '*' || !/[*?]/.test(pattern)));
+  const lastFallback = rules.findLastIndex(([pattern]) => pattern === '*');
+  assert.ok(lastFallback >= 0, `${tool}: missing fallback`);
+  return rules.slice(lastFallback);
+};
+const unchangedPolicy = (policy) =>
+  Object.fromEntries(Object.entries(policy).filter(([tool]) => !['edit', 'task'].includes(tool)));
 
 const skills = readdirSync(new URL('skills/', root)).filter((name) =>
   existsSync(new URL(`skills/${name}/SKILL.md`, root)),
@@ -399,8 +476,11 @@ test('the default and focused leads are selectable primary agents', () => {
   assert.equal(agents['planning-lead'].bash, 'deny');
 });
 
-test('Explore explicitly denies edits after global permissions are applied', () => {
-  assert.equal(shippedSettings('explore').permission?.edit, 'deny');
+test('native edit fallback denies Explore and shared system agents retain ask', () => {
+  for (const name of ['explore', 'summary', 'compaction', 'title']) {
+    const action = configuredAction('edit', 'src/file.ts', [config.permission, shippedSettings(name).permission ?? {}]);
+    assert.equal(action, name === 'explore' ? 'deny' : 'ask', name);
+  }
 });
 
 test('only primary leads receive an explicit Question tool grant', () => {
@@ -517,7 +597,7 @@ test('Git inspection accepts flexible arguments while output-writing forms requi
   ]) {
     assert.equal(configuredAction('bash', command), 'deny', command);
   }
-  assert.equal(configuredAction('edit', 'src/index.ts'), 'ask');
+  assert.equal(configuredAction('edit', 'src/index.ts'), 'deny');
   for (const name of ['planning-lead', 'planner', 'architect', 'architecture-reviewer']) {
     assert.equal(agents[name].bash, 'deny', name);
   }
@@ -657,7 +737,7 @@ test('published Composer registrations match locked dependencies and preserve na
   const dependencies = JSON.parse(read('package.json')).dependencies;
   const lock = JSON.parse(read('package-lock.json'));
   for (const [name, version] of [
-    ['config', '0.2.0'],
+    ['config', '0.3.0'],
     ['prompt', '0.1.1'],
   ]) {
     const dependency = `@lunchbox-labs/opencode-${name}-composer`;
@@ -670,7 +750,7 @@ test('published Composer registrations match locked dependencies and preserve na
     assert.match(lock.packages[`node_modules/${dependency}`].resolved, /^https:\/\/registry\.npmjs\.org\//);
   }
   assert.deepEqual(config.plugin.slice(0, 2), [
-    '@lunchbox-labs/opencode-config-composer@0.2.0',
+    '@lunchbox-labs/opencode-config-composer@0.3.0',
     '@lunchbox-labs/opencode-prompt-composer@0.1.1',
   ]);
   assert.equal(composer.$schema, './node_modules/@lunchbox-labs/opencode-config-composer/schema.json');
