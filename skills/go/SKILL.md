@@ -1,3 +1,8 @@
+---
+name: go
+description: Use when implementing, planning, or reviewing Go code, especially goroutine lifetime, cancellation, channels, and resource ownership.
+---
+
 # Go guidance
 
 Apply project conventions and the installed Go version.

@@ -50,10 +50,5 @@ Zero exit status with no expected tests collected does not prove acceptance.
 Do not invent a runner or install packages to hide missing configuration.
 Do not suppress warnings or weaken assertions. Record warnings against the project's policy.
 Report action items for the implementer. A verification report does not authorize edits or remote actions.
-For delegated verification, use the supplied Common task response envelope and Research response below.
-Include these check statuses in evidence. The supplied response sections apply only to delegated verification.
+Include these check statuses, source state, commands, and limits in the report.
 Task status describes assignment completion, not passing checks.
-
-{{include:response-formats/common.md}}
-
-{{include:response-formats/research.md}}

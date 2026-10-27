@@ -32,22 +32,9 @@ Before pure refactors, preserve existing outputs with characterization tests. Gr
 For a documentation-only change, use relevant structural checks rather than inventing a unit test.
 Without an accepted exclusion, report unavailable required execution as `BLOCKED` with the missing
 dependency or environment.
-Describe unrun checks as plans. Use the common response rules for overall task status.
+Describe unrun checks as plans. Distinguish task completion from passing checks.
 Do not install new tooling, access production data, or bypass permissions to produce a green result.
 Respect the remaining task budget; return blockers when it is exhausted.
 
-## Task response guidance
-
-Use the common envelope below for task responses. Use the Implementation response for assigned changes, with
-observed red/green evidence. Use the Research response only for research-only assignments or explicitly assigned
-check execution without edits.
-
-{{include:response-formats/common.md}}
-
-For assigned implementation, use this profile under `Result`:
-
-{{include:response-formats/implementation.md}}
-
-For research-only assignments or explicitly assigned check execution without edits, use this profile under `Result`:
-
-{{include:response-formats/research.md}}
+Report changed behavior, observed red/green evidence, regression results, and limits. Research-only assignments
+return findings without edits. Execution-only assignments do not authorize repairs.

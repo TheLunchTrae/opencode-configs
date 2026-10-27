@@ -1,3 +1,8 @@
+---
+name: typescript
+description: Use when implementing, planning, or reviewing TypeScript, JavaScript, React, or Node.js code with runtime validation, async ownership, or component boundaries.
+---
+
 # TypeScript and JavaScript guidance
 
 Apply project conventions and the installed language, runtime, and framework versions.
@@ -35,6 +40,9 @@ These examples do not imply that the tools are installed or that those exact com
 When React is present, check hooks ordering, dependency arrays, stale closures, and stable keys for reorderable lists.
 For frameworks with Server and Client Components, keep hooks and browser APIs within the correct boundary.
 Do not move an entire tree to the client to hide a boundary error.
+Use effects for external synchronization; compute derived values during render.
+Memoize only for measured cost or required identity stability. Inspect parent components and installed state,
+data, and framework libraries before choosing patterns. Use existing accessible queries and journey tests.
 
 ## Security-sensitive boundaries
 

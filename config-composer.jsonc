@@ -2,43 +2,24 @@
   "$schema": "./node_modules/@lunchbox-labs/opencode-config-composer/schema.json",
   "defaultProfile": "primary",
   "groups": {
-    "workflow": {
+    "reasoning": {
       "agent": {
         "modelRef": "reasoning"
       }
     },
-    "planning": {
+    "coding": {
       "agent": {
-        "modelRef": "reasoning"
+        "modelRef": "coding"
       }
     },
-    "developers": {
+    "writers": {
       "agent": {
-        "modelRef": "coding",
         "permission": {
           "edit": "allow"
         }
       }
     },
-    "reviewers": {
-      "agent": {
-        "modelRef": "reasoning"
-      }
-    },
-    "refactoring": {
-      "agent": {
-        "modelRef": "coding",
-        "permission": {
-          "edit": "allow"
-        }
-      }
-    },
-    "documentation": {
-      "agent": {
-        "modelRef": "support"
-      }
-    },
-    "research": {
+    "support": {
       "agent": {
         "modelRef": "support"
       }
@@ -52,35 +33,14 @@
         }
       }
     },
-    "developer-delegation": {
-      "agent": {
-        "permission": {
-          "edit": "allow",
-          "task": {
-            "typescript-developer": "allow",
-            "go-developer": "allow",
-            "csharp-developer": "allow",
-            "php-developer": "allow"
-          }
-        }
-      }
-    },
-    "delegating-reviewers": {
-      "agent": {
-        "permission": {
-          "task": {
-            "typescript-reviewer": "allow",
-            "go-reviewer": "allow",
-            "csharp-reviewer": "allow",
-            "php-reviewer": "allow"
-          }
-        }
-      }
-    },
     "read-only": {
       "agent": {
         "permission": {
-          "bash": "deny"
+          "bash": "deny",
+          "edit": "deny",
+          "task": "deny",
+          "github_*": "deny",
+          "playwright_*": "deny"
         }
       }
     }
@@ -89,18 +49,6 @@
     "title": {
       "model": "openai/gpt-5.6-luna",
       "variant": "low"
-    },
-    "doctrine-developer": {
-      "modelRef": "reasoning"
-    },
-    "efcore-developer": {
-      "modelRef": "reasoning"
-    },
-    "implementation-lead": {
-      "modelRef": "reasoning"
-    },
-    "performance-optimizer": {
-      "modelRef": "reasoning"
     }
   },
   "profiles": {

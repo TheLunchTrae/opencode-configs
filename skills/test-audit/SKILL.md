@@ -63,17 +63,10 @@ Report any unavailable validation without claiming that the cleanup is verified.
 
 ## Return the assessment
 
-Use the common task-response envelope below. For assessment, apply the assessment guidance and Review response.
-For approved cleanup, use the Implementation response. Use the Research response only for research-only assignments
-or explicitly assigned check execution without edits.
-Put candidate decisions, evidence, coverage gaps, and uncertainty in the existing profile.
+Report candidate decisions, evidence, coverage gaps, and uncertainty. For cleanup, include changes and verification.
 Separate inspected scope from unassessed suites. Report valuable apparent false positives, preserved contracts,
 test-support changes, executed checks, and necessary follow-up.
 Keep plans and execution logs in conversation or an authorized task location. An audit does not authorize shipping.
-
-## Task response envelope
-
-{{include:response-formats/common.md}}
 
 ## Assessment guidance
 
@@ -84,17 +77,3 @@ and reviewed authorization.
 {{include:review-guidance.md}}
 
 The assessment-only guidance above does not grant edit authority or restrict separately approved cleanup.
-
-## Task response profiles
-
-For suite assessments, use this profile under `Result`:
-
-{{include:response-formats/review.md}}
-
-For approved cleanup, use this profile under `Result`:
-
-{{include:response-formats/implementation.md}}
-
-For research-only assignments or explicitly assigned check execution without edits, use this profile under `Result`:
-
-{{include:response-formats/research.md}}

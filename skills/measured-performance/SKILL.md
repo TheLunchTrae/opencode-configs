@@ -28,11 +28,7 @@ Do not rank a hot loop over startup without evidence about the actual workload.
 A faster microbenchmark does not prove a faster application; different datasets do not establish fair comparisons.
 Do not invent an improvement percentage, significance claim, or fixed speedup quota.
 Report unsafe or unavailable required measurement as blocked, with a proposed in-scope measurement plan.
-Use common task-status rules; a measurement-plan assignment can be complete without execution.
+Distinguish task completion from measured results; a measurement-plan assignment can be complete without execution.
 Preserve original benchmark evidence. Do not delete user work or alter the acceptance target to hide a regression.
 
-{{include:response-formats/common.md}}
-
-{{include:response-formats/performance.md}}
-
-{{include:response-formats/research.md}}
+Return the baseline, changed behavior, comparable measurements, correctness checks, and unresolved limits.
