@@ -7,8 +7,8 @@ description: Design and implement reliable end-to-end tests for new features or 
 
 Read `@agent-references/testing-standards.md` and applicable project and language guidance.
 Honor assigned role, approved scope, and verification limits. Design-only work does not edit or execute.
-Implementation needs a reviewed, approved design covering any harness or dependency changes.
-Reuse feature-plan approval that covers this work.
+Confirm that authorization covers any harness or dependency changes. Reuse the feature plan when it covers this work.
+Seek design review when consequential integration risks warrant it.
 
 ## Design the evidence
 
@@ -70,15 +70,4 @@ unconditional waits, or optional assertions. Record retry-only passes and unreso
 Return the coverage map, real and substituted boundaries, commands, source state, results, and remaining gaps.
 Separate authored tests from executed proof. Unavailable integrations and approved exclusions do not count as passes.
 Update the project's existing test instructions with necessary setup, execution, and cleanup details.
-Use the supplied Common task response envelope for task responses.
-Select the supplied Plan response for design, Implementation response for edits, or Research response for
-execution-only assignments. Apply only the selected profile's Result sections.
 Do not apply repairs during verification.
-
-{{include:response-formats/common.md}}
-
-{{include:response-formats/plan.md}}
-
-{{include:response-formats/implementation.md}}
-
-{{include:response-formats/research.md}}

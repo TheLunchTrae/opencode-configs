@@ -1,3 +1,8 @@
+---
+name: csharp
+description: Use when implementing, planning, or reviewing C# and .NET code with nullable contracts, disposal, cancellation, or query boundaries.
+---
+
 # C# and .NET guidance
 
 Apply project conventions and the installed language, framework, and package versions.

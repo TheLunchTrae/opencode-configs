@@ -54,15 +54,15 @@ Create a compact coverage map. For each behavior, include:
 Choose the smallest level exercising the contract. Use integration or end-to-end coverage when unit
 tests are insufficient.
 Use `end-to-end-tests` for complete journeys; include its boundaries and fixtures in this map.
-Follow the framework agent's provider and runtime guidance.
+Load relevant stack skills for provider and runtime guidance.
 For missing in-scope harnesses, propose the smallest suitable setup using the project's language and available tools.
 For excluded infrastructure, report the accepted limit and reuse permitted coverage without proposing a harness.
 Explicitly list new dependencies, testability refactors, CI changes, and external environment needs in the design.
 Use `project-standards` only for deliberate tooling or convention adoption; routine tests do not require it.
 
-Before generating tests, require a reviewed, approved design covering files, commands, and
-exclusions. Reuse same-scope approval.
-Design-only assignments return the design and outstanding reviews.
+Before generating tests, confirm that authorization covers files, commands, and exclusions.
+Reuse the existing plan and seek design review when consequential coverage or infrastructure risks warrant it.
+Design-only assignments return the design and unresolved decisions.
 
 ## Generate maintainable tests
 
@@ -101,9 +101,8 @@ Resolve assigned findings within approved scope and budget.
 
 ## Hand off and reuse
 
-Use the common task-response envelope below. Select the Plan response for design-only tasks, the Implementation
-response after test implementation, or the Research response for inspection or check execution without edits.
-Include the coverage map under the profile's acceptance or coverage section.
+Return the coverage map, changed tests, actual checks, and limits. Keep design-only, execution-only, and implementation
+results distinct.
 
 Update existing test documentation with prerequisites, setup, commands, cleanup, covered contracts, and known limits.
 Keep it concise and colocated with project guidance. Keep plans and execution logs in conversation or the authorized
@@ -115,21 +114,3 @@ Update expectations only for a reviewed requirement change, never simply because
 Rerun affected checks on current source and environment. Passing baselines verify only behavior
 exercised by their assertions.
 Report uncovered changes and stale evidence; do not claim full verification.
-
-## Task response envelope
-
-{{include:response-formats/common.md}}
-
-## Task response profiles
-
-For design-only tasks, use this profile under `Result`:
-
-{{include:response-formats/plan.md}}
-
-After test implementation, use this profile under `Result`:
-
-{{include:response-formats/implementation.md}}
-
-For inspection or check execution without edits, use this profile under `Result`:
-
-{{include:response-formats/research.md}}

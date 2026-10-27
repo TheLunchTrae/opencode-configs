@@ -10,7 +10,7 @@
   "model": "openai/gpt-6-astra",
   "small_model": "openai/gpt-5.6-luna",
   "subagent_depth": 2,
-  "default_agent": "workflow-lead",
+  "default_agent": "builder",
   "references": {
     "agent-references": {
       "path": "./references/agent",
@@ -74,11 +74,11 @@
       "disable": true
     },
     "general": {
-      "groups": ["developers"],
+      "groups": ["coding", "writers"],
       "color": "#8AF793"
     },
     "explore": {
-      "groups": ["research"],
+      "groups": ["support"],
       "color": "#8AEEF7"
     },
     "summary": {

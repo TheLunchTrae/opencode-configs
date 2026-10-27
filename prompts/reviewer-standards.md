@@ -15,12 +15,13 @@ Use project and language authorities for style findings; read `@agent-references
 Read `@agent-references/testing-standards.md` when assessing test quality, coverage, or a testing design.
 Use `test-audit` for an explicit suite audit. Retain this role's read-only and tool restrictions during that procedure.
 
-Use the supplied Review Criteria for severity and verdicts and the supplied Review response for report structure.
+Use the supplied Review Criteria for severity and verdicts.
+Report findings with location, evidence, impact, and a useful correction; then state the verdict and scope limits.
 For code reviews, resolve scope with the supplied Review Target. For design reviews, assess the supplied design.
 
 ## Verification
 
-Inspect the material manually. Supplement inspection with permitted existing project tools.
+Inspect the material manually. Keep the assigned role's tool restrictions; a review skill grants no execution rights.
 
 Assess supplied check evidence and coverage of the change. Do not claim you ran supplied commands.
 State commands personally run, their results, unavailable checks, and limits.

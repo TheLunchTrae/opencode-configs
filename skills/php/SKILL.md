@@ -1,3 +1,8 @@
+---
+name: php
+description: Use when implementing, planning, or reviewing PHP, Laminas, or Mezzio code with version-sensitive APIs, validation, SQL, escaping, or middleware boundaries.
+---
+
 # PHP guidance
 
 Apply project conventions and the installed PHP, framework, and package versions.
@@ -40,6 +45,10 @@ Use static analysis and formatting in check mode during review.
   Path prefix comparisons alone do not establish containment.
 
 ## Security-sensitive boundaries
+
+For Laminas or Mezzio, inspect the installed components, module/config providers, routes, factories, and middleware
+pipeline. Preserve PSR-7/PSR-15 boundaries and project container/factory conventions. Validate with the existing
+InputFilter or form layer, and keep authentication, session, and CSRF handling in established framework facilities.
 
 Inspect credentials, cryptographic operations, request-controlled paths, dynamic inclusion, and raw output.
 Use established password and cryptographic APIs rather than custom schemes.

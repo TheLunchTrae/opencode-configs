@@ -20,9 +20,8 @@
   Do not add words solely for pleasantness.
 - Assignments need the task, scope, constraints, context, expected output, relevant interfaces, and prior findings.
   Do not assume shared context.
-- Use the assigned canonical response profile. Keep required sections; use `None` when empty.
-  Include evidence, verification limits, risks, and needed decisions. Omit optional empty sections
-  and routine narration.
+- Report the result, evidence, verification limits, risks, and needed decisions in a concise task-appropriate form.
+  Omit empty sections and routine narration.
 - On follow-up, report new information and changed conclusions. Repeat context only when needed to act correctly.
 - Preserve necessary evidence, uncertainty, safety information, and requirements. Keep identifiers, paths, commands,
   and error text exact. Avoid ambiguous abbreviations.
@@ -46,6 +45,15 @@
 
 Read `@agent-references/global-coding-style.md` before code-related analysis, design, planning, implementation, or review.
 Also read it for code examples and docstrings. Do not apply coding-style rules to documentation prose.
+
+## Conditional stack guidance
+
+For implementation, planning, or review, load the relevant native skill with the `skill` tool:
+`go` for Go, `typescript` for TS/JS and React, `csharp` for .NET, `php` for PHP and Laminas/Mezzio,
+`persistence` for EF Core or Doctrine, and `ci` for GitHub Actions or GitLab CI.
+Load only skills relevant to the affected code. Inspect installed versions before applying their guidance.
+Skills never grant permissions or override read-only assignments. If the skill tool is unavailable, report the gap
+and read its source only through permitted tools; do not claim native skill composition occurred.
 
 ## Technical Documentation Standard
 

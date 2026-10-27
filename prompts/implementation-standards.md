@@ -29,9 +29,8 @@ Apply its boundary to the guidance below.
 
 ## Return evidence
 
-Use the agent's canonical response profile. The supplied Implementation response covers implementation;
-the supplied Research response covers research-only assignments. Use the specialized performance or
-documentation profile when the task requires it.
+Report changed behavior, inspected scope, source state, actual check results, and unresolved limits.
+For research-only work, return source-grounded findings and do not imply implementation occurred.
 
 Implementation evidence does not authorize a commit, push, deployment, or other external action.
 Honor the task's authorization boundaries and report unmet prerequisites without expanding the assignment.
