@@ -23,20 +23,21 @@ const MAX_DEPTH = 8;
 const SKIPPED_KEYS: ReadonlySet<string> = new Set(['attachments', 'data', 'blob']);
 
 // Key blocks are matched by their body, so code that merely mentions a BEGIN or END marker stays readable.
-// Lines may carry the read tool's `N: ` prefix. Bodies are long base64 lines, optionally after armor headers.
-const LINE = '\\r?\\n(?:\\d+: )?';
+// A line break is a real newline or an escaped \n inside a JSON or code string. Lines may be indented, as in YAML,
+// and may carry the read tool's `N: ` or the grep tool's `Line N: ` prefix. Bodies are long base64 lines,
+// optionally after armor headers.
+const PREFIX = '[ \\t]*(?:\\d+: |Line \\d+: )?';
+const LINE = `(?:\\r?\\n|\\\\n)${PREFIX}`;
+const LINE_START = `(?:(?<=^|\\n)|(?<=\\\\n))${PREFIX}`;
 const KEY_BEGIN = '-----BEGIN [A-Z0-9 ]*PRIVATE KEY(?: BLOCK)?-----';
 const KEY_END = '-----END [A-Z0-9 ]*PRIVATE KEY(?: BLOCK)?-----';
-const KEY_HEADERS = `(?:${LINE}(?:[A-Za-z][\\w-]*: [^\\n]*)?)*?`;
+const KEY_HEADERS = `(?:${LINE}(?:[A-Za-z][\\w-]*: [^\\n\\\\]*)?)*?`;
 const KEY_BODY = `(?:${LINE}[A-Za-z0-9+/=]{32,})+(?:${LINE}[A-Za-z0-9+/=]+)?`;
 const REDACTIONS: readonly (readonly [string, RegExp])[] = [
   // A block ends at its END line or, when output was cut, after its last body line.
   ['private-key', new RegExp(`${KEY_BEGIN}${KEY_HEADERS}${KEY_BODY}(?:${LINE}${KEY_END})?`, 'g')],
   // Body lines followed by END without BEGIN mean the text starts inside a key, as with an offset read.
-  [
-    'private-key',
-    new RegExp(`(?<=^|\\n)(?:\\d+: )?[A-Za-z0-9+/=]{32,}(?:${LINE}[A-Za-z0-9+/=]+)*${LINE}${KEY_END}`, 'g'),
-  ],
+  ['private-key', new RegExp(`${LINE_START}[A-Za-z0-9+/=]{32,}(?:${LINE}[A-Za-z0-9+/=]+)*${LINE}${KEY_END}`, 'g')],
   ['aws-access-key', /\b(?:AKIA|ASIA)[0-9A-Z]{16}\b/g],
   ['github-token', /\bgh[opsur]_[A-Za-z0-9]{36,255}\b/g],
   ['github-token', /\bgithub_pat_\w{22,255}\b/g],

@@ -163,6 +163,20 @@ describe('scrub-secrets plugin', () => {
     }
   });
 
+  it('redacts keys in JSON strings, indented YAML, and grep output', async () => {
+    const { after } = await create();
+    const lines = ['-----BEGIN PRIVATE KEY-----', body, body, 'AB==', '-----END PRIVATE KEY-----'];
+    for (const text of [
+      JSON.stringify({ type: 'service_account', private_key: `${lines.join('\n')}\n` }),
+      `key: |\n${lines.map((line) => `    ${line}`).join('\n')}\nnext: value`,
+      lines.map((line, index) => `  Line ${String(index + 3)}: ${line}`).join('\n'),
+    ]) {
+      const output = { title: '', output: text, metadata: {} };
+      await after({ tool: 'read', sessionID: 's', callID: 'c', args: {} }, output);
+      assert.doesNotMatch(output.output, /QUFBQXN5bnRoZXRpYy/, text);
+    }
+  });
+
   it('leaves code that only mentions key markers readable', async () => {
     const { after, showToast } = await create();
     const text = [
