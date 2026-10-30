@@ -141,7 +141,8 @@ Speed, convenience, batching, output truncation, and tool limits are not excepti
 
 Standard build, test, lint, formatter, static-analysis, documentation-generation, and Git commands remain available
 within the agent's role, permissions, and required approvals. Use existing project scripts only for their established
-purpose. Never use these commands or scripts as substitutes for dedicated tools or as workarounds for this policy.
+purpose. Run scripts declared in `package.json`, `composer.json`, or a Makefile with `project_script` when available.
+Never use these commands or scripts as substitutes for dedicated tools or as workarounds for this policy.
 
 Implement requested application code, tests, and project scripts with the editing tools when authorized.
 Do not create helper files merely to reclassify a prohibited shortcut as an existing project script or deliverable.

@@ -77,6 +77,7 @@ See [USAGE.md](USAGE.md) for command examples, stack guidance, and verification 
   review dispositions, and blockers. See [Continue a long task](USAGE.md#continue-a-long-task).
 - Local secret-path protection and environment/output scrubbing, described below.
 - Local `git_inspect` tool: read-only Git status, diffs, history, and blame for roles without shell access.
+- Local `project_script` tool: runs only scripts declared in `package.json`, `composer.json`, or a Makefile.
 
 Both plugin lists register Config Composer before Prompt Composer. Session tools do not import Composer APIs.
 Restart the server after editing definitions or prompts. Existing sessions can retain previous model selections.
@@ -130,6 +131,13 @@ the commands.
 `git status *`, `git diff *`, and `git log *` allow routine inspection, including bare commands in V1.
 Later rules require approval for `--output` and `>` redirection. Git helpers and text-conversion filters can still run.
 Check an approval prompt's scope before saving approval. See [opencode.jsonc](opencode.jsonc) for the complete policy.
+
+`project_script` asks for `project_script` permission on every run, keyed by runner, script, and exact arguments,
+such as `npm:test --watch=false`. A saved approval covers only that key, unlike a saved shell prefix.
+It runs without a shell and uses the lockfile or `packageManager` field to choose npm, pnpm, Yarn, or Bun.
+Makefile targets take no arguments. On Windows, package-manager shims run through `cmd.exe`, so arguments are limited
+to letters, digits, and `@+=:,./_-`. Read-only roles deny the tool. Project scripts still run project code with your
+environment; approving one in an untrusted repository has the same risk as running it yourself.
 
 ## Upgrade an existing installation
 

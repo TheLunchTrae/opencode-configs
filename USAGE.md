@@ -122,6 +122,7 @@ when guidance is unavailable; the presence of a file alone does not establish th
 | `/push` | Push only when authorized. |
 
 Except `/test-audit`, utility commands retain the selected agent and permissions.
+Writing roles run declared project scripts through `project_script`; see the README for its approval keys.
 `/test-audit` uses a reviewer subtask; it does not switch to another primary lead.
 `/resume` remains OpenCode's built-in session selector.
 Project initialization commands target the work project, never this global configuration repository or installation.

@@ -96,6 +96,7 @@
     "task": {
       "*": "deny"
     },
+    "project_script": "ask",
     "github_*": "ask",
     "playwright_*": "ask"
   },
