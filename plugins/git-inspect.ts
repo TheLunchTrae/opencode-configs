@@ -83,7 +83,8 @@ const commitView = (stat: boolean, tail: string[]): string[] => [
   '--root',
   '--pretty=fuller',
   '--date=iso',
-  ...(stat ? ['--stat'] : ['-p', '--cc']),
+  // Merges show a first-parent diffstat, as `git show --stat` does; patches use the combined form.
+  ...(stat ? ['-m', '--first-parent', '--stat'] : ['-p', '--cc']),
   ...tail,
 ];
 
@@ -139,6 +140,9 @@ const inspect = async (request: Request, git: Git): Promise<string> => {
         return git({ args: ['show', ...NO_HELPERS, target, ...content] });
       }
       checkRevision(target);
+      if (target.includes('..')) {
+        return fail('show takes one revision. Use log or diff for ranges.');
+      }
       const type = (await git({ args: ['cat-file', '-t', target] })).trim();
       if (type === 'blob') {
         return fail('Show blobs as rev:path so the path can be checked.');
@@ -237,7 +241,10 @@ export const GitInspectPlugin: Plugin = async () => ({
         revision: z
           .string()
           .optional()
-          .describe('Commit, ref, or range. show also accepts rev:path. merge-base requires A...B.'),
+          .describe(
+            'Commit, ref, or range. show takes one revision or rev:path and shows a tag as its commit. ' +
+              'merge-base requires A...B.',
+          ),
         paths: z.array(z.string()).max(50).optional().describe('Repository paths that limit the output.'),
         staged: z.boolean().optional().describe('diff or changed-files: compare the index instead of the worktree.'),
         stat: z.boolean().optional().describe('diff, log, or show: include a diffstat instead of patches.'),

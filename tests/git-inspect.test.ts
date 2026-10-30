@@ -94,6 +94,23 @@ describe('git_inspect tool', () => {
     }
   });
 
+  it('shows a first-parent diffstat for merges', async () => {
+    git('checkout', '--quiet', '-b', 'merge-side', 'main');
+    await writeFile(join(repository, 'side.txt'), 'side\n');
+    git('add', 'side.txt');
+    git('commit', '--quiet', '-m', 'side change');
+    git('checkout', '--quiet', 'feature');
+    git('merge', '--quiet', '--no-ff', '-m', 'merge side', 'merge-side');
+    try {
+      const stat = await inspect({ operation: 'show', revision: 'HEAD', stat: true });
+      assert.match(stat, /merge side/);
+      assert.match(stat, /side\.txt/);
+    } finally {
+      git('reset', '--quiet', '--hard', 'HEAD~1');
+      git('branch', '--quiet', '-D', 'merge-side');
+    }
+  });
+
   it('keeps commits whose only changes are excluded', async () => {
     const shown = await inspect({ operation: 'show', revision: 'HEAD' });
     assert.match(shown, /rotate secrets only/);
@@ -120,6 +137,7 @@ describe('git_inspect tool', () => {
       { operation: 'show', revision: git('rev-parse', 'HEAD:.env').trim() },
       { operation: 'log', revision: 'HEAD@{2024-01-01:00}' },
       { operation: 'log', revision: 'main feature' },
+      { operation: 'show', revision: 'main..feature' },
       { operation: 'merge-base', revision: 'main' },
       { operation: 'blame', paths: [] },
     ]) {
