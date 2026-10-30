@@ -1,7 +1,8 @@
 import type { PluginInput } from '@opencode-ai/plugin';
 import assert from 'node:assert/strict';
-import { existsSync } from 'node:fs';
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { existsSync, readFileSync } from 'node:fs';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { setTimeout } from 'node:timers/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { after, before, describe, it } from 'node:test';
@@ -19,7 +20,7 @@ let project = '';
 
 const execute = async (
   args: Record<string, unknown>,
-  options: { deny?: boolean; directory?: string; asks?: AskInput[] } = {},
+  options: { deny?: boolean; directory?: string; asks?: AskInput[]; signal?: AbortSignal } = {},
 ) => {
   const hooks = await ProjectScriptPlugin({} as PluginInput);
   const definition = hooks.tool?.project_script;
@@ -31,7 +32,7 @@ const execute = async (
     agent: 'builder',
     directory: options.directory ?? project,
     worktree: project,
-    abort: new AbortController().signal,
+    abort: options.signal ?? new AbortController().signal,
     metadata: () => undefined,
     ask: async (input: AskInput) => {
       asks.push(input);
@@ -50,7 +51,21 @@ describe('project_script tool', () => {
     await writeFile(join(project, 'print.mjs'), "console.log('args:' + JSON.stringify(process.argv.slice(2)));\n");
     await writeFile(
       join(project, 'package.json'),
-      JSON.stringify({ scripts: { show: 'node print.mjs', broken: 'node -e "process.exit(3)"' } }),
+      JSON.stringify({
+        scripts: {
+          show: 'node print.mjs',
+          broken: 'node -e "process.exit(3)"',
+          mark: "node -e \"require('fs').writeFileSync('marked','')\"",
+          stdin: "node -e \"process.stdin.on('data',()=>{}).on('end',()=>console.log('stdin-closed'))\"",
+          hang: 'node hang.mjs',
+        },
+      }),
+    );
+    await writeFile(
+      join(project, 'hang.mjs'),
+      "import { spawn } from 'node:child_process';\nimport { writeFileSync } from 'node:fs';\n" +
+        "const child = spawn('sleep', ['30'], { stdio: 'ignore' });\n" +
+        "writeFileSync('hang.pid', String(child.pid));\nsetInterval(() => {}, 1000);\n",
     );
     await writeFile(join(project, 'Makefile'), 'VAR := value\n.PHONY: hello\nhello:\n\t@echo make-ran\n');
     await mkdir(join(project, 'packages', 'pnpm-app'), { recursive: true });
@@ -64,7 +79,14 @@ describe('project_script tool', () => {
 
   it('lists declared scripts and Makefile targets', async () => {
     const { output, asks } = await execute({});
-    assert.deepEqual(output.split('\n').sort(), ['make:hello', 'npm:broken', 'npm:show']);
+    assert.deepEqual(output.split('\n').sort(), [
+      'make:hello',
+      'npm:broken',
+      'npm:hang',
+      'npm:mark',
+      'npm:show',
+      'npm:stdin',
+    ]);
     assert.equal(asks.length, 0);
   });
 
@@ -74,18 +96,73 @@ describe('project_script tool', () => {
     assert.match(output, /args:\["--grep","\$\(touch pwned\)","a b"\]/);
     assert.match(output, /\[exit code 0\]/);
     assert.equal(existsSync(marker), false);
-    assert.deepEqual(asks, [
-      {
-        permission: 'project_script',
-        patterns: ['npm:show --grep $(touch pwned) a b'],
-        always: ['npm:show --grep $(touch pwned) a b'],
-        metadata: { command: 'npm run show -- --grep $(touch pwned) a b', directory: asks[0]?.metadata.directory },
-      },
-    ]);
+    assert.equal(asks.length, 1);
+    const [ask] = asks as [AskInput];
+    assert.equal(ask.permission, 'project_script');
+    assert.match(ask.patterns[0] ?? '', /^npm:show in \. #[0-9a-f]{12} \["--grep","\$\(touch pwned\)","a b"\]$/);
+    assert.deepEqual(ask.always, ask.patterns);
+    assert.equal(ask.metadata.script, 'node print.mjs');
+    assert.equal(ask.metadata.command, 'npm run show -- --grep $(touch pwned) a b');
+  });
+
+  it('changes the approval key when scripts or the directory change, and escapes wildcards', async () => {
+    const key = async (args: Record<string, unknown>) => {
+      const asks: AskInput[] = [];
+      await execute(args, { deny: true, asks }).catch(() => undefined);
+      return asks[0]?.patterns[0] ?? '';
+    };
+    const before = await key({ script: 'show' });
+    const path = join(project, 'package.json');
+    const original = await readFile(path, 'utf8');
+    const edited: unknown = JSON.parse(original);
+    assert.ok(typeof edited === 'object' && edited !== null);
+    Reflect.set(Reflect.get(edited, 'scripts') as object, 'show', 'node print.mjs --other');
+    await writeFile(path, JSON.stringify(edited));
+    try {
+      assert.notEqual(await key({ script: 'show' }), before);
+    } finally {
+      await writeFile(path, original);
+    }
+    assert.equal(await key({ script: 'show' }), before);
+    const wild = await key({ script: 'show', args: ['*', 'a?'] });
+    assert.equal(/[*?]/.test(wild), false, wild);
+    assert.notEqual(await key({ script: 'show', args: ['a b'] }), await key({ script: 'show', args: ['a', 'b'] }));
+    assert.match(await key({ script: 'test', directory: 'packages/pnpm-app' }), / in packages\/pnpm-app #/);
   });
 
   it('does not run when permission is denied', async () => {
-    await assert.rejects(execute({ script: 'hello' }, { deny: true }), /denied/);
+    await assert.rejects(execute({ script: 'mark' }, { deny: true }), /denied/);
+    assert.equal(existsSync(join(project, 'marked')), false);
+  });
+
+  it('closes stdin', async () => {
+    const { output } = await execute({ script: 'stdin' });
+    assert.match(output, /stdin-closed/);
+  });
+
+  it('stops the whole process tree when aborted', async () => {
+    const controller = new AbortController();
+    const pidFile = join(project, 'hang.pid');
+    const pending = execute({ script: 'hang' }, { signal: controller.signal });
+    for (let attempt = 0; attempt < 100 && !existsSync(pidFile); attempt++) {
+      await setTimeout(50);
+    }
+    const pid = Number(await readFile(pidFile, 'utf8'));
+    controller.abort();
+    const { output } = await pending;
+    assert.match(output, /\[stopped: aborted\]/);
+    // An exited process can linger as a zombie until the container's init reaps it; that is not running.
+    const running = () => {
+      try {
+        return !/^State:\s+Z/m.test(readFileSync(`/proc/${String(pid)}/status`, 'utf8'));
+      } catch {
+        return false;
+      }
+    };
+    for (let attempt = 0; attempt < 40 && running(); attempt++) {
+      await setTimeout(50);
+    }
+    assert.equal(running(), false, 'grandchild process still running');
   });
 
   it('reports a failing script without throwing', async () => {
@@ -108,7 +185,7 @@ describe('project_script tool', () => {
   it('detects the package manager from the lockfile', async () => {
     const asks: AskInput[] = [];
     await assert.rejects(execute({ script: 'test', directory: 'packages/pnpm-app' }, { deny: true, asks }), /denied/);
-    assert.equal(asks[0]?.patterns[0], 'pnpm:test');
+    assert.match(asks[0]?.patterns[0] ?? '', /^pnpm:test in packages\/pnpm-app #[0-9a-f]{12}$/);
     assert.equal(asks[0]?.metadata.command, 'pnpm run test');
   });
 });

@@ -132,12 +132,16 @@ the commands.
 Later rules require approval for `--output` and `>` redirection. Git helpers and text-conversion filters can still run.
 Check an approval prompt's scope before saving approval. See [opencode.jsonc](opencode.jsonc) for the complete policy.
 
-`project_script` asks for `project_script` permission on every run, keyed by runner, script, and exact arguments,
-such as `npm:test --watch=false`. A saved approval covers only that key, unlike a saved shell prefix.
-It runs without a shell and uses the lockfile or `packageManager` field to choose npm, pnpm, Yarn, or Bun.
+`project_script` asks for `project_script` permission on every run. The approval key names the runner, script,
+directory, a hash of the declared scripts or Makefile, and the exact arguments, such as
+`npm:test in packages/api #3f2a9c1b7d4e ["--watch=false"]`. The prompt shows the declared command, including npm
+`pre` and `post` scripts. A saved approval stops matching when any declared script, the directory, or an argument
+changes. It does not cover files the script runs or includes, which a writing role can still edit.
+The tool runs without a shell and uses the lockfile or `packageManager` field to choose npm, pnpm, Yarn, or Bun.
 Makefile targets take no arguments. On Windows, package-manager shims run through `cmd.exe`, so arguments are limited
-to letters, digits, and `@+=:,./_-`. Read-only roles deny the tool. Project scripts still run project code with your
-environment; approving one in an untrusted repository has the same risk as running it yourself.
+to letters, digits, and `@+=:,./_-`. Stdin is closed, and an abort or the 10-minute timeout stops the whole process
+tree. Read-only roles deny the tool. Scripts run with the OpenCode server's full environment; approving one in an
+untrusted repository has the same risk as running it yourself.
 
 ## Upgrade an existing installation
 

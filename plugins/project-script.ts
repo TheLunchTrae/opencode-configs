@@ -1,5 +1,6 @@
 import { type Plugin, tool } from '@opencode-ai/plugin';
-import { execFile } from 'node:child_process';
+import { type ChildProcess, spawn } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { readFile, realpath } from 'node:fs/promises';
 import { isAbsolute, join, relative, resolve } from 'node:path';
@@ -10,9 +11,14 @@ type Runner = 'npm' | 'pnpm' | 'yarn' | 'bun' | 'composer' | 'make';
 interface Script {
   runner: Runner;
   name: string;
+  // Text whose change must invalidate a saved approval: the whole scripts map or Makefile.
+  source: string;
+  // Declared command text shown in the approval prompt.
+  body: string;
 }
 
 const TIMEOUT_MS = 10 * 60_000;
+const KILL_GRACE_MS = 3000;
 const MAX_OUTPUT_BYTES = 20 * 1024 * 1024;
 const SCRIPT_NAME = /^[\w:.@/-]+$/;
 // Windows runs .cmd and .bat shims through cmd.exe, so arguments there are limited to characters it treats literally.
@@ -36,11 +42,6 @@ const readJson = async (path: string): Promise<Record<string, unknown> | undefin
   return isRecord(value) ? value : undefined;
 };
 
-const scriptNames = (manifest: Record<string, unknown> | undefined): string[] => {
-  const scripts = manifest?.scripts;
-  return isRecord(scripts) ? Object.keys(scripts) : [];
-};
-
 const packageRunner = (directory: string, manifest: Record<string, unknown>): Runner => {
   const declared = typeof manifest.packageManager === 'string' ? manifest.packageManager.split('@')[0] : undefined;
   if (declared === 'pnpm' || declared === 'yarn' || declared === 'bun' || declared === 'npm') {
@@ -58,29 +59,60 @@ const packageRunner = (directory: string, manifest: Record<string, unknown>): Ru
   return 'npm';
 };
 
+const manifestScripts = (
+  runner: Runner,
+  manifest: Record<string, unknown> | undefined,
+  lifecycle: boolean,
+): Script[] => {
+  const scripts = manifest?.scripts;
+  if (!isRecord(scripts)) {
+    return [];
+  }
+  const source = JSON.stringify(scripts);
+  const describe = (name: string) =>
+    typeof scripts[name] === 'string' ? scripts[name] : JSON.stringify(scripts[name]);
+  return Object.keys(scripts).map((name) => {
+    // npm runs pre<name> and post<name> around a script, so the prompt shows them too.
+    const present = (lifecycle ? [`pre${name}`, name, `post${name}`] : [name]).filter((hook) => hook in scripts);
+    const body = present.map((hook) => (present.length > 1 ? `${hook}: ${describe(hook)}` : describe(hook))).join('\n');
+    return { runner, name, source, body };
+  });
+};
+
+const makeTargets = (text: string): Script[] => {
+  const lines = text.split(/\r?\n/);
+  const targets = new Map<string, string[]>();
+  lines.forEach((line, index) => {
+    const name = MAKE_TARGET.exec(line)?.[1];
+    if (name === undefined || targets.has(name)) {
+      return;
+    }
+    const recipe = [line];
+    for (const next of lines.slice(index + 1)) {
+      if (!next.startsWith('\t')) {
+        break;
+      }
+      recipe.push(next);
+    }
+    targets.set(name, recipe);
+  });
+  return [...targets].map(([name, recipe]) => ({ runner: 'make', name, source: text, body: recipe.join('\n') }));
+};
+
 const discover = async (directory: string): Promise<Script[]> => {
   const scripts: Script[] = [];
   const manifest = await readJson(join(directory, 'package.json'));
   if (manifest !== undefined) {
     const runner = packageRunner(directory, manifest);
-    scripts.push(...scriptNames(manifest).map((name) => ({ runner, name })));
+    scripts.push(...manifestScripts(runner, manifest, runner === 'npm'));
   }
-  const composer = await readJson(join(directory, 'composer.json'));
-  scripts.push(...scriptNames(composer).map((name) => ({ runner: 'composer' as const, name })));
+  scripts.push(...manifestScripts('composer', await readJson(join(directory, 'composer.json')), false));
   for (const file of ['GNUmakefile', 'makefile', 'Makefile']) {
     const path = join(directory, file);
-    if (!existsSync(path)) {
-      continue;
+    if (existsSync(path)) {
+      scripts.push(...makeTargets(await readFile(path, 'utf8')));
+      break;
     }
-    const targets = new Set<string>();
-    for (const line of (await readFile(path, 'utf8')).split(/\r?\n/)) {
-      const target = MAKE_TARGET.exec(line)?.[1];
-      if (target !== undefined) {
-        targets.add(target);
-      }
-    }
-    scripts.push(...[...targets].map((name) => ({ runner: 'make' as const, name })));
-    break;
   }
   return scripts.filter((script) => SCRIPT_NAME.test(script.name));
 };
@@ -100,7 +132,20 @@ const commandLine = (script: Script, args: readonly string[]): [string, string[]
   }
 };
 
-const resolveDirectory = async (worktree: string, base: string, requested: string | undefined): Promise<string> => {
+// The host treats * and ? in permission patterns as wildcards, so the key escapes them to stay exact.
+const escapeWildcards = (value: string): string => value.replaceAll('*', '\\u002a').replaceAll('?', '\\u003f');
+
+const approvalKey = (script: Script, directory: string, args: readonly string[]): string => {
+  const hash = createHash('sha256').update(script.source).digest('hex').slice(0, 12);
+  const key = `${script.runner}:${script.name} in ${directory} #${hash}${args.length > 0 ? ` ${JSON.stringify(args)}` : ''}`;
+  return escapeWildcards(key);
+};
+
+const resolveDirectory = async (
+  worktree: string,
+  base: string,
+  requested: string | undefined,
+): Promise<{ path: string; label: string }> => {
   const target = requested === undefined ? base : resolve(base, requested);
   const [root, actual] = await Promise.all([
     realpath(worktree),
@@ -110,31 +155,99 @@ const resolveDirectory = async (worktree: string, base: string, requested: strin
   if (path.startsWith('..') || isAbsolute(path)) {
     fail('The directory must be inside the project worktree.');
   }
-  return actual;
+  return { path: actual, label: path === '' ? '.' : path.replaceAll('\\', '/') };
+};
+
+const killTree = (child: ChildProcess): void => {
+  const pid = child.pid;
+  if (pid === undefined) {
+    return;
+  }
+  if (process.platform === 'win32') {
+    spawn('taskkill', ['/pid', String(pid), '/T', '/F'], { windowsHide: true, stdio: 'ignore' }).on('error', () => {
+      child.kill();
+    });
+    return;
+  }
+  // POSIX children run in their own process group, so the negative PID reaches the script's descendants too.
+  const signal = (name: NodeJS.Signals) => {
+    try {
+      process.kill(-pid, name);
+    } catch {
+      // the group already exited
+    }
+  };
+  signal('SIGTERM');
+  setTimeout(() => {
+    signal('SIGKILL');
+  }, KILL_GRACE_MS).unref();
 };
 
 const run = (
   command: string,
   args: string[],
   cwd: string,
-  signal: AbortSignal,
-): Promise<{ code: number | string; output: string }> =>
+  abort: AbortSignal,
+): Promise<{ status: string; output: string }> =>
   new Promise((resolvePromise) => {
     const windows = process.platform === 'win32';
-    execFile(
-      command,
-      args,
-      { cwd, signal, timeout: TIMEOUT_MS, maxBuffer: MAX_OUTPUT_BYTES, windowsHide: true, shell: windows },
-      (error, stdout, stderr) => {
-        const output = [stdout, stderr].filter((text) => text.length > 0).join('\n');
-        if (error === null) {
-          resolvePromise({ code: 0, output });
-          return;
-        }
-        const code = typeof error.code === 'number' || typeof error.code === 'string' ? error.code : 'failed';
-        resolvePromise({ code, output: output.length > 0 ? output : error.message });
-      },
-    );
+    const child = spawn(command, args, {
+      cwd,
+      shell: windows,
+      detached: !windows,
+      windowsHide: true,
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+    const chunks: Buffer[] = [];
+    let size = 0;
+    let truncated = false;
+    let stopped: string | undefined;
+    const stop = (reason: string) => {
+      if (stopped === undefined) {
+        stopped = reason;
+        killTree(child);
+      }
+    };
+    const timer = setTimeout(() => {
+      stop(`timed out after ${String(TIMEOUT_MS / 60_000)} minutes`);
+    }, TIMEOUT_MS);
+    const onAbort = () => {
+      stop('aborted');
+    };
+    abort.addEventListener('abort', onAbort, { once: true });
+    if (abort.aborted) {
+      onAbort();
+    }
+    const collect = (chunk: Buffer) => {
+      if (size + chunk.length > MAX_OUTPUT_BYTES) {
+        chunks.push(chunk.subarray(0, Math.max(0, MAX_OUTPUT_BYTES - size)));
+        size = MAX_OUTPUT_BYTES;
+        truncated = true;
+        return;
+      }
+      chunks.push(chunk);
+      size += chunk.length;
+    };
+    child.stdout.on('data', collect);
+    child.stderr.on('data', collect);
+    const finish = (status: string) => {
+      clearTimeout(timer);
+      abort.removeEventListener('abort', onAbort);
+      const text = Buffer.concat(chunks).toString();
+      resolvePromise({ status, output: truncated ? `${text}\n[output truncated]` : text });
+    };
+    child.on('error', (error) => {
+      finish(`failed to start: ${error.message}`);
+    });
+    child.on('close', (code, signal) => {
+      if (stopped !== undefined) {
+        finish(`stopped: ${stopped}`);
+      } else if (code !== null) {
+        finish(`exit code ${String(code)}`);
+      } else {
+        finish(`terminated by ${signal ?? 'unknown signal'}`);
+      }
+    });
   });
 
 // eslint-disable-next-line @typescript-eslint/require-await -- OpenCode's plugin factory requires a Promise result.
@@ -156,7 +269,7 @@ export const ProjectScriptPlugin: Plugin = async () => ({
       },
       async execute(input, context) {
         const directory = await resolveDirectory(context.worktree, context.directory, input.directory);
-        const scripts = await discover(directory);
+        const scripts = await discover(directory.path);
         if (input.script === undefined) {
           return scripts.length > 0
             ? scripts.map((script) => `${script.runner}:${script.name}`).join('\n')
@@ -168,7 +281,7 @@ export const ProjectScriptPlugin: Plugin = async () => ({
         if (matches.length !== 1) {
           return fail(
             matches.length === 0
-              ? `"${input.script}" is not a declared script in ${directory}.`
+              ? `"${input.script}" is not a declared script in ${directory.label}.`
               : `"${input.script}" is declared by ${matches.map((script) => script.runner).join(' and ')}; set runner.`,
           );
         }
@@ -185,21 +298,20 @@ export const ProjectScriptPlugin: Plugin = async () => ({
         }
         const [command, args] = commandLine(script, extra);
         const display = [command, ...args].join(' ');
-        const key = [`${script.runner}:${script.name}`, ...extra].join(' ');
-        // A saved approval covers this exact script and argument list, not a command prefix.
+        const key = approvalKey(script, directory.label, extra);
+        // A saved approval covers this script, directory, declared scripts, and argument list exactly.
         await context.ask({
           permission: 'project_script',
           patterns: [key],
           always: [key],
-          metadata: { command: display, directory },
+          metadata: { command: display, directory: directory.label, script: script.body },
         });
         context.metadata({ title: display });
-        const result = await run(command, args, directory, context.abort);
-        const status = result.code === 0 ? 'exit code 0' : `exit code ${String(result.code)}`;
+        const result = await run(command, args, directory.path, context.abort);
         return {
           title: display,
-          output: `$ ${display}\n${result.output}\n[${status}]`,
-          metadata: { exit: result.code },
+          output: `$ ${display}\n${result.output}\n[${result.status}]`,
+          metadata: { status: result.status },
         };
       },
     }),
