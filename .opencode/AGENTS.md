@@ -39,7 +39,8 @@ Read affected source before editing. Follow root authorization, tool-selection, 
   Restart the server after editing definitions, prompts, or native files. Existing sessions may retain model selections.
 - `/view-prompts` is read-only, shows full loaded agents/commands, and does not expose full model context or skills.
   Inspect loaded text and diagnostics after restart; host hook errors can leave unresolved includes.
-- Keep GitHub/Playwright MCP typed and disabled without credential interpolation. Do not inspect secrets for verification.
+- Keep GitHub/Playwright/Context7 MCP typed and disabled without credential interpolation.
+  Do not inspect secrets for verification.
   V2 ignores V1 plugins and top-level `subagent_depth`; a V2 port is separate work.
 
 ## Plugin tooling

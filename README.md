@@ -42,6 +42,9 @@ and the native `skill` tool; raw reads and skill-derived slash commands do not e
 - GitHub and Playwright MCP definitions are disabled. Enabling them and configuring authentication is a separate
   local decision. Their tools require approval for writing roles and remain denied for read-only custom roles.
   Keep credentials out of configuration source.
+- The Context7 MCP definition is also disabled. When enabled, it serves version-specific library documentation to
+  every role, after approval. Queries, including library names and questions, go to Context7. It works without a key
+  at a lower rate limit; add a key through a `CONTEXT7_API_KEY` header in local configuration, not this source.
 - The `opencode` provider is disabled. Remove it from `disabled_providers` only if you want to use it.
 
 External-directory access retains native V1 boundaries. Ordinary external paths require approval; OpenCode permits

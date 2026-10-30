@@ -29,6 +29,12 @@
       "type": "local",
       "command": ["npx", "@playwright/mcp@latest"],
       "enabled": false
+    },
+    "context7": {
+      "type": "remote",
+      "url": "https://mcp.context7.com/mcp",
+      "enabled": false,
+      "oauth": false
     }
   },
   "permission": {
@@ -97,7 +103,8 @@
       "*": "deny"
     },
     "github_*": "ask",
-    "playwright_*": "ask"
+    "playwright_*": "ask",
+    "context7_*": "ask"
   },
   "agent": {
     "build": {
