@@ -72,6 +72,8 @@ See [USAGE.md](USAGE.md) for command examples, stack guidance, and verification 
   shared implementation and review instructions.
 - [OpenCode Quota](https://github.com/slkiser/opencode-quota): OpenAI quota toasts.
 - [Session tools](USAGE.md#session-tools): configuration/context inspectors, bookmarks, and handoff drafts.
+- Compaction task state: asks automatic and manual compaction to keep scope, approvals, check results,
+  review dispositions, and blockers. See [Continue a long task](USAGE.md#continue-a-long-task).
 - Local secret-path protection, described below.
 
 Both plugin lists register Config Composer before Prompt Composer. Session tools do not import Composer APIs.
