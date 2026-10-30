@@ -105,6 +105,8 @@ describe('git_inspect tool', () => {
       const stat = await inspect({ operation: 'show', revision: 'HEAD', stat: true });
       assert.match(stat, /merge side/);
       assert.match(stat, /side\.txt/);
+      assert.ok((stat.match(/\(from /g) ?? []).length <= 1, stat);
+      assert.doesNotMatch(stat, /app\.txt/);
     } finally {
       git('reset', '--quiet', '--hard', 'HEAD~1');
       git('branch', '--quiet', '-D', 'merge-side');

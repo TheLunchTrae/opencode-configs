@@ -84,7 +84,7 @@ const commitView = (stat: boolean, tail: string[]): string[] => [
   '--pretty=fuller',
   '--date=iso',
   // Merges show a first-parent diffstat, as `git show --stat` does; patches use the combined form.
-  ...(stat ? ['-m', '--first-parent', '--stat'] : ['-p', '--cc']),
+  ...(stat ? ['--diff-merges=first-parent', '--stat'] : ['-p', '--cc']),
   ...tail,
 ];
 
