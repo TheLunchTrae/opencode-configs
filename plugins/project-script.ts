@@ -19,6 +19,8 @@ interface Script {
 
 const TIMEOUT_MS = 10 * 60_000;
 const KILL_GRACE_MS = 3000;
+// After a stop, a descendant that left the process group can still hold the output pipes open.
+const ABANDON_MS = KILL_GRACE_MS + 2000;
 const MAX_OUTPUT_BYTES = 20 * 1024 * 1024;
 const SCRIPT_NAME = /^[\w:.@/-]+$/;
 // Windows runs .cmd and .bat shims through cmd.exe, so arguments there are limited to characters it treats literally.
@@ -72,7 +74,6 @@ const manifestScripts = (
   const describe = (name: string) =>
     typeof scripts[name] === 'string' ? scripts[name] : JSON.stringify(scripts[name]);
   return Object.keys(scripts).map((name) => {
-    // npm runs pre<name> and post<name> around a script, so the prompt shows them too.
     const present = (lifecycle ? [`pre${name}`, name, `post${name}`] : [name]).filter((hook) => hook in scripts);
     const body = present.map((hook) => (present.length > 1 ? `${hook}: ${describe(hook)}` : describe(hook))).join('\n');
     return { runner, name, source, body };
@@ -84,10 +85,11 @@ const makeTargets = (text: string): Script[] => {
   const targets = new Map<string, string[]>();
   lines.forEach((line, index) => {
     const name = MAKE_TARGET.exec(line)?.[1];
-    if (name === undefined || targets.has(name)) {
+    if (name === undefined) {
       return;
     }
-    const recipe = [line];
+    // A target can appear in several rules; all of them are shown because make may combine or override them.
+    const recipe = [...(targets.get(name) ?? []), line];
     for (const next of lines.slice(index + 1)) {
       if (!next.startsWith('\t')) {
         break;
@@ -104,7 +106,8 @@ const discover = async (directory: string): Promise<Script[]> => {
   const manifest = await readJson(join(directory, 'package.json'));
   if (manifest !== undefined) {
     const runner = packageRunner(directory, manifest);
-    scripts.push(...manifestScripts(runner, manifest, runner === 'npm'));
+    // npm, Yarn 1, and Bun run pre<name> and post<name>; pnpm does not by default.
+    scripts.push(...manifestScripts(runner, manifest, runner !== 'pnpm'));
   }
   scripts.push(...manifestScripts('composer', await readJson(join(directory, 'composer.json')), false));
   for (const file of ['GNUmakefile', 'makefile', 'Makefile']) {
@@ -202,10 +205,16 @@ const run = (
     let size = 0;
     let truncated = false;
     let stopped: string | undefined;
+    let finished = false;
+    // Assigned once finish exists; called if the streams never close after a stop.
+    let abandon = (): void => undefined;
     const stop = (reason: string) => {
       if (stopped === undefined) {
         stopped = reason;
         killTree(child);
+        setTimeout(() => {
+          abandon();
+        }, ABANDON_MS).unref();
       }
     };
     const timer = setTimeout(() => {
@@ -231,10 +240,19 @@ const run = (
     child.stdout.on('data', collect);
     child.stderr.on('data', collect);
     const finish = (status: string) => {
+      if (finished) {
+        return;
+      }
+      finished = true;
       clearTimeout(timer);
       abort.removeEventListener('abort', onAbort);
       const text = Buffer.concat(chunks).toString();
       resolvePromise({ status, output: truncated ? `${text}\n[output truncated]` : text });
+    };
+    abandon = () => {
+      child.stdout.destroy();
+      child.stderr.destroy();
+      finish(`stopped: ${stopped ?? 'unknown'}; some output streams stayed open`);
     };
     child.on('error', (error) => {
       finish(`failed to start: ${error.message}`);

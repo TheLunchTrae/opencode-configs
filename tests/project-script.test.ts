@@ -140,7 +140,8 @@ describe('project_script tool', () => {
     assert.match(output, /stdin-closed/);
   });
 
-  it('stops the whole process tree when aborted', async () => {
+  // The check reads /proc, so it only proves anything on Linux.
+  it('stops the whole process tree when aborted', { skip: process.platform !== 'linux' }, async () => {
     const controller = new AbortController();
     const pidFile = join(project, 'hang.pid');
     const pending = execute({ script: 'hang' }, { signal: controller.signal });

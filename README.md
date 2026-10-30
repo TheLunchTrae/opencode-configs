@@ -136,7 +136,8 @@ Check an approval prompt's scope before saving approval. See [opencode.jsonc](op
 directory, a hash of the declared scripts or Makefile, and the exact arguments, such as
 `npm:test in packages/api #3f2a9c1b7d4e ["--watch=false"]`. The prompt shows the declared command, including npm
 `pre` and `post` scripts. A saved approval stops matching when any declared script, the directory, or an argument
-changes. It does not cover files the script runs or includes, which a writing role can still edit.
+changes. It does not cover files the script runs or includes, such as test files, `.npmrc` settings, or included
+makefiles, which a writing role can still edit.
 The tool runs without a shell and uses the lockfile or `packageManager` field to choose npm, pnpm, Yarn, or Bun.
 Makefile targets take no arguments. On Windows, package-manager shims run through `cmd.exe`, so arguments are limited
 to letters, digits, and `@+=:,./_-`. Stdin is closed, and an abort or the 10-minute timeout stops the whole process
