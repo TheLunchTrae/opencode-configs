@@ -89,11 +89,12 @@ Native Read permissions also deny a complete `secrets` path segment and its cont
 
 The `scrub-secrets` plugin blanks shell environment variables named like credentials (`*_TOKEN`, `*_SECRET`,
 `*_PASSWORD`, `*_API_KEY`, `*_ACCESS_KEY`, `*_PRIVATE_KEY`, `*_CREDENTIALS`, and similar) and variables holding URLs
-with embedded passwords. Names ending in `_FILE`, `_PATH`, `_DIR`, or `_HOME`, and path values, are kept.
+with embedded passwords. Names ending in `_FILE`, `_PATH`, `_DIR`, or `_HOME`, and values naming an existing file,
+are kept.
 It applies to shell calls through the `shell.env` hook: agent shell calls and `!` commands. Terminal panels and
 plugin tools that start their own processes keep the server's environment.
 List variables that commands still need in `OPENCODE_SCRUB_ENV_ALLOW`, separated by commas.
-It also redacts private-key blocks, including cut-off blocks, common cloud, Git host, and API tokens, JWTs,
+It also redacts private-key bodies, including cut-off blocks, common cloud, Git host, and API tokens, JWTs,
 bearer headers, URL passwords, and scrubbed values of 12 or more characters from built-in, plugin, MCP, and subtask
 tool results, with a warning toast. Output of `!` commands is not redacted. Redacted text cannot be matched by edits;
 edit around it or by hand.

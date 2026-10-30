@@ -1,4 +1,6 @@
 import type { Plugin, PluginInput } from '@opencode-ai/plugin';
+import { existsSync } from 'node:fs';
+import { homedir } from 'node:os';
 
 type Client = PluginInput['client'];
 
@@ -7,21 +9,34 @@ const SECRET_NAME =
   /(?:^|_)(?:TOKEN|SECRET|PASSWORD|PASSWD|PASSPHRASE|API_?KEY|ACCESS_?KEY|PRIVATE_?KEY|CREDENTIALS?)(?:_|$)/i;
 // Names that locate a credential or store rather than holding one, such as AWS_WEB_IDENTITY_TOKEN_FILE.
 const LOCATION_NAME = /(?:_FILE|_PATH|_DIR|_HOME)$|^PASSWORD_STORE_/i;
-// Values that are filesystem paths, such as GOOGLE_APPLICATION_CREDENTIALS=/home/me/key.json.
-const PATH_VALUE = /^(?:[/~]|[a-z]:[\\/]|\.{1,2}[\\/])\S*$/i;
+// Values that name an existing file, such as GOOGLE_APPLICATION_CREDENTIALS=/home/me/key.json. Checking existence
+// keeps base64 secrets that happen to start with / from being mistaken for paths.
+const PATH_VALUE = /^(?:\/|~\/|[a-z]:[\\/])\S+$/i;
+const isExistingPath = (value: string): boolean =>
+  PATH_VALUE.test(value) && existsSync(value.startsWith('~/') ? `${homedir()}${value.slice(1)}` : value);
 // A URL with an embedded password, such as postgres://user:password@host/db or https://:token@host.
 const URL_PASSWORD = /\b([a-z][a-z0-9+.-]*:\/\/[^\s:/@]*:)[^\s/@]+@/gi;
 // Short values such as `postgres` would rewrite ordinary text, so only longer literal values are redacted.
 const MIN_LITERAL_LENGTH = 12;
 const MAX_DEPTH = 8;
+// Encoded binary payloads: attachments in built-in results, data and blob fields in MCP content.
+const SKIPPED_KEYS: ReadonlySet<string> = new Set(['attachments', 'data', 'blob']);
 
+// Key blocks are matched by their body, so code that merely mentions a BEGIN or END marker stays readable.
+// Lines may carry the read tool's `N: ` prefix. Bodies are long base64 lines, optionally after armor headers.
+const LINE = '\\r?\\n(?:\\d+: )?';
 const KEY_BEGIN = '-----BEGIN [A-Z0-9 ]*PRIVATE KEY(?: BLOCK)?-----';
 const KEY_END = '-----END [A-Z0-9 ]*PRIVATE KEY(?: BLOCK)?-----';
+const KEY_HEADERS = `(?:${LINE}(?:[A-Za-z][\\w-]*: [^\\n]*)?)*?`;
+const KEY_BODY = `(?:${LINE}[A-Za-z0-9+/=]{32,})+(?:${LINE}[A-Za-z0-9+/=]+)?`;
 const REDACTIONS: readonly (readonly [string, RegExp])[] = [
-  // A key block ends at its END line or, when output was cut, at the end of the text.
-  ['private-key', new RegExp(`${KEY_BEGIN}[\\s\\S]*?(?:${KEY_END}|$)`, 'g')],
-  // An END line without its BEGIN means the text starts inside a key, as with an offset read.
-  ['private-key', new RegExp(`^[\\s\\S]*?${KEY_END}`)],
+  // A block ends at its END line or, when output was cut, after its last body line.
+  ['private-key', new RegExp(`${KEY_BEGIN}${KEY_HEADERS}${KEY_BODY}(?:${LINE}${KEY_END})?`, 'g')],
+  // Body lines followed by END without BEGIN mean the text starts inside a key, as with an offset read.
+  [
+    'private-key',
+    new RegExp(`(?<=^|\\n)(?:\\d+: )?[A-Za-z0-9+/=]{32,}(?:${LINE}[A-Za-z0-9+/=]+)*${LINE}${KEY_END}`, 'g'),
+  ],
   ['aws-access-key', /\b(?:AKIA|ASIA)[0-9A-Z]{16}\b/g],
   ['github-token', /\bgh[opsur]_[A-Za-z0-9]{36,255}\b/g],
   ['github-token', /\bgithub_pat_\w{22,255}\b/g],
@@ -69,7 +84,7 @@ export const ScrubSecretsPlugin: Plugin = async ({ client }) => {
     if (value === undefined || value === '' || allowed.has(name)) {
       return [];
     }
-    const named = SECRET_NAME.test(name) && !LOCATION_NAME.test(name) && !PATH_VALUE.test(value);
+    const named = SECRET_NAME.test(name) && !LOCATION_NAME.test(name) && !isExistingPath(value);
     return named || hasUrlPassword(value) ? [[name, value] as const] : [];
   });
   const secretNames = secrets.map(([name]) => name);
@@ -99,7 +114,7 @@ export const ScrubSecretsPlugin: Plugin = async ({ client }) => {
   };
 
   // Built-in tools return { output, metadata }; MCP tools return { content: [...] }; failed subtasks return nothing.
-  // Every string in the result is redacted in place, except attachments, which carry encoded file data.
+  // Every string in the result is redacted in place, except encoded binary payloads.
   const walk = (value: unknown, kinds: Set<string>, depth: number): unknown => {
     if (typeof value === 'string') {
       return redact(value, kinds);
@@ -114,7 +129,7 @@ export const ScrubSecretsPlugin: Plugin = async ({ client }) => {
       return value;
     }
     for (const [key, item] of Object.entries(value)) {
-      if (key !== 'attachments') {
+      if (!SKIPPED_KEYS.has(key)) {
         Reflect.set(value, key, walk(item, kinds, depth + 1));
       }
     }

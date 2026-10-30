@@ -1,16 +1,21 @@
 import type { PluginInput } from '@opencode-ai/plugin';
 import assert from 'node:assert/strict';
-import { afterEach, beforeEach, describe, it, mock } from 'node:test';
+import { rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { after, afterEach, before, beforeEach, describe, it, mock } from 'node:test';
 
 import { ScrubSecretsPlugin } from '../plugins/scrub-secrets.ts';
 
 // Synthetic values only. They match credential formats but are not real credentials.
+const body = `QUFBQXN5bnRoZXRpYy${'A'.repeat(46)}`;
+const credentialsFile = join(tmpdir(), 'scrub-secrets-credentials.json');
 const fake = {
   github: `ghp_${'a'.repeat(36)}`,
   aws: 'AKIAABCDEFGHIJKLMNOP',
   openai: `sk-proj-${'b'.repeat(40)}`,
   jwt: `eyJ${'c'.repeat(12)}.eyJ${'d'.repeat(12)}.${'e'.repeat(12)}`,
-  key: '-----BEGIN OPENSSH PRIVATE KEY-----\nAAAAsynthetic\n-----END OPENSSH PRIVATE KEY-----',
+  key: `-----BEGIN OPENSSH PRIVATE KEY-----\n${body}\n${body}\nAAAA==\n-----END OPENSSH PRIVATE KEY-----`,
   env: 'synthetic-env-value-123',
 };
 
@@ -21,7 +26,8 @@ const variables = {
   SCRUB_TEST_ALLOWED_TOKEN: 'kept-for-tools',
   PASSWORD_STORE_DIR: '/home/test/.password-store',
   SCRUB_TEST_IDENTITY_TOKEN_FILE: '/var/run/secrets/token',
-  SCRUB_TEST_APPLICATION_CREDENTIALS: '/home/test/key.json',
+  SCRUB_TEST_APPLICATION_CREDENTIALS: credentialsFile,
+  SCRUB_TEST_SLASH_SECRET: '/wJalrXUtnFEMIK7MDENGbPxRfiCYEXAMPLEKEY',
   SCRUB_TEST_SHORT_PASSWORD: 'postgres',
 };
 const saved = new Map<string, string | undefined>();
@@ -36,6 +42,12 @@ const create = async () => {
 };
 
 describe('scrub-secrets plugin', () => {
+  before(() => {
+    writeFileSync(credentialsFile, '{}');
+  });
+  after(() => {
+    rmSync(credentialsFile, { force: true });
+  });
   beforeEach(() => {
     for (const [name, value] of Object.entries({
       ...variables,
@@ -68,6 +80,7 @@ describe('scrub-secrets plugin', () => {
     assert.equal('SCRUB_TEST_IDENTITY_TOKEN_FILE' in output.env, false);
     assert.equal('SCRUB_TEST_APPLICATION_CREDENTIALS' in output.env, false);
     assert.equal(output.env.SCRUB_TEST_SHORT_PASSWORD, '');
+    assert.equal(output.env.SCRUB_TEST_SLASH_SECRET, '');
   });
 
   it('leaves terminal panels without a session unchanged', async () => {
@@ -96,7 +109,7 @@ describe('scrub-secrets plugin', () => {
       fake.aws,
       fake.openai,
       fake.jwt,
-      'AAAAsynthetic',
+      'QUFBQXN5bnRoZXRpYy',
       fake.env,
       'synthetic-password',
     ]) {
@@ -139,14 +152,30 @@ describe('scrub-secrets plugin', () => {
   it('redacts partial private keys and PGP key blocks', async () => {
     const { after } = await create();
     for (const text of [
-      '-----BEGIN RSA PRIVATE KEY-----\nAAAAtruncated',
-      'AAAAoffset-body\nmore\n-----END EC PRIVATE KEY-----\nafter',
-      '-----BEGIN PGP PRIVATE KEY BLOCK-----\nAAAApgp\n-----END PGP PRIVATE KEY BLOCK-----',
+      `-----BEGIN RSA PRIVATE KEY-----\n${body}\n${body}`,
+      `12: ${body}\n13: ${body}\n14: AB==\n15: -----END EC PRIVATE KEY-----\n16: after`,
+      `-----BEGIN PGP PRIVATE KEY BLOCK-----\nVersion: test\n\n${body}\n=AbCd\n-----END PGP PRIVATE KEY BLOCK-----`,
+      `-----BEGIN RSA PRIVATE KEY-----\nProc-Type: 4,ENCRYPTED\nDEK-Info: AES-128-CBC,00\n\n${body}\n-----END RSA PRIVATE KEY-----`,
     ]) {
       const output = { title: '', output: text, metadata: {} };
       await after({ tool: 'read', sessionID: 's', callID: 'c', args: {} }, output);
-      assert.doesNotMatch(output.output, /AAAA/, text);
+      assert.doesNotMatch(output.output, /QUFBQXN5bnRoZXRpYy/, text);
     }
+  });
+
+  it('leaves code that only mentions key markers readable', async () => {
+    const { after, showToast } = await create();
+    const text = [
+      "1: if (pem.startsWith('-----BEGIN PRIVATE KEY-----')) {",
+      '2:   return parse(pem);',
+      '3: }',
+      '4: const footer = "-----END RSA PRIVATE KEY-----";',
+      '5: export default footer;',
+    ].join('\n');
+    const output = { title: '', output: text, metadata: {} };
+    await after({ tool: 'read', sessionID: 's', callID: 'c', args: {} }, output);
+    assert.equal(output.output, text);
+    assert.equal(showToast.mock.callCount(), 0);
   });
 
   it('keeps short environment values in ordinary text and redacts empty-user URL passwords', async () => {
