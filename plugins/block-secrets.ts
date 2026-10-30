@@ -1,57 +1,9 @@
 import type { Plugin, PluginInput } from '@opencode-ai/plugin';
-import { posix } from 'node:path';
+import { isBlockedPath } from '../extensions/security/secret-paths.ts';
 
 type Client = PluginInput['client'];
 
-const BLOCKED_PATTERNS: readonly RegExp[] = [
-  /(^|\/)\.env$/,
-  /(^|\/)\.env\.[^/]+$/,
-  /\.pem$/,
-  /(^|\/)id_rsa($|\.)/,
-  /(^|\/)id_ed25519($|\.)/,
-  /(^|\/)id_ecdsa($|\.)/,
-  /(^|\/)id_dsa($|\.)/,
-  /\.key$/,
-  /(^|\/)credentials\.json$/,
-  /(^|\/)\.netrc$/,
-  /(^|\/)secrets\.(json|yaml|yml)$/,
-  /\.p12$/,
-  /\.pfx$/,
-  /(^|\/)\.aws\/credentials$/,
-  /(^|\/)\.ssh\/.*$/,
-];
-
-const ALLOWED_BASENAMES: ReadonlySet<string> = new Set([
-  '.env.example',
-  '.env.sample',
-  '.env.template',
-  '.env.defaults',
-  '.env.dist',
-]);
-
 const PATH_TOOL_ARG_KEYS = ['filePath', 'file_path', 'path'] as const;
-
-// eslint-disable-next-line regexp/no-unused-capturing-group -- Preserve the pattern source shown in blocked-path diagnostics.
-const SECRETS_DIRECTORY_PATTERN = /(^|\/)secrets(\/|$)/;
-
-const isBlockedPath = (raw: string): string | undefined => {
-  if (raw.length === 0) {
-    return undefined;
-  }
-  const normalized = raw.replaceAll('\\', '/').toLowerCase();
-  if (SECRETS_DIRECTORY_PATTERN.test(normalized)) {
-    return SECRETS_DIRECTORY_PATTERN.source;
-  }
-  if (ALLOWED_BASENAMES.has(posix.basename(normalized))) {
-    return undefined;
-  }
-  for (const pattern of BLOCKED_PATTERNS) {
-    if (pattern.test(normalized)) {
-      return pattern.source;
-    }
-  }
-  return undefined;
-};
 
 const firstBlockedPathInCommand = (command: string): { path: string; pattern: string } | undefined => {
   const tokens = command.split(/\s+/).filter(Boolean);

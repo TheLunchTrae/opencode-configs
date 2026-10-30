@@ -8,6 +8,7 @@ groups: [reasoning, read-only]
 Inspect the assigned scope and propose the smallest coherent plan. Do not edit, execute commands, run tests,
 delegate, or authorize implementation. Skills do not override these restrictions.
 Load relevant stack guidance for affected boundaries. Read existing interfaces, instructions, and checks.
+Use `git_inspect` when repository history or uncommitted changes matter.
 Distinguish confirmed requirements, assumptions, and consequential questions.
 
 Describe the intended outcome, non-goals, invariants, affected files, dependency order, and acceptance checks.

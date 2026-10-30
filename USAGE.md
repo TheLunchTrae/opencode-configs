@@ -13,7 +13,8 @@ For a clear small task, state the change and constraints. For complex work, incl
 Planning effort follows ambiguity and risk. Use the planner for independent design work when useful, not by default.
 Non-trivial changes get one fresh reviewer using relevant stack guidance. High-risk trust or data changes get
 separate security assessment. Reviewers and the planner are read-only: no shell, edits, delegation, or configured MCP tools.
-They assess supplied test results and identify checks for the builder to run.
+They inspect Git state through the read-only `git_inspect` tool, assess supplied test results, and identify checks
+for the builder to run.
 
 Examples:
 

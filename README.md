@@ -37,8 +37,8 @@ and the native `skill` tool; raw reads and skill-derived slash commands do not e
 - Select models supported by your provider. Keep model aliases and profiles in `config-composer.jsonc`.
   `/profiles` selects a worktree profile; `/view-configs` shows settings and origins.
 - Review permissions before installation. Builder and built-in `general` can edit; planner and reviewers cannot
-  edit, run shell commands, delegate, or use the configured GitHub/Playwright tools. Built-in `explore` retains
-  its native exploration restrictions. Global Task access remains denied except for the builder's explicit targets.
+  edit, run shell commands, delegate, or use the configured GitHub/Playwright tools. They can use `git_inspect`.
+  Built-in `explore` retains its native exploration restrictions. Global Task access remains denied except for the builder's explicit targets.
 - GitHub and Playwright MCP definitions are disabled. Enabling them and configuring authentication is a separate
   local decision. Their tools require approval for writing roles and remain denied for read-only custom roles.
   Keep credentials out of configuration source.
@@ -75,6 +75,7 @@ See [USAGE.md](USAGE.md) for command examples, stack guidance, and verification 
 - Compaction task state: asks automatic and manual compaction to keep scope, approvals, check results,
   review dispositions, and blockers. See [Continue a long task](USAGE.md#continue-a-long-task).
 - Local secret-path protection and environment/output scrubbing, described below.
+- Local `git_inspect` tool: read-only Git status, diffs, history, and blame for roles without shell access.
 
 Both plugin lists register Config Composer before Prompt Composer. Session tools do not import Composer APIs.
 Restart the server after editing definitions or prompts. Existing sessions can retain previous model selections.
@@ -100,6 +101,10 @@ It also redacts private-key bodies, including cut-off blocks, common cloud, Git 
 bearer headers, URL passwords, and scrubbed values of 12 or more characters from built-in, plugin, MCP, and subtask
 tool results, with a warning toast. Output of `!` commands is not redacted. Redacted text cannot be matched by edits;
 edit around it or by hand.
+
+`git_inspect` applies the same path check to explicit paths and `rev:path` reads. It excludes content of matching
+files from diffs, logs, and `show`, including template files such as `.env.example`; file names still appear.
+It disables external diff drivers, text conversion, and fsmonitor helpers. Configured clean filters can still run.
 
 These plugins are pattern checks, not a sandbox or complete secret protection:
 

@@ -75,7 +75,8 @@ then restores it for native checks. It must not mutate installed-user configurat
 
 ## Plugin contracts
 
-Read `plugins/block-secrets.ts` and its tests before modifying it. Preserve path keys `filePath`, `file_path`, and `path`;
+Read `plugins/block-secrets.ts`, `extensions/security/secret-paths.ts`, and their tests before modifying them.
+Secret path patterns are shared with `git_inspect`. Preserve path keys `filePath`, `file_path`, and `path`;
 `pattern` is a path only for glob. Match case-insensitively and normalize backslashes. A complete `secrets` segment
 overrides template basenames. Reject calls even when the error toast fails. Keep its README pointer correct.
 Bash token checks are heuristic; expansion, aliases, symlinks, and parent-directory searches limit protection.
