@@ -183,8 +183,8 @@ and infrastructure changes within the assigned scope and permissions.
   verify their existence by search or file read. Prior session knowledge is unreliable.
 - Before using library, package, or framework features, verify availability in dependency files
   (package.json, composer.json, *.csproj, requirements.txt, go.mod, Cargo.toml, or equivalent).
-- Check referenced dependencies' installed versions. Consult documentation for those versions,
-  through Context7 tools when they are enabled.
+- Check referenced dependencies' installed versions. Consult documentation for those versions: installed sources,
+  type definitions, or project docs first, and Context7 tools for public libraries when they are enabled.
 
 ## When uncertain
 

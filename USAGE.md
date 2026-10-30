@@ -12,7 +12,8 @@ Built-in `build` and `plan` remain disabled; background title, summary, and comp
 For a clear small task, state the change and constraints. For complex work, include acceptance criteria and non-goals.
 Planning effort follows ambiguity and risk. Use the planner for independent design work when useful, not by default.
 Non-trivial changes get one fresh reviewer using relevant stack guidance. High-risk trust or data changes get
-separate security assessment. Reviewers and the planner are read-only: no shell, edits, delegation, or configured MCP tools.
+separate security assessment. Reviewers and the planner are read-only: no shell, edits, delegation, or GitHub and
+Playwright MCP tools. Context7 documentation lookups remain available after approval when enabled.
 They assess supplied test results and identify checks for the builder to run.
 
 Examples:
@@ -34,7 +35,7 @@ pull requests, merges, installations, and deployments.
 
 Native agent files own ordered `groups`; `config-composer.jsonc` owns shared group settings and model profiles.
 `reasoning`, `coding`, and `support` groups consume profile aliases. `writers` grants edit access.
-`read-only` denies edits, shell, delegation, and configured MCP tools. `system` retains fixed background settings.
+`read-only` denies edits, shell, delegation, and GitHub/Playwright MCP tools. `system` retains fixed background settings.
 Native global edit and Task denials remain the fallback; the builder's exact Task allowlist is final.
 Secret-path Read guards and ordered shell rules stay in `opencode.jsonc`.
 
