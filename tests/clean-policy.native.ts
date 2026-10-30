@@ -7,7 +7,7 @@ import { test } from 'node:test';
 import { parse } from 'jsonc-parser';
 import { nativeBinary } from './native-host.ts';
 
-test('native clean policy permits bounded dry runs and rejects destructive lookalikes', async (t) => {
+test('native shell policy permits bounded dry runs and rejects destructive commands', async (t) => {
   if (process.platform !== 'linux') {
     t.skip('The inert /bin/false shell fixture requires Linux.');
     return;
@@ -50,6 +50,7 @@ test('native clean policy permits bounded dry runs and rejects destructive looka
     ['git clean -fdn', true],
     ['git clean -dn -- build', true],
     ['git clean -d --dry-run build', true],
+    ['git clean', false],
     ['git clean -f', false],
     ['git clean -xdf', false],
     ['git clean --force', false],
@@ -61,6 +62,10 @@ test('native clean policy permits bounded dry runs and rejects destructive looka
     ['git clean -f -e "--dry-run"', false],
     ['git clean -dn; git clean -f', false],
     ['git clean -dn && git clean -f', false],
+    ['git branch topic -D', false],
+    ['git branch topic -D another-topic', false],
+    ['git push origin main -f', false],
+    ['git push origin main -f another-ref', false],
   ];
   for (const [command, eligible] of cases) {
     await t.test(command, () => {
