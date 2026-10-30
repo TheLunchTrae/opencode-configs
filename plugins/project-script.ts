@@ -3,7 +3,7 @@ import { type ChildProcess, spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { readFile, realpath } from 'node:fs/promises';
-import { isAbsolute, join, relative, resolve } from 'node:path';
+import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
 
 const z = tool.schema;
 
@@ -44,21 +44,38 @@ const readJson = async (path: string): Promise<Record<string, unknown> | undefin
   return isRecord(value) ? value : undefined;
 };
 
-const packageRunner = (directory: string, manifest: Record<string, unknown>): Runner => {
-  const declared = typeof manifest.packageManager === 'string' ? manifest.packageManager.split('@')[0] : undefined;
-  if (declared === 'pnpm' || declared === 'yarn' || declared === 'bun' || declared === 'npm') {
-    return declared;
+const packageRunner = async (
+  directory: string,
+  manifest: Record<string, unknown>,
+  worktree: string,
+): Promise<Runner> => {
+  let current = directory;
+  let currentManifest: Record<string, unknown> | undefined = manifest;
+  for (;;) {
+    const declared =
+      typeof currentManifest?.packageManager === 'string' ? currentManifest.packageManager.split('@')[0] : undefined;
+    if (declared === 'pnpm' || declared === 'yarn' || declared === 'bun' || declared === 'npm') {
+      return declared;
+    }
+    if (existsSync(join(current, 'pnpm-lock.yaml'))) {
+      return 'pnpm';
+    }
+    if (existsSync(join(current, 'yarn.lock'))) {
+      return 'yarn';
+    }
+    if (existsSync(join(current, 'bun.lock')) || existsSync(join(current, 'bun.lockb'))) {
+      return 'bun';
+    }
+    if (
+      existsSync(join(current, 'package-lock.json')) ||
+      existsSync(join(current, 'npm-shrinkwrap.json')) ||
+      current === worktree
+    ) {
+      return 'npm';
+    }
+    current = dirname(current);
+    currentManifest = await readJson(join(current, 'package.json'));
   }
-  if (existsSync(join(directory, 'pnpm-lock.yaml'))) {
-    return 'pnpm';
-  }
-  if (existsSync(join(directory, 'yarn.lock'))) {
-    return 'yarn';
-  }
-  if (existsSync(join(directory, 'bun.lock')) || existsSync(join(directory, 'bun.lockb'))) {
-    return 'bun';
-  }
-  return 'npm';
 };
 
 const manifestScripts = (
@@ -101,11 +118,11 @@ const makeTargets = (text: string): Script[] => {
   return [...targets].map(([name, recipe]) => ({ runner: 'make', name, source: text, body: recipe.join('\n') }));
 };
 
-const discover = async (directory: string): Promise<Script[]> => {
+const discover = async (directory: string, worktree: string): Promise<Script[]> => {
   const scripts: Script[] = [];
   const manifest = await readJson(join(directory, 'package.json'));
   if (manifest !== undefined) {
-    const runner = packageRunner(directory, manifest);
+    const runner = await packageRunner(directory, manifest, worktree);
     // npm, Yarn 1, and Bun run pre<name> and post<name>; pnpm does not by default.
     scripts.push(...manifestScripts(runner, manifest, runner !== 'pnpm'));
   }
@@ -148,7 +165,7 @@ const resolveDirectory = async (
   worktree: string,
   base: string,
   requested: string | undefined,
-): Promise<{ path: string; label: string }> => {
+): Promise<{ path: string; label: string; worktree: string }> => {
   const target = requested === undefined ? base : resolve(base, requested);
   const [root, actual] = await Promise.all([
     realpath(worktree),
@@ -158,7 +175,7 @@ const resolveDirectory = async (
   if (path.startsWith('..') || isAbsolute(path)) {
     fail('The directory must be inside the project worktree.');
   }
-  return { path: actual, label: path === '' ? '.' : path.replaceAll('\\', '/') };
+  return { path: actual, label: path === '' ? '.' : path.replaceAll('\\', '/'), worktree: root };
 };
 
 const killTree = (child: ChildProcess): void => {
@@ -228,6 +245,10 @@ const run = (
       onAbort();
     }
     const collect = (chunk: Buffer) => {
+      if (size === MAX_OUTPUT_BYTES) {
+        truncated = true;
+        return;
+      }
       if (size + chunk.length > MAX_OUTPUT_BYTES) {
         chunks.push(chunk.subarray(0, Math.max(0, MAX_OUTPUT_BYTES - size)));
         size = MAX_OUTPUT_BYTES;
@@ -287,7 +308,7 @@ export const ProjectScriptPlugin: Plugin = async () => ({
       },
       async execute(input, context) {
         const directory = await resolveDirectory(context.worktree, context.directory, input.directory);
-        const scripts = await discover(directory.path);
+        const scripts = await discover(directory.path, directory.worktree);
         if (input.script === undefined) {
           return scripts.length > 0
             ? scripts.map((script) => `${script.runner}:${script.name}`).join('\n')

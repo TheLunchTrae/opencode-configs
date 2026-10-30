@@ -20,7 +20,7 @@ let project = '';
 
 const execute = async (
   args: Record<string, unknown>,
-  options: { deny?: boolean; directory?: string; asks?: AskInput[]; signal?: AbortSignal } = {},
+  options: { deny?: boolean; directory?: string; worktree?: string; asks?: AskInput[]; signal?: AbortSignal } = {},
 ) => {
   const hooks = await ProjectScriptPlugin({} as PluginInput);
   const definition = hooks.tool?.project_script;
@@ -31,7 +31,7 @@ const execute = async (
     messageID: 'message',
     agent: 'builder',
     directory: options.directory ?? project,
-    worktree: project,
+    worktree: options.worktree ?? project,
     abort: options.signal ?? new AbortController().signal,
     metadata: () => undefined,
     ask: async (input: AskInput) => {
@@ -188,5 +188,63 @@ describe('project_script tool', () => {
     await assert.rejects(execute({ script: 'test', directory: 'packages/pnpm-app' }, { deny: true, asks }), /denied/);
     assert.match(asks[0]?.patterns[0] ?? '', /^pnpm:test in packages\/pnpm-app #[0-9a-f]{12}$/);
     assert.equal(asks[0]?.metadata.command, 'pnpm run test');
+  });
+
+  it('inherits the nearest package manager without crossing the worktree', async () => {
+    const workspace = join(project, 'workspace');
+    const nested = join(workspace, 'packages', 'app');
+    await mkdir(nested, { recursive: true });
+    await writeFile(join(nested, 'package.json'), JSON.stringify({ scripts: { test: 'example' } }));
+    const listing = async (worktree = workspace) => (await execute({}, { directory: nested, worktree })).output;
+
+    await writeFile(join(workspace, 'package.json'), JSON.stringify({ packageManager: 'yarn@4.9.0' }));
+    assert.equal(await listing(), 'yarn:test');
+    const asks: AskInput[] = [];
+    await assert.rejects(
+      execute({ script: 'test', runner: 'yarn' }, { directory: nested, worktree: workspace, deny: true, asks }),
+      /denied/,
+    );
+    assert.match(asks[0]?.patterns[0] ?? '', /^yarn:test in packages\/app #/);
+
+    await rm(join(workspace, 'package.json'));
+    await writeFile(join(workspace, 'pnpm-lock.yaml'), '');
+    assert.equal(await listing(), 'pnpm:test');
+    await writeFile(join(nested, 'package-lock.json'), '{}');
+    assert.equal(await listing(), 'npm:test');
+    await writeFile(
+      join(nested, 'package.json'),
+      JSON.stringify({ packageManager: 'bun@1.3.0', scripts: { test: 'example' } }),
+    );
+    assert.equal(await listing(), 'bun:test');
+    await writeFile(join(nested, 'package.json'), JSON.stringify({ scripts: { test: 'example' } }));
+    await rm(join(nested, 'package-lock.json'));
+    assert.equal(await listing(nested), 'npm:test');
+  });
+
+  it('does not retain discarded output buffers after truncation', async (context) => {
+    const directory = join(project, 'verbose');
+    await mkdir(directory);
+    await writeFile(join(directory, 'package.json'), JSON.stringify({ scripts: { verbose: 'node verbose.mjs' } }));
+    await writeFile(
+      join(directory, 'verbose.mjs'),
+      "import { writeSync } from 'node:fs';\n" +
+        "const chunk = Buffer.alloc(65536, 'x');\n" +
+        'for (let index = 0; index < 384; index++) writeSync(1, chunk);\n',
+    );
+    const concat = Buffer.concat.bind(Buffer);
+    let retainedBytes = 0;
+    context.mock.method(Buffer, 'concat', (chunks: readonly Uint8Array[], length?: number) => {
+      const buffers = new Set(chunks.map((chunk) => chunk.buffer));
+      retainedBytes = Math.max(
+        retainedBytes,
+        [...buffers].reduce((sum, buffer) => sum + buffer.byteLength, 0),
+      );
+      return concat(chunks, length);
+    });
+    const { output } = await execute({ script: 'verbose', directory: 'verbose' });
+    assert.match(output, /\[output truncated\]/);
+    assert.match(output, /\[exit code 0\]/);
+    assert.ok(retainedBytes >= 20 * 1024 * 1024, 'the output collector was not observed');
+    assert.ok(retainedBytes <= 21 * 1024 * 1024, `retained ${String(retainedBytes)} bytes after truncation`);
   });
 });

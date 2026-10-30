@@ -139,6 +139,7 @@ directory, a hash of the declared scripts or Makefile, and the exact arguments, 
 changes. It does not cover files the script runs or includes, such as test files, `.npmrc` settings, or included
 makefiles, which a writing role can still edit.
 The tool runs without a shell and uses the lockfile or `packageManager` field to choose npm, pnpm, Yarn, or Bun.
+Nested packages use the nearest declaration or lockfile, searching only as far as the worktree root.
 Makefile targets take no arguments. On Windows, package-manager shims run through `cmd.exe`, so arguments are limited
 to letters, digits, and `@+=:,./_-`. Stdin is closed, and an abort or the 10-minute timeout stops the whole process
 tree. Read-only roles deny the tool. Scripts run with the OpenCode server's full environment; approving one in an
