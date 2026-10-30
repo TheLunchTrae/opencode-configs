@@ -162,6 +162,10 @@ after restart; retain shared helpers under `extensions/tui/`.
 
 ## Continue a long task
 
+Compaction summaries are asked to keep the task objective, approved scope, pending permissions, verification limits,
+actual check results, review dispositions, retry budget, and blockers, and to mark unrecorded items unknown.
+A summary is still a model's restatement. It does not grant approval or prove that checks ran.
+
 Use `/checkpoint` only when durable state is useful. Keep short tasks in conversation.
 Save state in the work project's established location, preserving ownership, source changes, approvals, checks,
 review findings, and blockers. `/resume-work` revalidates that state against current files and instructions.
