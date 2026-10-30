@@ -74,7 +74,7 @@ See [USAGE.md](USAGE.md) for command examples, stack guidance, and verification 
 - [Session tools](USAGE.md#session-tools): configuration/context inspectors, bookmarks, and handoff drafts.
 - Compaction task state: asks automatic and manual compaction to keep scope, approvals, check results,
   review dispositions, and blockers. See [Continue a long task](USAGE.md#continue-a-long-task).
-- Local secret-path protection, described below.
+- Local secret-path protection and environment/output scrubbing, described below.
 
 Both plugin lists register Config Composer before Prompt Composer. Session tools do not import Composer APIs.
 Restart the server after editing definitions or prompts. Existing sessions can retain previous model selections.
@@ -89,12 +89,25 @@ Template basenames `.env.example`, `.env.sample`, `.env.template`, `.env.default
 unless the path contains a `secrets` segment. Matching is case-insensitive on every operating system.
 Native Read permissions also deny a complete `secrets` path segment and its contents.
 
-This plugin is a path check, not a sandbox or complete secret protection:
+The `scrub-secrets` plugin blanks shell environment variables named like credentials (`*_TOKEN`, `*_SECRET`,
+`*_PASSWORD`, `*_API_KEY`, `*_ACCESS_KEY`, `*_PRIVATE_KEY`, `*_CREDENTIALS`, and similar) and variables holding URLs
+with embedded passwords. Names ending in `_FILE`, `_PATH`, `_DIR`, or `_HOME`, and values naming an existing file,
+are kept.
+It applies to shell calls through the `shell.env` hook: agent shell calls and `!` commands. Terminal panels and
+plugin tools that start their own processes keep the server's environment.
+List variables that commands still need in `OPENCODE_SCRUB_ENV_ALLOW`, separated by commas.
+It also redacts private-key bodies, including cut-off blocks, common cloud, Git host, and API tokens, JWTs,
+bearer headers, URL passwords, and scrubbed values of 12 or more characters from built-in, plugin, MCP, and subtask
+tool results, with a warning toast. Output of `!` commands is not redacted. Redacted text cannot be matched by edits;
+edit around it or by hand.
+
+These plugins are pattern checks, not a sandbox or complete secret protection:
 
 - Shell expansion, aliases, or symlinks can hide the accessed path.
 - Searches from a parent directory can read sensitive content without a blocked path argument.
 - Approved commands, scripts, and hooks can access secrets.
 - Project settings, per-agent permissions, and saved approvals can change effective access.
+- Credentials in unrecognized formats or variable names pass through scrubbing unchanged.
 
 Shell approval defaults to `ask`, with explicit destructive-command denials.
 `git status *`, `git diff *`, and `git log *` allow routine inspection, including bare commands in V1.
