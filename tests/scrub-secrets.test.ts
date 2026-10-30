@@ -156,6 +156,9 @@ describe('scrub-secrets plugin', () => {
         data: { token: fake.github },
         blob: fake.aws,
         attachments: [{ data: fake.jwt }],
+        resource: { uri: 'file:///ordinary', blob: fake.aws },
+        content: [{ type: 'image', mimeType: 'image/png', data: fake.aws }],
+        file: { type: 'file', mime: 'image/png', url: `data:image/png;base64,${fake.aws}` },
       },
       metadata: { data: fake.env },
     };
@@ -164,6 +167,9 @@ describe('scrub-secrets plugin', () => {
       data: { token: '[REDACTED:github-token]' },
       blob: '[REDACTED:aws-access-key]',
       attachments: [{ data: '[REDACTED:jwt]' }],
+      resource: { uri: 'file:///ordinary', blob: '[REDACTED:aws-access-key]' },
+      content: [{ type: 'image', mimeType: 'image/png', data: '[REDACTED:aws-access-key]' }],
+      file: { type: 'file', mime: 'image/png', url: 'data:image/png;base64,[REDACTED:aws-access-key]' },
     });
     assert.equal(output.metadata.data, '[REDACTED:env:SCRUB_TEST_API_TOKEN]');
   });

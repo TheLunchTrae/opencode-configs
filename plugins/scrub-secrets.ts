@@ -20,18 +20,25 @@ const URL_PASSWORD = /\b([a-z][a-z0-9+.-]*:\/\/[^\s:/@]*:)[^\s/@]+@/gi;
 const MIN_LITERAL_LENGTH = 12;
 const MAX_DEPTH = 8;
 // Preserve encoded payloads in MCP media/resources and built-in file attachments, not ordinary data fields.
-const isBinaryPayload = (value: object, key: string, item: unknown): boolean => {
+type ResultContext = 'result' | 'content' | 'resource' | 'attachment' | 'ordinary';
+const isBinaryPayload = (value: object, key: string, item: unknown, context: ResultContext): boolean => {
   if (typeof item !== 'string') {
     return false;
   }
   const type: unknown = Reflect.get(value, 'type');
-  if (key === 'data') {
+  if (context === 'content' && key === 'data') {
     return (type === 'image' || type === 'audio') && typeof Reflect.get(value, 'mimeType') === 'string';
   }
-  if (key === 'blob') {
+  if (context === 'resource' && key === 'blob') {
     return typeof Reflect.get(value, 'uri') === 'string';
   }
-  return key === 'url' && type === 'file' && typeof Reflect.get(value, 'mime') === 'string' && item.startsWith('data:');
+  return (
+    context === 'attachment' &&
+    key === 'url' &&
+    type === 'file' &&
+    typeof Reflect.get(value, 'mime') === 'string' &&
+    item.startsWith('data:')
+  );
 };
 
 // Key blocks are matched by their body, so code that merely mentions a BEGIN or END marker stays readable.
@@ -152,7 +159,7 @@ export const ScrubSecretsPlugin: Plugin = async ({ client }) => {
 
   // Built-in tools return { output, metadata }; MCP tools return { content: [...] }; failed subtasks return nothing.
   // Every string in the result is redacted in place, except encoded binary payloads.
-  const walk = (value: unknown, kinds: Set<string>, depth: number): unknown => {
+  const walk = (value: unknown, kinds: Set<string>, depth: number, context: ResultContext): unknown => {
     if (typeof value === 'string') {
       return redact(value, kinds);
     }
@@ -161,13 +168,23 @@ export const ScrubSecretsPlugin: Plugin = async ({ client }) => {
     }
     if (Array.isArray(value)) {
       for (let index = 0; index < value.length; index++) {
-        value[index] = walk(value[index], kinds, depth + 1);
+        value[index] = walk(value[index], kinds, depth + 1, context);
       }
       return value;
     }
     for (const [key, item] of Object.entries(value)) {
-      if (!isBinaryPayload(value, key, item)) {
-        Reflect.set(value, key, walk(item, kinds, depth + 1));
+      if (!isBinaryPayload(value, key, item, context)) {
+        let childContext: ResultContext = 'ordinary';
+        if (context === 'result' && Array.isArray(item)) {
+          if (key === 'content') {
+            childContext = 'content';
+          } else if (key === 'attachments') {
+            childContext = 'attachment';
+          }
+        } else if (context === 'content' && Reflect.get(value, 'type') === 'resource' && key === 'resource') {
+          childContext = 'resource';
+        }
+        Reflect.set(value, key, walk(item, kinds, depth + 1, childContext));
       }
     }
     return value;
@@ -188,7 +205,7 @@ export const ScrubSecretsPlugin: Plugin = async ({ client }) => {
     // eslint-disable-next-line @typescript-eslint/require-await -- The hook contract returns a Promise.
     'tool.execute.after': async (input, output: unknown) => {
       const kinds = new Set<string>();
-      walk(output, kinds, 0);
+      walk(output, kinds, 0, 'result');
       if (kinds.size > 0) {
         notify(client, kinds, input.tool);
       }
