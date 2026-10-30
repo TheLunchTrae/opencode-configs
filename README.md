@@ -97,7 +97,8 @@ This plugin is a path check, not a sandbox or complete secret protection:
 Shell approval defaults to `ask`, with explicit destructive-command denials. They cover common argument orders for
 force, `+refspec`, and `--mirror` pushes, hard resets, `branch -D`, `git clean`, and recursive forced `rm`.
 A `git clean` whose first option is `-n` or `--dry-run` still asks. Unlisted spellings fall back to approval,
-including combined short flags such as `rm -vrf`, `branch -d -f`, and Git options before the subcommand such as
+including combined or split short flags such as `rm -vrf` and `branch -d -f`, and Git options before the
+subcommand such as
 `-C <dir>`, `-c`, or `--git-dir`. Rules for those would also deny commit messages that mention the commands.
 `git status *`, `git diff *`, and `git log *` allow routine inspection, including bare commands in V1.
 Later rules require approval for `--output` and `>` redirection. Git helpers and text-conversion filters can still run.
