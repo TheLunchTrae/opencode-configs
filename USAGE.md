@@ -38,7 +38,9 @@ Native agent files own ordered `groups`; `config-composer.jsonc` owns shared gro
 Native global edit and Task denials remain the fallback; the builder's exact Task allowlist is final.
 Secret-path Read guards and ordered shell rules stay in `opencode.jsonc`.
 
-The shipped profiles are `primary`, `openai-latest`, and `anthropic-latest`.
+The shipped profiles are `primary`, `primary-coding-builder`, `openai-latest`, and `anthropic-latest`.
+`primary-coding-builder` keeps `primary`'s bindings but runs the builder on the `coding` alias. The planner and
+reviewers stay on `reasoning`. Use it to compare builder cost and results; the quota sidebar shows usage.
 Their concrete provider/model/variant choices are in [config-composer.jsonc](config-composer.jsonc).
 No model availability or quality is implied by its name. Check your provider before selecting a profile.
 Background system/title choices and global defaults remain fixed across profiles.

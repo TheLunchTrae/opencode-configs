@@ -68,6 +68,28 @@
         }
       }
     },
+    "primary-coding-builder": {
+      "description": "primary bindings with the builder on the coding alias; planner and reviewers stay on reasoning",
+      "models": {
+        "reasoning": {
+          "model": "openai/gpt-6-astra",
+          "variant": "high"
+        },
+        "coding": {
+          "model": "openai/gpt-5.6-sol",
+          "variant": "medium"
+        },
+        "support": {
+          "model": "openai/gpt-5.6-terra",
+          "variant": "medium"
+        }
+      },
+      "agent": {
+        "builder": {
+          "modelRef": "coding"
+        }
+      }
+    },
     "openai-latest": {
       "models": {
         "reasoning": {
