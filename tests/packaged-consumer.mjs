@@ -30,6 +30,7 @@ try {
       '--experimental-strip-types',
       '--test',
       'tests/block-secrets.test.ts',
+      'tests/compaction-task-state.test.ts',
       'tests/scrub-secrets.test.ts',
       'tests/session-tools.test.ts',
       'tests/tui-navigation.test.ts',
