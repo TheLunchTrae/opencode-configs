@@ -35,7 +35,8 @@ pull requests, merges, installations, and deployments.
 
 Native agent files own ordered `groups`; `config-composer.jsonc` owns shared group settings and model profiles.
 `reasoning`, `coding`, and `support` groups consume profile aliases. `writers` grants edit access.
-`read-only` denies edits, shell, delegation, and GitHub/Playwright MCP tools. `system` retains fixed background settings.
+`read-only` denies edits, shell, delegation, and GitHub/Playwright MCP tools.
+`system` retains fixed background settings.
 Native global edit and Task denials remain the fallback; the builder's exact Task allowlist is final.
 Secret-path Read guards and ordered shell rules stay in `opencode.jsonc`.
 
