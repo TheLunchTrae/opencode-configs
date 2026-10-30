@@ -1,11 +1,12 @@
 import type { Plugin } from '@opencode-ai/plugin';
 
-// Appended after OpenCode's default compaction prompt. It mirrors the checkpoint skill's handoff fields
-// so automatic compaction keeps the state that authorization and verification rules depend on.
+// Appended after OpenCode's default compaction prompt. It follows a subset of the checkpoint skill's handoff
+// fields so automatic compaction keeps the state that authorization and verification rules depend on.
 const TASK_STATE_GUIDANCE = `Preserve task control state in the summary. When the conversation established them, record:
 
 - Task objective, active agent, and requested stopping point.
-- Approved scope, non-goals, and actions that still require user permission. Discussion is not approval.
+- Approved scope, non-goals, unresolved decisions, and actions that still require user permission.
+  Discussion is not approval.
 - Verification limits and their source: permitted checks, exclusions, and conditions for continuing without checks.
 - Checks actually run: command, working directory, PASS, FAIL, BLOCKED, or SKIP, and the source state checked.
 - Review findings and their disposition.
