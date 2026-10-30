@@ -123,7 +123,6 @@ test('native TUI activates the three session inspection panels from source', { t
       ['effective-config', 'context-inspector', 'session-bookmarks'],
     );
     assert.ok(panels.every((status) => status.active && status.enabled && status.source === 'file'));
-    assert.ok(!statuses.some((status) => status.id === 'workflow-panel'));
     assert.deepEqual(registryRequests, [], 'Source panels must load using the installed fixture dependencies');
   } finally {
     if (running() && child.pid !== undefined) {

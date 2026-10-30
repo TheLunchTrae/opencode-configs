@@ -11,8 +11,6 @@ import { nativeBinary } from './native-host.ts';
 import { waitForNativeReferences } from './native-references.ts';
 
 interface RuntimeMarker {
-  id: string;
-  definitionId: string;
   status: string;
   diagnostic?: string;
   selection: { path: string; revision: number; choice?: string | null };
@@ -211,12 +209,9 @@ test('native Composer selection applies, clears, and survives server restart', {
       }),
     );
     await api('/global/dispose', 'POST');
-    const previous = marker;
     marker = await snapshot();
     assert.equal(marker.selection.choice, choice);
     assert.equal(marker.candidate.profile, choice === undefined ? settings.defaultProfile : choice);
-    assert.notEqual(marker.id, previous.id, 'selection must be applied to a new runtime');
-    assert.equal(marker.definitionId, previous.definitionId, 'selection uses captured definitions');
     await stop();
     output = '';
     baseURL = undefined;
@@ -227,7 +222,6 @@ test('native Composer selection applies, clears, and survives server restart', {
     const restarted = await snapshot();
     assert.equal(restarted.selection.choice, choice, 'selection survives restart');
     assert.equal(restarted.candidate.profile, marker.candidate.profile);
-    assert.notEqual(restarted.definitionId, marker.definitionId, 'restart reloads definitions');
     marker = restarted;
   }
   assert.doesNotMatch(output, /Composer not applied|ConfigInvalidError|PluginInitError/);

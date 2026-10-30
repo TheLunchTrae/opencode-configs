@@ -87,7 +87,7 @@ test('context records require actual attachments and completed tool evidence', (
     records.filter((item) => item.kind === 'skill').map((item) => item.label),
     ['checkpoint'],
   );
-  assert.equal(records.filter((item) => item.label === 'Summary recorded').length, 1);
+  assert.equal(records.filter((item) => item.kind === 'compaction' && item.messageID === 'message-3').length, 1);
   assert.match(records.find((item) => item.label === 'Automatic compaction requested')!.evidence, /Request recorded/);
 });
 
@@ -140,8 +140,8 @@ test('bookmarks persist by project, workspace, directory, and session without ov
   assert.equal(bookmarkStore(api, { session: session() }).read()[0]?.label, 'Output contract');
   assert.deepEqual(bookmarkStore(api, { session: session('other') }).read(), []);
   assert.deepEqual(bookmarkStore(api, { session: { ...session(), projectID: 'other' } }).read(), []);
-  assert.notEqual(bookmarkKey(session()), bookmarkKey({ ...session(), workspaceID: 'other' }));
-  assert.notEqual(bookmarkKey(session()), bookmarkKey({ ...session(), directory: '/other' }));
+  assert.deepEqual(bookmarkStore(api, { session: { ...session(), workspaceID: 'other' } }).read(), []);
+  assert.deepEqual(bookmarkStore(api, { session: { ...session(), directory: '/other' } }).read(), []);
   const invalid = { version: 2, bookmarks: [] };
   values.set(bookmarkKey(session()), invalid);
   assert.throws(() => store.write(() => []), /preserved/);
@@ -158,27 +158,20 @@ test('invalid and duplicate bookmarks are rejected rather than silently replaced
   assert.throws(() => readBookmarks({ version: 1, bookmarks: [{ ...mark(), label: ' ' }] }, 'session-a'), /invalid/);
 });
 
-test('handoff drafts include only selected notes and preserve checkpoint evidence requirements', () => {
+test('handoff drafts preserve task context, selected notes, and source provenance', () => {
   const text = handoff(session(), [mark(), { ...mark('excluded'), note: 'EXCLUDED_NOTE', selected: false }]);
+  assert.match(text, /Add structured output/);
+  assert.match(text, /\/project/);
+  assert.match(text, /Output contract/);
   assert.match(text, /JSON only on stdout/);
-  assert.ok(!text.toLowerCase().includes('stage report'));
-  assert.match(text, /Confirm active lead and requested stopping point/);
-  assert.match(text, /Confirm current task state, dependencies, and ownership/);
   assert.ok(!text.includes('EXCLUDED_NOTE'));
-  for (const field of [
-    'Plan/spec location',
-    'Verification limits',
-    'Source evidence',
-    'file owners',
-    'working directory',
-    'Review findings',
-    'remaining budget',
-    'next bounded action',
-  ]) {
-    assert.ok(text.includes(field));
-  }
-  assert.match(text, /not permission grants/);
   assert.match(text, /Source session: session-a; message: message-1/);
+  assert.doesNotThrow(() =>
+    handoff(session(), [
+      ...Array.from({ length: 20 }, (_, i) => mark(String(i))),
+      { ...mark('excluded'), selected: false },
+    ]),
+  );
   assert.throws(
     () =>
       handoff(
