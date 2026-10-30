@@ -177,6 +177,17 @@ describe('scrub-secrets plugin', () => {
     }
   });
 
+  it('handles large base64 output in linear time', async () => {
+    const { after } = await create();
+    const line = `${'QUJD'.repeat(19)}\n`;
+    for (const text of [line.repeat(14_000), `${line.repeat(14_000)}-----END PRIVATE KEY-----\n`]) {
+      const output = { title: '', output: text, metadata: {} };
+      const started = performance.now();
+      await after({ tool: 'mcp_tool', sessionID: 's', callID: 'c', args: {} }, output);
+      assert.ok(performance.now() - started < 1000, `took ${String(performance.now() - started)} ms`);
+    }
+  });
+
   it('leaves code that only mentions key markers readable', async () => {
     const { after, showToast } = await create();
     const text = [

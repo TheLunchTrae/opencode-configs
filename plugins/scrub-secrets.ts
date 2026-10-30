@@ -33,11 +33,30 @@ const KEY_BEGIN = '-----BEGIN [A-Z0-9 ]*PRIVATE KEY(?: BLOCK)?-----';
 const KEY_END = '-----END [A-Z0-9 ]*PRIVATE KEY(?: BLOCK)?-----';
 const KEY_HEADERS = `(?:${LINE}(?:[A-Za-z][\\w-]*: [^\\n\\\\]*)?)*?`;
 const KEY_BODY = `(?:${LINE}[A-Za-z0-9+/=]{32,})+(?:${LINE}[A-Za-z0-9+/=]+)?`;
+// Body lines followed by END without BEGIN mean the text starts inside a key, as with an offset read.
+// The search starts from each END marker and looks back over a bounded window, so large base64 text without
+// a marker costs linear time. The window fits PEM and armored PGP private keys.
+const KEY_END_MARKER = new RegExp(KEY_END, 'g');
+const LONE_KEY_BODY = new RegExp(`${LINE_START}[A-Za-z0-9+/=]{32,}(?:${LINE}[A-Za-z0-9+/=]+)*${LINE}$`);
+const KEY_WINDOW = 16_384;
+const redactLoneKeyEnds = (text: string): string => {
+  let result = '';
+  let last = 0;
+  for (const match of text.matchAll(KEY_END_MARKER)) {
+    const start = Math.max(last, match.index - KEY_WINDOW);
+    const body = LONE_KEY_BODY.exec(text.slice(start, match.index));
+    if (body === null) {
+      continue;
+    }
+    result += `${text.slice(last, start + body.index)}[REDACTED:private-key]`;
+    last = match.index + match[0].length;
+  }
+  return last === 0 ? text : result + text.slice(last);
+};
+
 const REDACTIONS: readonly (readonly [string, RegExp])[] = [
   // A block ends at its END line or, when output was cut, after its last body line.
   ['private-key', new RegExp(`${KEY_BEGIN}${KEY_HEADERS}${KEY_BODY}(?:${LINE}${KEY_END})?`, 'g')],
-  // Body lines followed by END without BEGIN mean the text starts inside a key, as with an offset read.
-  ['private-key', new RegExp(`${LINE_START}[A-Za-z0-9+/=]{32,}(?:${LINE}[A-Za-z0-9+/=]+)*${LINE}${KEY_END}`, 'g')],
   ['aws-access-key', /\b(?:AKIA|ASIA)[0-9A-Z]{16}\b/g],
   ['github-token', /\bgh[opsur]_[A-Za-z0-9]{36,255}\b/g],
   ['github-token', /\bgithub_pat_\w{22,255}\b/g],
@@ -108,6 +127,11 @@ export const ScrubSecretsPlugin: Plugin = async ({ client }) => {
     }
     for (const [kind, pattern] of REDACTIONS) {
       apply(kind, pattern, `[REDACTED:${kind}]`);
+    }
+    const withoutKeyEnds = redactLoneKeyEnds(result);
+    if (withoutKeyEnds !== result) {
+      kinds.add('private-key');
+      result = withoutKeyEnds;
     }
     apply('bearer', BEARER, '$1[REDACTED:bearer]');
     apply('url-password', URL_PASSWORD, '$1[REDACTED:url-password]@');
