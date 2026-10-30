@@ -7,7 +7,7 @@ description: Establish comparable performance measurements and test one bottlene
 
 Work within the performance assignment, specialty, and permissions. Retain planning, approval, security review,
 and correctness requirements. This skill grants no delegation.
-Research-only and execution-only assignments return measurements and findings without edits.
+Research-only and execution-only assignments return findings and any measurements without edits.
 Apply `@agent-references/verification-scope.md` before measurement discovery or execution. Honor excluded measurements
 without requiring a new measurement plan. Keep any approved unmeasured change distinct from a demonstrated improvement.
 
