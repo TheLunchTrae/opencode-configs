@@ -149,6 +149,47 @@ describe('scrub-secrets plugin', () => {
     await after({ tool: 'task', sessionID: 's', callID: 'c', args: {} }, undefined as never);
   });
 
+  it('redacts ordinary data, blob, and attachment fields in structured results', async () => {
+    const { after } = await create();
+    const output = {
+      structuredContent: {
+        data: { token: fake.github },
+        blob: fake.aws,
+        attachments: [{ data: fake.jwt }],
+      },
+      metadata: { data: fake.env },
+    };
+    await after({ tool: 'mcp_tool', sessionID: 's', callID: 'c', args: {} }, output as never);
+    assert.deepEqual(output.structuredContent, {
+      data: { token: '[REDACTED:github-token]' },
+      blob: '[REDACTED:aws-access-key]',
+      attachments: [{ data: '[REDACTED:jwt]' }],
+    });
+    assert.equal(output.metadata.data, '[REDACTED:env:SCRUB_TEST_API_TOKEN]');
+  });
+
+  it('preserves encoded payloads while redacting their text metadata', async () => {
+    const { after } = await create();
+    // This synthetic AWS-shaped string is also valid base64 and must remain intact in binary fields.
+    const payload = fake.aws;
+    const output = {
+      content: [
+        { type: 'image', mimeType: 'image/png', data: payload },
+        { type: 'audio', mimeType: 'audio/wav', data: payload },
+        { type: 'resource', resource: { uri: 'file:///sample', blob: payload } },
+      ],
+      attachments: [
+        { type: 'file', mime: 'image/png', url: `data:image/png;base64,${payload}`, filename: fake.github },
+      ],
+    };
+    await after({ tool: 'mcp_tool', sessionID: 's', callID: 'c', args: {} }, output as never);
+    assert.equal(output.content[0]?.data, payload);
+    assert.equal(output.content[1]?.data, payload);
+    assert.equal(output.content[2]?.resource?.blob, payload);
+    assert.equal(output.attachments[0]?.url, `data:image/png;base64,${payload}`);
+    assert.equal(output.attachments[0]?.filename, '[REDACTED:github-token]');
+  });
+
   it('redacts partial private keys and PGP key blocks', async () => {
     const { after } = await create();
     for (const text of [

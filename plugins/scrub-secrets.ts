@@ -19,8 +19,20 @@ const URL_PASSWORD = /\b([a-z][a-z0-9+.-]*:\/\/[^\s:/@]*:)[^\s/@]+@/gi;
 // Short values such as `postgres` would rewrite ordinary text, so only longer literal values are redacted.
 const MIN_LITERAL_LENGTH = 12;
 const MAX_DEPTH = 8;
-// Encoded binary payloads: attachments in built-in results, data and blob fields in MCP content.
-const SKIPPED_KEYS: ReadonlySet<string> = new Set(['attachments', 'data', 'blob']);
+// Preserve encoded payloads in MCP media/resources and built-in file attachments, not ordinary data fields.
+const isBinaryPayload = (value: object, key: string, item: unknown): boolean => {
+  if (typeof item !== 'string') {
+    return false;
+  }
+  const type: unknown = Reflect.get(value, 'type');
+  if (key === 'data') {
+    return (type === 'image' || type === 'audio') && typeof Reflect.get(value, 'mimeType') === 'string';
+  }
+  if (key === 'blob') {
+    return typeof Reflect.get(value, 'uri') === 'string';
+  }
+  return key === 'url' && type === 'file' && typeof Reflect.get(value, 'mime') === 'string' && item.startsWith('data:');
+};
 
 // Key blocks are matched by their body, so code that merely mentions a BEGIN or END marker stays readable.
 // A line break is a real newline or an escaped \n inside a JSON or code string. Lines may be indented, as in YAML,
@@ -154,7 +166,7 @@ export const ScrubSecretsPlugin: Plugin = async ({ client }) => {
       return value;
     }
     for (const [key, item] of Object.entries(value)) {
-      if (!SKIPPED_KEYS.has(key)) {
+      if (!isBinaryPayload(value, key, item)) {
         Reflect.set(value, key, walk(item, kinds, depth + 1));
       }
     }
