@@ -152,6 +152,24 @@ describe('git_inspect tool', () => {
     assert.equal(output, 'git diff: no output');
   });
 
+  it('rejects subtree-relative reads that hide a sensitive directory', async () => {
+    const subtree = git('rev-parse', 'HEAD:config/secrets').trim();
+    await assert.rejects(inspect({ operation: 'show', revision: `${subtree}:db.txt` }));
+  });
+
+  it('reads commit and annotated-tag paths without weakening secret checks', async () => {
+    git('tag', '-a', 'inspection-tag', '-m', 'inspection tag', 'main');
+    try {
+      const commit = git('rev-parse', 'main').trim();
+      for (const revision of [`${commit}:app.txt`, 'inspection-tag:app.txt']) {
+        assert.equal(await inspect({ operation: 'show', revision }), 'first\n');
+      }
+      await assert.rejects(inspect({ operation: 'show', revision: 'inspection-tag:.env' }));
+    } finally {
+      git('tag', '-d', 'inspection-tag');
+    }
+  });
+
   it('does not run configured text conversion or fsmonitor helpers', async () => {
     const textconv = join(repository, 'textconv-ran');
     const fsmonitor = join(repository, 'fsmonitor-ran');

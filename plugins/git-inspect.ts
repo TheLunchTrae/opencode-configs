@@ -131,13 +131,14 @@ const inspect = async (request: Request, git: Git): Promise<string> => {
       const target = revision ?? 'HEAD';
       const colon = target.indexOf(':');
       if (colon !== -1) {
-        // rev:path reads one blob or tree. The path must pass the secret check; exclusions still apply to trees.
-        checkRevision(target.slice(0, colon));
+        // Resolve a commit root so subtree IDs cannot hide sensitive parent directories.
+        const root = checkRevision(target.slice(0, colon));
         const path = target.slice(colon + 1);
         if (path !== '') {
           checkPath(path);
         }
-        return git({ args: ['show', ...NO_HELPERS, target, ...content] });
+        const commit = (await git({ args: ['rev-parse', '--verify', `${root}^{commit}`] })).trim();
+        return git({ args: ['show', ...NO_HELPERS, `${commit}:${path}`, ...content] });
       }
       checkRevision(target);
       if (target.includes('..')) {

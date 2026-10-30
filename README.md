@@ -103,7 +103,8 @@ bearer headers, URL passwords, and scrubbed values of 12 or more characters from
 tool results, with a warning toast. Output of `!` commands is not redacted. Redacted text cannot be matched by edits;
 edit around it or by hand.
 
-`git_inspect` applies the same path check to explicit paths and `rev:path` reads, and rejects raw blob IDs,
+`git_inspect` applies the same path check to explicit paths and `rev:path` reads. The `rev:path` root must resolve
+to a commit, including an annotated tag's commit. It rejects subtree roots, raw blob IDs,
 index-stage paths, and `:/` or `^{/...}` searches. It excludes content of matching files from diffs, logs, and `show`,
 including template files such as `.env.example`. Commits that change only excluded files still appear, without
 their content, and file names still appear in status and changed-file lists. It disables external diff drivers,
