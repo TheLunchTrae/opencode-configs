@@ -20,6 +20,9 @@ const variables = {
   SCRUB_TEST_TOKENIZERS_PARALLELISM: 'false',
   SCRUB_TEST_ALLOWED_TOKEN: 'kept-for-tools',
   PASSWORD_STORE_DIR: '/home/test/.password-store',
+  SCRUB_TEST_IDENTITY_TOKEN_FILE: '/var/run/secrets/token',
+  SCRUB_TEST_APPLICATION_CREDENTIALS: '/home/test/key.json',
+  SCRUB_TEST_SHORT_PASSWORD: 'postgres',
 };
 const saved = new Map<string, string | undefined>();
 
@@ -62,6 +65,9 @@ describe('scrub-secrets plugin', () => {
     assert.equal('SCRUB_TEST_TOKENIZERS_PARALLELISM' in output.env, false);
     assert.equal('SCRUB_TEST_ALLOWED_TOKEN' in output.env, false);
     assert.equal('PASSWORD_STORE_DIR' in output.env, false);
+    assert.equal('SCRUB_TEST_IDENTITY_TOKEN_FILE' in output.env, false);
+    assert.equal('SCRUB_TEST_APPLICATION_CREDENTIALS' in output.env, false);
+    assert.equal(output.env.SCRUB_TEST_SHORT_PASSWORD, '');
   });
 
   it('leaves terminal panels without a session unchanged', async () => {
@@ -111,6 +117,44 @@ describe('scrub-secrets plugin', () => {
     await after({ tool: 'read', sessionID: 'session', callID: 'call', args: {} }, output);
     assert.equal(output.output, text);
     assert.equal(showToast.mock.callCount(), 0);
+  });
+
+  it('redacts MCP content and tolerates missing results', async () => {
+    const { after } = await create();
+    const output = {
+      content: [
+        { type: 'text', text: `token ${fake.github}` },
+        { type: 'resource', resource: { uri: 'file:///x', text: fake.jwt } },
+      ],
+      structuredContent: { nested: { key: fake.aws } },
+    };
+    await after({ tool: 'github_get_file', sessionID: 's', callID: 'c', args: {} }, output as never);
+    const text = JSON.stringify(output);
+    for (const value of [fake.github, fake.jwt, fake.aws]) {
+      assert.equal(text.includes(value), false, value);
+    }
+    await after({ tool: 'task', sessionID: 's', callID: 'c', args: {} }, undefined as never);
+  });
+
+  it('redacts partial private keys and PGP key blocks', async () => {
+    const { after } = await create();
+    for (const text of [
+      '-----BEGIN RSA PRIVATE KEY-----\nAAAAtruncated',
+      'AAAAoffset-body\nmore\n-----END EC PRIVATE KEY-----\nafter',
+      '-----BEGIN PGP PRIVATE KEY BLOCK-----\nAAAApgp\n-----END PGP PRIVATE KEY BLOCK-----',
+    ]) {
+      const output = { title: '', output: text, metadata: {} };
+      await after({ tool: 'read', sessionID: 's', callID: 'c', args: {} }, output);
+      assert.doesNotMatch(output.output, /AAAA/, text);
+    }
+  });
+
+  it('keeps short environment values in ordinary text and redacts empty-user URL passwords', async () => {
+    const { after } = await create();
+    const output = { title: '', output: 'database: postgres\nhttps://:synthetic-url-token@host.invalid', metadata: {} };
+    await after({ tool: 'read', sessionID: 's', callID: 'c', args: {} }, output);
+    assert.match(output.output, /database: postgres/);
+    assert.doesNotMatch(output.output, /synthetic-url-token/);
   });
 
   it('still redacts when the toast fails', async () => {
