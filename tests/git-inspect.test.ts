@@ -2,7 +2,7 @@ import type { PluginInput } from '@opencode-ai/plugin';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { after, before, describe, it } from 'node:test';
@@ -51,6 +51,12 @@ describe('git_inspect tool', () => {
     await writeFile(join(repository, 'app.txt'), 'first\nsecond\n');
     await writeFile(join(repository, '.env'), 'TOKEN=synthetic-changed-value\n');
     git('commit', '--quiet', '-am', 'feature change');
+    await mkdir(join(repository, 'config', 'secrets'), { recursive: true });
+    await writeFile(join(repository, 'config', 'secrets', 'db.txt'), 'synthetic-nested-value\n');
+    await writeFile(join(repository, 'deploy.key'), 'synthetic-key-value\n');
+    await writeFile(join(repository, '.env'), 'TOKEN=synthetic-rotated-value\n');
+    git('add', '.');
+    git('commit', '--quiet', '-m', 'rotate secrets only');
   });
 
   after(async () => {
@@ -75,11 +81,26 @@ describe('git_inspect tool', () => {
     assert.match(files, /\.env/);
     for (const args of [
       { operation: 'diff', revision: 'main...feature' },
-      { operation: 'show', revision: 'feature' },
+      { operation: 'diff', revision: 'main...feature', stat: true },
+      { operation: 'show' },
+      { operation: 'show', revision: 'feature~1' },
+      { operation: 'show', revision: 'HEAD', stat: true },
+      { operation: 'show', revision: 'HEAD:' },
       { operation: 'log', revision: 'main..feature', patch: true },
+      { operation: 'log', patch: true, maxCount: 5 },
     ]) {
       const output = await inspect(args);
-      assert.doesNotMatch(output, /synthetic-(committed|changed)-value/, JSON.stringify(args));
+      assert.doesNotMatch(output, /synthetic-[a-z]+-value/, JSON.stringify(args));
+    }
+  });
+
+  it('keeps commits whose only changes are excluded', async () => {
+    const shown = await inspect({ operation: 'show', revision: 'HEAD' });
+    assert.match(shown, /rotate secrets only/);
+    for (const args of [{ patch: true }, { stat: true }, {}]) {
+      const log = await inspect({ operation: 'log', maxCount: 3, ...args });
+      assert.match(log, /rotate secrets only/, JSON.stringify(args));
+      assert.match(log, /feature change/, JSON.stringify(args));
     }
   });
 
@@ -90,6 +111,14 @@ describe('git_inspect tool', () => {
       { operation: 'blame', paths: ['.env'] },
       { operation: 'diff', paths: ['keys/server.pem'] },
       { operation: 'diff', revision: '--output=/tmp/x' },
+      { operation: 'show', revision: ':/rotate' },
+      { operation: 'show', revision: 'HEAD~1^{/:{0}}' },
+      { operation: 'show', revision: 'HEAD^{/rotate}' },
+      { operation: 'show', revision: ':0:.env' },
+      { operation: 'show', revision: 'HEAD:./.env' },
+      { operation: 'show', revision: 'HEAD:deploy.key' },
+      { operation: 'show', revision: git('rev-parse', 'HEAD:.env').trim() },
+      { operation: 'log', revision: 'HEAD@{2024-01-01:00}' },
       { operation: 'log', revision: 'main feature' },
       { operation: 'merge-base', revision: 'main' },
       { operation: 'blame', paths: [] },

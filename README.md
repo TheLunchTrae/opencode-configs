@@ -38,7 +38,8 @@ and the native `skill` tool; raw reads and skill-derived slash commands do not e
   `/profiles` selects a worktree profile; `/view-configs` shows settings and origins.
 - Review permissions before installation. Builder and built-in `general` can edit; planner and reviewers cannot
   edit, run shell commands, delegate, or use the configured GitHub/Playwright tools. They can use `git_inspect`.
-  Built-in `explore` retains its native exploration restrictions. Global Task access remains denied except for the builder's explicit targets.
+  Built-in `explore` retains its native exploration restrictions.
+  Global Task access remains denied except for the builder's explicit targets.
 - GitHub and Playwright MCP definitions are disabled. Enabling them and configuring authentication is a separate
   local decision. Their tools require approval for writing roles and remain denied for read-only custom roles.
   Keep credentials out of configuration source.
@@ -102,9 +103,12 @@ bearer headers, URL passwords, and scrubbed values of 12 or more characters from
 tool results, with a warning toast. Output of `!` commands is not redacted. Redacted text cannot be matched by edits;
 edit around it or by hand.
 
-`git_inspect` applies the same path check to explicit paths and `rev:path` reads. It excludes content of matching
-files from diffs, logs, and `show`, including template files such as `.env.example`; file names still appear.
-It disables external diff drivers, text conversion, and fsmonitor helpers. Configured clean filters can still run.
+`git_inspect` applies the same path check to explicit paths and `rev:path` reads, and rejects raw blob IDs,
+index-stage paths, and `:/` or `^{/...}` searches. It excludes content of matching files from diffs, logs, and `show`,
+including template files such as `.env.example`. Commits that change only excluded files still appear, without
+their content, and file names still appear in status and changed-file lists. It disables external diff drivers,
+text conversion, fsmonitor helpers, and partial-clone fetches. Configured clean filters can still run.
+Output over 8 MB is truncated.
 
 These plugins are pattern checks, not a sandbox or complete secret protection:
 
