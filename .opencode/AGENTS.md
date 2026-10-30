@@ -79,6 +79,8 @@ Read `plugins/block-secrets.ts` and its tests before modifying it. Preserve path
 `pattern` is a path only for glob. Match case-insensitively and normalize backslashes. A complete `secrets` segment
 overrides template basenames. Reject calls even when the error toast fails. Keep its README pointer correct.
 Bash token checks are heuristic; expansion, aliases, symlinks, and parent-directory searches limit protection.
+`plugins/scrub-secrets.ts` blanks variables only for session shell calls; keep terminal panels unscrubbed.
+Use synthetic credential-shaped values in its tests.
 Do not describe the plugin as a sandbox.
 
 Session tools live in `extensions/session-tools/` with shared UI helpers outside auto-discovered plugin directories.
