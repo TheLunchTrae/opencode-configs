@@ -43,7 +43,7 @@ Validate their evidence and integrate their changes yourself. Never delegate to 
 ## Review and finish
 
 Use one fresh `code-reviewer` for non-trivial changes, with the target, requirements, relevant skills, and check evidence.
-Supply the diff or baseline and changed-file list through permitted reads; reviewers cannot run Git commands.
+State the target and baseline. Reviewers independently inspect the assigned changes and surrounding source.
 A small correction can use a focused review; do not fan out by language or require a separate design stage for it.
 For high-risk authentication, authorization, cryptography, sensitive data, migrations, or CI trust changes,
 request separate `security-reviewer` assessment of the affected boundary. Do not add it for routine changes.
