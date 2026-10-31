@@ -5,7 +5,8 @@
 This repository supplies reusable global OpenCode configuration. Root `AGENTS.md` ships to every session.
 Keep repository-only maintenance rules here; `.opencode/opencode.jsonc` loads this file through `instructions` in V1.
 Read this file explicitly in V2, whose instruction loading differs. Do not move maintenance rules into global config.
-Keep user docs in `README.md` and `USAGE.md`. Do not store task reports, private conversations, or research dumps here.
+Keep `README.md` to a brief personal-configuration description, except for required license notices.
+Do not add a usage guide or store task reports, private conversations, or research dumps here.
 Read affected source before editing. Follow root authorization, tool-selection, security, and verification rules.
 
 ## Configuration and prompts
@@ -83,7 +84,7 @@ then restores it for native checks. It must not mutate installed-user configurat
 Read `plugins/block-secrets.ts`, `extensions/security/secret-paths.ts`, and their tests before modifying them.
 Secret path patterns are shared with `git_inspect`. Preserve path keys `filePath`, `file_path`, and `path`;
 `pattern` is a path only for glob. Match case-insensitively and normalize backslashes. A complete `secrets` segment
-overrides template basenames. Reject calls even when the error toast fails. Keep its README pointer correct.
+overrides template basenames. Reject calls even when the error toast fails. Keep denial diagnostics accurate.
 Bash token checks are heuristic; expansion, aliases, symlinks, and parent-directory searches limit protection.
 `plugins/scrub-secrets.ts` blanks variables only for session shell calls; keep terminal panels unscrubbed.
 Use synthetic credential-shaped values in its tests.
