@@ -37,6 +37,7 @@
       "agent": {
         "permission": {
           "bash": "deny",
+          "project_script": "deny",
           "edit": "deny",
           "task": "deny",
           "github_*": "deny",
