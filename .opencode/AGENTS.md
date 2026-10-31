@@ -44,6 +44,11 @@ Read affected source before editing. Follow root authorization, tool-selection, 
 
 ## Plugin tooling
 
+Keep local plugin entrypoints in `plugins/` unless a documented loader or runtime constraint requires another location.
+Keep shared helper modules outside auto-discovered plugin directories so their exports are not treated as plugins.
+Document placement exceptions in source or these maintenance notes. Verify native discovery before moving or
+registering entrypoints, and do not register an auto-discovered entrypoint again.
+
 Run `npm ci` before editing plugins/extensions. Use workspace TypeScript and preserve compiler/OpenTUI JSX settings.
 The DOM library supports Solid declarations; runtime ESLint globals remain limited to Node.js.
 Keep npm, pinned dependencies, loader-required exports, and Promise-returning hooks. Explain narrow lint suppressions.
@@ -85,6 +90,7 @@ Use synthetic credential-shaped values in its tests.
 Do not describe the plugin as a sandbox.
 
 Session tools live in `extensions/session-tools/` with shared UI helpers outside auto-discovered plugin directories.
+Their TUI-only entrypoints are registered in `tui.jsonc` and stay outside server plugin auto-discovery.
 Keep config/context views read-only and preserve evidence limits. Bookmark storage stays scoped by project,
 workspace, directory, and session; preserve malformed records on errors. Handoff drafts require explicit copy
 and must never submit prompts automatically. Do not add workflow-stage tracking to these panels.
