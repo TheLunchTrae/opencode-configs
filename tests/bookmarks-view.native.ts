@@ -6,7 +6,7 @@ import type { JSX } from '@opentui/solid';
 import { bookmarkKey } from '../extensions/session-tools/model.ts';
 
 test(
-  'session panels preserve existing bookmarks and render an explicit-copy handoff without stage reports',
+  'session panels preserve existing bookmarks and require explicit handoff copying without submission',
   {
     skip: process.versions.bun === undefined ? 'Run with Bun and @opentui/solid/preload to render TSX.' : false,
     timeout: 15_000,
@@ -22,6 +22,12 @@ test(
     const commands = new Map<string, () => unknown>();
     const controller = new AbortController();
     const copied: string[] = [];
+    const errors: unknown[] = [];
+    let submissions = 0;
+    const submit = () => {
+      submissions++;
+      return Promise.resolve({ data: undefined });
+    };
     const session: Session = {
       id: 'root',
       slug: 'root',
@@ -50,7 +56,14 @@ test(
     const api = {
       lifecycle: { signal: controller.signal },
       route: { current: { name: 'session', params: { sessionID: 'root' } } },
-      client: { session: { get: async () => ({ data: session }), messages: async () => ({ data: [] }) } },
+      client: {
+        session: {
+          get: async () => ({ data: session }),
+          messages: async () => ({ data: [] }),
+          prompt: submit,
+          promptAsync: submit,
+        },
+      },
       kv: {
         ready: true,
         get: (key: string) => storage.get(key),
@@ -77,7 +90,11 @@ test(
         },
       },
       ui: {
-        toast: ({ variant }: { variant: string }) => assert.notEqual(variant, 'error'),
+        toast: (notification: { variant: string }) => {
+          if (notification.variant === 'error') {
+            errors.push(notification);
+          }
+        },
         DialogSelect: (props: TuiDialogSelectProps<string>) => {
           selected = props;
           return jsx('text', {
@@ -166,14 +183,16 @@ test(
     assert.deepEqual(storage.get(bookmarkKey(session)), saved);
     await select('draft');
     await renderer.waitForFrame((value) => value.includes('Handoff draft'));
-    assert.equal(copied.length, 0, 'Opening a handoff must not copy or submit it');
+    assert.equal(copied.length, 0, 'Opening a handoff must not copy it');
+    assert.equal(submissions, 0, 'Opening a handoff must not submit it');
+    assert.deepEqual(errors, []);
     await commands.get('session-bookmarks.copy-draft')!();
     assert.equal(copied.length, 1);
     assert.match(copied[0], /^\/checkpoint /);
     assert.match(copied[0], /PRESERVED_NOTE/);
     assert.match(copied[0], /Source session: root; message: message-1/);
-    assert.match(copied[0], /Confirm current task state, dependencies, and ownership from the conversation/);
-    assert.ok(!copied[0].toLowerCase().includes('stage report'));
+    assert.equal(submissions, 0, 'Copying a handoff must not submit it');
+    assert.deepEqual(errors, []);
     renderer.resize(60, 25);
     await renderer.flush();
     assert.match(renderer.captureCharFrame(), /Handoff draft/);
