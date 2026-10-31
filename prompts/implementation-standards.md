@@ -27,6 +27,16 @@ Apply its boundary to the guidance below.
   Record checks that passed, failed, were blocked, or were not applicable.
 - Do not describe an unexecuted check as passing. Include evidence for any claimed result.
 
+## Simplify when useful
+
+After complex or exploratory work functions, make one bounded simplification pass before final independent review.
+Use what you learned to identify temporary scaffolding, duplicate logic, unnecessary state or layers,
+and opportunities to reuse existing code. Change only what has a concrete benefit within the approved scope.
+No change is a valid result; do not require a rewrite or repeat the pass indefinitely.
+Preserve a recoverable baseline without unauthorized commits or destructive Git operations.
+Preserve behavior, interfaces, security boundaries, and meaningful tests. Rerun affected checks after changes,
+then review the final diff through the existing review workflow.
+
 ## Return evidence
 
 Report changed behavior, inspected scope, source state, actual check results, and unresolved limits.
