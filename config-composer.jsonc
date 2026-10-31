@@ -37,7 +37,6 @@
       "agent": {
         "permission": {
           "bash": "deny",
-          "git_inspect": "allow",
           "edit": "deny",
           "task": "deny",
           "github_*": "deny",
