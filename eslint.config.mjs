@@ -10,7 +10,7 @@ const codeFiles = ['plugins/**/*.ts', 'extensions/**/*.{ts,tsx}', 'tests/**/*.{m
 const typedFiles = ['plugins/**/*.ts', 'extensions/**/*.{ts,tsx}', 'tests/**/*.ts'];
 
 export default defineConfig(
-  globalIgnores(['**/node_modules/**', '**/coverage/**', '**/dist/**']),
+  globalIgnores(['**/node_modules/**', '**/coverage/**', '**/dist/**', 'vendor/**']),
   {
     files: [...codeFiles, '*.config.mjs'],
     extends: [eslint.configs.recommended, comments.recommended, regexp.configs['flat/recommended']],
