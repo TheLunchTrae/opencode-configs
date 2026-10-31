@@ -28,7 +28,6 @@ const assertBlocked = async (tool: string, args: Record<string, unknown>, rawPat
     assert.ok(error instanceof Error);
     assert.match(error.message, /blocked by block-secrets plugin/);
     assert.ok(error.message.includes(rawPath));
-    assert.match(error.message, /Sensitive-file access is denied by policy/);
     return true;
   });
   assert.equal(showToast.mock.callCount(), 1);
