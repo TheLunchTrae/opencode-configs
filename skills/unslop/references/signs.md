@@ -112,8 +112,3 @@ after the passes.
 - A headline that would fit another product if you swapped the name → say what this product does, with its own nouns
 - A hero visual that is an empty box or a generic picture → a product preview in code or an image from the world
 - Every product getting the same layout, type and palette → let the direction choose
-
----
-
-Part of unslop by Damir Sokolovsky ([@heydamir](https://x.com/heydamir)), CC BY 4.0. Keep this credit in copies and
-adaptations.

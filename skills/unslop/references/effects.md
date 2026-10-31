@@ -120,8 +120,3 @@ These effects broke on weak laptops before, so keep to these rules.
 - Animate at 8 to 12 steps per second, not 60, and change only a small share of cells per step.
 - Pause when the canvas is off screen.
 - Size the canvas for the device pixel ratio, but cap it at 2.
-
----
-
-Part of unslop by Damir Sokolovsky ([@heydamir](https://x.com/heydamir)), CC BY 4.0. Keep this credit in copies and
-adaptations.

@@ -117,8 +117,3 @@ Build the prompt from these parts, in this order:
 - A treatment in code, like a duotone into the page palette, can make a generated image feel native. Use one only when
   it fits the character, and never as new decoration.
 - Load the hero image with high priority and give it fixed dimensions so the layout does not jump.
-
----
-
-Part of unslop by Damir Sokolovsky ([@heydamir](https://x.com/heydamir)), CC BY 4.0. Keep this credit in copies and
-adaptations.

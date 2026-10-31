@@ -3,19 +3,9 @@ name: unslop
 description:
   Use when the user asks to unslop, polish, clean up, or redesign an AI-looking interface, or when reviewing a UI with
   generic gradients, glows, emoji labels, hype copy, uneven spacing, or excessive motion.
-license: CC-BY-4.0
-metadata:
-  author: Damir Sokolovsky
-  source: https://github.com/heydamir/unslop
-  upstream-revision: 4652254daff586ff4739849395a127b56f7f8cc7
 ---
 
 # Unslop
-
-Adapted for OpenCode from **unslop by Damir Sokolovsky** ([@heydamir](https://x.com/heydamir)). The
-[upstream source](https://github.com/heydamir/unslop/tree/4652254daff586ff4739849395a127b56f7f8cc7) and this adaptation
-are licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Keep this attribution and the
-[notice](NOTICE.md) with copies and adaptations. No endorsement is implied.
 
 Fix the craft and keep the product. Preserve features, content, section order, and established branding. Give the screen
 a character derived from its purpose, not from a fashionable template. Keep navigation, buttons, borders, and labels

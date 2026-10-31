@@ -148,8 +148,3 @@ One easing curve for everything, `cubic-bezier(0.22, 1, 0.36, 1)`.
 
 - Rise distance on enter: 6 to 12px. Press scale: 0.97 to 0.98.
 - Transition color, background, border, opacity and transform only.
-
----
-
-Part of unslop by Damir Sokolovsky ([@heydamir](https://x.com/heydamir)), CC BY 4.0. Keep this credit in copies and
-adaptations.
