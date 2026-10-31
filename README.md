@@ -17,11 +17,15 @@ Planning and review scale with task risk. There is no mandatory planner/design/d
 
 ## Setup
 
-1. Install OpenCode V1 1.19.x and Node 22.18 or newer. See [OpenCode documentation](https://opencode.ai/docs/).
+1. Install OpenCode V1 1.19.x, Node 22.18 or newer, and Python 3.10 or newer on `PATH`.
+   See [OpenCode documentation](https://opencode.ai/docs/).
 2. Back up your existing global configuration directory.
+   In this checkout, run `git submodule update --init --recursive` to retrieve the pinned TokenEconomizer runtime.
 3. Copy `AGENTS.md`, `opencode.jsonc`, `config-composer.jsonc`, `tui.jsonc`, `agents/`, `commands/`, `skills/`,
    `references/`, `prompts/`, `plugins/`, `extensions/`, `themes/`, `opencode-quota/`, `package.json`,
-   `package-lock.json`, `README.md`, and `USAGE.md` into that directory. Merge unrelated local settings.
+   `package-lock.json`, `vendor/`, `notices/`, `README.md`, and `USAGE.md` into that directory.
+   Merge unrelated local settings.
+   Preserve the complete `vendor/TokenEconomizer` directory, including its Apache-2.0 `LICENSE`.
 4. Run `npm ci` there to install the pinned dependencies.
 5. Configure your shell and available provider models, authenticate through `/connect`, and restart OpenCode.
 
@@ -78,6 +82,13 @@ See [USAGE.md](USAGE.md) for command examples, stack guidance, and verification 
 - Local secret-path protection and environment/output scrubbing, described below.
 - Local `git_inspect` tool: read-only Git status, diffs, history, and blame for roles without shell access.
 - Local `project_script` tool: runs only scripts declared in `package.json`, `composer.json`, or a Makefile.
+- [TokenEconomizer](https://github.com/microsoft/TokenEconomizer): experimental OpenCode adapter with its pinned
+  upstream runtime in `vendor/TokenEconomizer`. The local entrypoint loads it once without changing upstream code.
+  It stores session exports in `~/.tokeneconomizer` and can make additional model calls through your OpenCode login.
+  Savings are not guaranteed. Set `TE_DISABLE=1` before starting OpenCode to disable this entrypoint entirely.
+  Check status with `~/.tokeneconomizer/bin/te --host opencode status` after the first session.
+  On Windows, use `python vendor/TokenEconomizer/plugin/scripts/te_bootstrap.py cli --host opencode status`
+  from your configuration directory. See [third-party notices](notices/README.md).
 
 Both plugin lists register Config Composer before Prompt Composer. Session tools do not import Composer APIs.
 Restart the server after editing definitions or prompts. Existing sessions can retain previous model selections.
