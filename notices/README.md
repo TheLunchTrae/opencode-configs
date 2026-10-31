@@ -1,5 +1,11 @@
 # Third-party notices
 
-`vendor/TokenEconomizer` is the unmodified Microsoft TokenEconomizer checkout pinned by the Git submodule.
-All files in that directory retain their upstream notices and [Apache-2.0 license](../vendor/TokenEconomizer/LICENSE).
+| Covered files                                         | Attribution and license                                |
+| ----------------------------------------------------- | ------------------------------------------------------ |
+| `skills/unslop/SKILL.md`, `skills/unslop/references/` | [Unslop notice](../skills/unslop/NOTICE.md), CC BY 4.0 |
+| `vendor/TokenEconomizer/` | [Upstream license](../vendor/TokenEconomizer/LICENSE), Apache-2.0 |
+
+The Unslop notice is stored with the skill so that standalone copies retain its attribution and license terms.
+
+TokenEconomizer is an unmodified upstream checkout pinned by the Git submodule.
 Include the initialized directory and its license when distributing this configuration.
