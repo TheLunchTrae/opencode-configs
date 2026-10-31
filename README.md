@@ -17,6 +17,23 @@ Planning and review scale with task risk. There is no mandatory planner/design/d
 
 ## Setup
 
+### TokenEconomizer
+
+[Per Original Docs](https://github.com/microsoft/TokenEconomizer/blob/main/plugin/README.md#opencode)
+
+Requirements: Git, OpenCode V1 1.19.x, and Python 3.10+ on `PATH`.
+
+1. From your active configuration checkout, run:
+
+   ```sh
+   git pull --ff-only
+   git submodule update --init --recursive
+   ```
+
+2. Restart OpenCode.
+
+### Configuration
+
 1. Install OpenCode V1 1.19.x and Node 22.18 or newer. See [OpenCode documentation](https://opencode.ai/docs/).
 2. Back up your existing global configuration directory.
 3. Copy `AGENTS.md`, `opencode.jsonc`, `config-composer.jsonc`, `tui.jsonc`, `agents/`, `commands/`, `skills/`,
