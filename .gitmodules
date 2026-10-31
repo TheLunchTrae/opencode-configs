@@ -1,3 +1,0 @@
-[submodule "vendor/TokenEconomizer"]
-	path = vendor/TokenEconomizer
-	url = https://github.com/microsoft/TokenEconomizer.git

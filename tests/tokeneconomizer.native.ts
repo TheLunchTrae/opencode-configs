@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { test } from 'node:test';
 import { nativeBinary } from './native-host.ts';
 
-test('native discovery loads the pinned upstream adapter from a copied installation', async (t) => {
+test('native discovery loads the vendored adapter from a copied installation', async (t) => {
   const root = await mkdtemp(join(tmpdir(), 'tokeneconomizer-native-'));
   t.after(() => rm(root, { recursive: true, force: true }));
   const installation = join(root, 'config', 'opencode');

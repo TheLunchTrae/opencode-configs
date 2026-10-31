@@ -7,5 +7,7 @@
 
 The Unslop notice is stored with the skill so that standalone copies retain its attribution and license terms.
 
-TokenEconomizer is an unmodified upstream checkout pinned by the Git submodule.
-Include the initialized directory and its license when distributing this configuration.
+TokenEconomizer runtime files are copied unchanged from
+[microsoft/TokenEconomizer at e428fc91b0f8ffecb5a596d56b14fe2f1485a5f9](https://github.com/microsoft/TokenEconomizer/tree/e428fc91b0f8ffecb5a596d56b14fe2f1485a5f9).
+The copy includes the OpenCode adapter, launchers, Python package, required catalog data, and license.
+Include `vendor/TokenEconomizer/` and its license when distributing this configuration.
