@@ -8,6 +8,13 @@ description: Use when planning, implementing, or reviewing GitHub Actions or Git
 Trace callers, includes, reusable workflows, triggers, inherited settings, required check names, and job dependencies.
 Inspect inaccessible dependencies as explicit gaps. Preserve the intended graph and existing project conventions.
 
+For GitHub Actions, read the current
+[shared workflow guidance](https://github.com/lunchbox-labs/.github/blob/main/agent-guidance/workflows.md)
+before selecting naming, performance, or failure-diagnostics changes. It owns those defaults; do not maintain a second copy.
+Honor local exceptions. Report unavailable guidance rather than guessing. Do not apply GitHub-specific defaults to GitLab.
+Normal command logs and failure status are the default. Upload existing results on failure only where useful.
+Deep diagnostics are opt-in for a specific investigation, not a mandatory pipeline stage. Preserve original failures.
+
 - Grant minimum job permissions. Keep secrets out of source, logs, artifacts, and caches. Masking does not make
   transformed secrets safe. Never execute untrusted fork code with deploy credentials or privileged runner access.
 - In GitHub Actions, pin third-party actions by full commit SHA. Pass untrusted event values through environment
