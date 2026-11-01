@@ -6,9 +6,7 @@ description: Use when starting issue-backed development, coordinating work acros
 # Issue and pull request delivery
 
 Read the target repository's instructions and relevant issue/PR history first.
-Read the current [shared common guidance](https://github.com/lunchbox-labs/.github/blob/main/agent-guidance/common.md)
-for authoritative traceability, commit/PR content, documentation placement, and meaningful-test defaults.
-Apply repository exceptions and user constraints. If the source is unavailable, report the gap; do not invent its contents.
+Apply repository exceptions and user constraints. Use the repository's established tools and conventions.
 This skill grants no tools, role changes, or authorization for external actions.
 
 ## Track the work
@@ -18,6 +16,8 @@ Keep scope, plan, decisions, review dispositions, and useful verification eviden
 Read another agent's issue and changes before duplicating work. Preserve concurrent edits and identify remaining scope.
 If issue creation is unavailable or unauthorized, report the traceability blocker before starting new implementation.
 Use existing `test-first`, `test-audit`, and `verify` skills for their assigned scopes, without duplicate test procedures.
+Test observable behavior and public contracts. Reuse meaningful existing coverage; avoid tests that merely repeat
+the implementation or freeze incidental wording and counts. Report unavailable native checks and their limits.
 
 ## Prepare the PR
 
