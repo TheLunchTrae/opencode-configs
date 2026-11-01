@@ -8,6 +8,30 @@ description: Use when planning, implementing, or reviewing GitHub Actions or Git
 Trace callers, includes, reusable workflows, triggers, inherited settings, required check names, and job dependencies.
 Inspect inaccessible dependencies as explicit gaps. Preserve the intended graph and existing project conventions.
 
+## Performance and diagnostics
+
+Inspect recent job and step durations before optimizing. Report measured before/after results or unmeasured limits.
+Honor repository exceptions and preserve existing workflow names and required checks.
+
+- Reuse valid caches where they reduce setup cost. Choose keys for the actual cached state and compatibility inputs,
+  such as platform, toolchain, and dependency files. Preserve isolation and cache trust boundaries.
+- Consider cancellation of superseded review runs only where safe. Preserve required branch, release,
+  deployment, and diagnostic work; do not impose a new cancellation policy without checking those needs.
+- Consider changed-file gates or separate fast/slow lanes when measured costs justify them.
+  Keep required coverage reachable before relevant changes ship. Unknown changes must not silently skip checks;
+  surface gate failures and preserve the host's required-status semantics.
+- Avoid duplicate builds, prerequisite probes that repeat real checks, and platform-independent work in every lane.
+  Build only needed architectures. Verify actual platform behavior rather than assuming a flag has an effect.
+- Use normal command logs and failure status with bounded timeouts. Upload existing failure results only where useful.
+  Deep diagnostics are opt-in for a specific investigation, not a mandatory stage. Bound them within the job timeout.
+  Preserve original failures; do not conceal them with diagnostics or blind retries.
+- Distinguish setup/runner failures from assertions. Validate reliability fixes against the observed failure;
+  a faster build does not prove an unrelated runtime failure is fixed.
+
+Use the target project's supported mechanisms; do not impose a provider, runner layout, or workflow structure.
+
+## Safety and verification
+
 - Grant minimum job permissions. Keep secrets out of source, logs, artifacts, and caches. Masking does not make
   transformed secrets safe. Never execute untrusted fork code with deploy credentials or privileged runner access.
 - In GitHub Actions, pin third-party actions by full commit SHA. Pass untrusted event values through environment
