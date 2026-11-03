@@ -64,11 +64,11 @@ Keep npm, pinned dependencies, loader-required exports, and Promise-returning ho
 | `npm run test:native:minimum` | Same checks on oldest published supported runtime. |
 | `npm run test:render` | Render the bookmark panel with Bun. |
 
-Use Node 22.18 or newer. Rendered bookmark tests need Bun (`BUN_BIN` can override PATH).
+Use Node 22.18 or newer. Rendered bookmark tests need Bun on PATH.
 Native installation supports x64 Linux/Windows. Source TUI activation needs Linux `script`; report skips elsewhere.
 Set `npm_config_cache` to a writable task-local directory when necessary.
 
-Test only code that lives in this repository: `plugins/`, `extensions/`, and their native loading.
+Test only what lives in this repository: `plugins/`, `extensions/`, their native loading, and `opencode.jsonc` policy.
 Never test npm-installed or other third-party plugins here, including Config Composer, Prompt Composer, and
 OpenCode Quota. Do not add unit or native tests that load, configure, or assert their behavior, and do not install
 them as dependencies to make such tests possible. Their behavior belongs in their owning repositories.
