@@ -4,3 +4,5 @@ dist/
 *.md
 **/*.md
 package-lock.json
+*.json
+*.jsonc
