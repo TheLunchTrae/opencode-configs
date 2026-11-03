@@ -18,15 +18,15 @@
     "opencode": "1.19.x"
   },
   "dependencies": {
-    "@lunchbox-labs/opencode-config-composer": "0.3.0",
-    "@lunchbox-labs/opencode-prompt-composer": "0.1.1",
-    "@opencode-ai/plugin": "1.19.0",
+    "@lunchbox-labs/opencode-config-composer": "0.4.1",
+    "@lunchbox-labs/opencode-prompt-composer": "0.2.1",
+    "@opencode-ai/plugin": "1.19.5",
     "jsonc-parser": "3.3.1"
   },
   "devDependencies": {
     "@eslint-community/eslint-plugin-eslint-comments": "4.7.2",
     "@eslint/js": "10.0.1",
-    "@opencode-ai/sdk": "1.19.0",
+    "@opencode-ai/sdk": "1.19.5",
     "@opentui/core": "0.4.5",
     "@opentui/keymap": "0.4.5",
     "@opentui/solid": "0.4.5",
