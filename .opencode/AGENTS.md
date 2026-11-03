@@ -33,7 +33,9 @@ Read affected source before editing. Follow root authorization, tool-selection, 
 - Keep utility commands in the selected role. `/test-audit` explicitly invokes a fresh reviewer subtask.
   Preserve `$ARGUMENTS`, the native `/resume` selector, and `/resume-work` handoff behavior.
 - Register pinned Config Composer and Prompt Composer packages once each in both server/TUI lists, in that order.
-  Use Config Composer's installed schema. Its only plugin option is `configFile`; Prompt Composer uses `prompts/`.
+  OpenCode installs npm plugins from these lists; do not add them to `package.json`.
+  `config-composer.jsonc` uses the published schema of the pinned Config Composer version; update its URL with the pin.
+  Its only plugin option is `configFile`; Prompt Composer uses `prompts/`.
   Keep runtime metadata out of provider request options. Do not add compatibility layers for removed roles.
 - `/profiles` selects default/shared-only/named worktree choices. Selection persists outside definitions.
   Shared-only retains shared permissions and fixed system settings, without profile alias variants.
@@ -60,24 +62,24 @@ Keep npm, pinned dependencies, loader-required exports, and Promise-returning ho
 | `npm run format` | Format plugin/extension code, tests, and tooling configuration. |
 | `npm run test:native` | Install and verify newest supported V1 runtime, then exercise native integration. |
 | `npm run test:native:minimum` | Same checks on oldest published supported runtime. |
-| `npm run test:package` | Fresh registry install, extension independence, and minimum/current native checks. |
+| `npm run test:render` | Render the bookmark panel with Bun. |
 
-Use Node 22.18 or newer. Rendered bookmark tests need Bun (`BUN_BIN` can override PATH).
+Use Node 22.18 or newer. Rendered bookmark tests need Bun on PATH.
 Native installation supports x64 Linux/Windows. Source TUI activation needs Linux `script`; report skips elsewhere.
 Set `npm_config_cache` to a writable task-local directory when necessary.
 
-Keep meaningful tests for local plugin and extension behavior. Do not add unit or native snapshot assertions for
-personal config shapes, fixed agent names/counts, model inventories, or exact permission maps.
-Use ad hoc reference and permission inspection during migrations. Native integration should exercise behavior such
-as profile application/persistence and real panel activation. Composer internals belong in their owning repositories.
-The optional `CONFIG_CONSUMER_EVIDENCE` prefix captures native diagnostic JSON for manual migration inspection.
-It is not a snapshot oracle. Report native loading separately from model-assisted execution.
+Test only what lives in this repository: `plugins/`, `extensions/`, their native loading, and `opencode.jsonc` policy.
+Never test npm-installed or other third-party plugins here, including Config Composer, Prompt Composer, and
+OpenCode Quota. Do not add unit or native tests that load, configure, or assert their behavior, and do not install
+them as dependencies to make such tests possible. Their behavior belongs in their owning repositories.
+Native fixtures load only local plugins and extensions.
+Do not add unit or native snapshot assertions for personal config shapes, fixed agent names/counts, model inventories,
+or exact permission maps. Use ad hoc reference and permission inspection during migrations.
+Report native loading separately from model-assisted execution.
 Do not send paid provider requests or use real credentials in test fixtures.
 
 The native runner selects from the published supported range and uses fresh temporary state. Registry/installation
 failures stop the run; do not silently fall back to a cached binary. Report unavailable checks and preexisting failures.
-Package validation copies the checkout, installs its lockfile, hides Config Composer for local extension tests,
-then restores it for native checks. It must not mutate installed-user configuration.
 
 ## Plugin contracts
 
