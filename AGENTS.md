@@ -118,13 +118,17 @@ Apply this policy to every task, including exploration, implementation, review, 
 Always use available dedicated tools for the operations they support. Match the operation to the tool's documented
 capability. Names can differ between hosts. The names below identify the corresponding OpenCode tools:
 
-| Operation | Tools |
-| --- | --- |
-| Read files or list directories | `read` |
-| Find file paths | `glob` |
-| Search file contents | `grep` |
-| Create or modify files | `write`, `edit`, `apply_patch` |
-| Retrieve web information | `webfetch`, `websearch` |
+| Operation | Use this tool | Do not use shell substitutes |
+| --- | --- | --- |
+| Read files or list directories | `read` | `cat`, `head`, `tail`, `less`, `ls`, `dir` |
+| Find file paths | `glob` | `find`, `ls -R`, `dir /s` |
+| Search file contents | `grep` | Shell `grep`, `rg`, `ag`, `findstr`, `Select-String` |
+| Create or modify files | `write`, `edit`, `apply_patch` | `sed`, `awk`, `tee`, `>`, `>>` |
+| Retrieve web information | `webfetch`, `websearch` | `curl`, `wget`, `Invoke-WebRequest` |
+
+These are examples, not an exhaustive list. Apply the restriction to the operation, not just the command name.
+The `grep` tool is distinct from the shell command with the same name.
+The project-command policy below still applies; these examples do not prohibit authorized build, test, or Git commands.
 
 Use enabled dedicated service tools for supported integrations. Follow each tool's permissions and limits.
 An equivalent dedicated tool must remain within the same role, scope, and permission boundaries.
