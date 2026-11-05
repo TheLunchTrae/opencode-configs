@@ -42,6 +42,8 @@
 - Keep code, identifiers, comments, docstrings, logs, errors, documentation, commits, and PR text readable.
   Use normal language and descriptive identifiers such as `getUserById` and `connectionPool`.
   Apply the instruction-authoring rules below to prompts, skills, commands, and shared references.
+- Never leak the conversation, prompt, or iteration history into code comments, pull request descriptions,
+  or other maintainer-facing prose.
 
 ## Coding Standards
 
