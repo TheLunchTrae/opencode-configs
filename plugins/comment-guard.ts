@@ -34,6 +34,7 @@ interface Syntax {
   slash: boolean;
   hash: boolean;
   dash: boolean;
+  braceDash: boolean;
   markup: boolean;
   docstring: boolean;
 }
@@ -101,6 +102,9 @@ const HASH_ONLY_BASENAMES = new Set([
 const HASH_ONLY_PREFIXES = ['dockerfile.', 'containerfile.', '.env.'];
 const HASH_AND_SLASH_EXTENSIONS = new Set(['.php']);
 const DASH_EXTENSIONS = new Set(['.sql', '.lua', '.hs', '.elm']);
+// In these languages `//` is an operator, so only `--` comments apply.
+const DASH_ONLY_EXTENSIONS = new Set(['.lua', '.hs', '.elm']);
+const BRACE_DASH_EXTENSIONS = new Set(['.hs', '.elm']);
 const DOCSTRING_EXTENSIONS = new Set(['.py', '.pyi']);
 const MARKUP_EXTENSIONS = new Set(['.html', '.htm', '.xml', '.svg', '.xhtml']);
 
@@ -170,16 +174,24 @@ const syntaxFor = (path: string): Syntax | undefined => {
     HASH_ONLY_PREFIXES.some((prefix) => name.startsWith(prefix)) ||
     HASH_ONLY_EXTENSIONS.has(extension)
   ) {
-    return { slash: false, hash: true, dash: false, markup: false, docstring: DOCSTRING_EXTENSIONS.has(extension) };
+    return {
+      slash: false,
+      hash: true,
+      dash: false,
+      braceDash: false,
+      markup: false,
+      docstring: DOCSTRING_EXTENSIONS.has(extension),
+    };
   }
   if (PROSE_EXTENSIONS.has(extension)) {
     return undefined;
   }
   return {
-    slash: !MARKUP_EXTENSIONS.has(extension),
+    slash: !MARKUP_EXTENSIONS.has(extension) && !DASH_ONLY_EXTENSIONS.has(extension),
     hash: HASH_AND_SLASH_EXTENSIONS.has(extension),
     dash: DASH_EXTENSIONS.has(extension),
-    markup: true,
+    braceDash: BRACE_DASH_EXTENSIONS.has(extension),
+    markup: !DASH_ONLY_EXTENSIONS.has(extension),
     docstring: false,
   };
 };
@@ -207,6 +219,31 @@ const openBlock = (rest: string, end: string): Scan => {
     : { comment: rest.slice(0, close), state: undefined };
 };
 
+// Characters and keywords after which a `/` starts a regex literal rather than a division.
+const REGEX_PREFIX = /(?:^|[(,=:[!&|?{};+\-*%<>~^]|\b(?:return|typeof|case|do|else|in|of|void|yield|await))\s*$/;
+
+// Index of the `/` that closes a regex literal starting at `start`, or -1 when `start` does not begin one.
+const regexEnd = (line: string, start: number): number => {
+  const next = line[start + 1];
+  if (next === '/' || next === '*' || !REGEX_PREFIX.test(line.slice(0, start))) {
+    return -1;
+  }
+  let inClass = false;
+  for (let index = start + 1; index < line.length; index += 1) {
+    const char = line[index];
+    if (char === '\\') {
+      index += 1;
+    } else if (char === '[') {
+      inClass = true;
+    } else if (char === ']') {
+      inClass = false;
+    } else if (char === '/' && !inClass) {
+      return index;
+    }
+  }
+  return -1;
+};
+
 // Scans code from `from` for a trailing comment that follows whitespace outside string literals. Strings that
 // stay open at the end of the line (template literals, Python triple-quoted strings) carry over as string state.
 const scanCode = (line: string, syntax: Syntax, from: number): Scan => {
@@ -231,6 +268,13 @@ const scanCode = (line: string, syntax: Syntax, from: number): Scan => {
       // Any other unclosed quote is literal text, such as an apostrophe or a Rust lifetime.
       continue;
     }
+    if (char === '/' && syntax.slash) {
+      const end = regexEnd(line, index);
+      if (end !== -1) {
+        index = end;
+        continue;
+      }
+    }
     if (index === 0 || !/\s/.test(line[index - 1])) {
       continue;
     }
@@ -243,6 +287,10 @@ const scanCode = (line: string, syntax: Syntax, from: number): Scan => {
     }
     if (syntax.hash && char === '#' && (index + 1 === line.length || /\s/.test(line[index + 1]))) {
       return { comment: line.slice(index + 1), state: undefined };
+    }
+    if (syntax.dash && pair === '--') {
+      const rest = line.slice(index + 2);
+      return rest.startsWith('[[') ? openBlock(rest.slice(2), ']]') : { comment: rest, state: undefined };
     }
   }
   return NO_COMMENT;
@@ -288,12 +336,15 @@ const scanLine = (line: string, syntax: Syntax, state: OpenState | undefined): S
   if (syntax.hash && trimmed.startsWith('#')) {
     return PREPROCESSOR_PATTERN.test(trimmed) ? NO_COMMENT : { comment: trimmed.replace(/^#+/, ''), state: undefined };
   }
+  if (syntax.braceDash && trimmed.startsWith('{-')) {
+    return openBlock(trimmed.slice(2), '-}');
+  }
   if (syntax.dash && trimmed.startsWith('--')) {
     return trimmed.startsWith('--[[')
       ? openBlock(trimmed.slice(4), ']]')
       : { comment: trimmed.replace(/^-+/, ''), state: undefined };
   }
-  return syntax.slash || syntax.hash || syntax.docstring ? scanCode(line, syntax, 0) : NO_COMMENT;
+  return syntax.slash || syntax.hash || syntax.dash || syntax.docstring ? scanCode(line, syntax, 0) : NO_COMMENT;
 };
 
 const cleanComment = (text: string): string =>

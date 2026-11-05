@@ -108,6 +108,11 @@ describe('comment-guard plugin', () => {
     await run('edit', edit('const prompt = `\n* You asked for a summary.\n`;\nrun(prompt);'));
     await assertBlocked('edit', edit('const prompt = `\nSummary\n`; // you said to inline it'), 'inline it');
     await run('edit', edit('<p>a // as requested</p>', '/project/index.html'));
+    await assertBlocked('edit', edit('const re = /`/g;\n// As requested, escape backticks.'), 'escape backticks');
+    await run('edit', edit('const re = /[([/`+-]/u;\nconst t = `\n// As requested\n`;'));
+    await assertBlocked('edit', edit('SELECT 1 -- as requested', '/project/query.sql'), 'query.sql');
+    await assertBlocked('edit', edit('local x = 1 -- as requested', '/project/init.lua'), 'init.lua');
+    await assertBlocked('edit', edit('{- Per our discussion, keep it lazy. -}', '/project/Main.hs'), 'Main.hs');
 
     process.env.OPENCODE_COMMENT_GUARD = 'all';
     await run('edit', edit('SQL = """\nSELECT 1\n"""\nx = 1\ny = 2\n', '/project/query.py'));
@@ -205,6 +210,9 @@ describe('comment-guard plugin', () => {
     await run('edit', edit('# type: ignore', '/project/tool.py'));
     await run('edit', edit('# yaml-language-server: $schema=./schema.json', '/project/config.yaml'));
     await run('edit', edit('#include <stdio.h>', '/project/main.c'));
+    await run('edit', edit('local q = a // b', '/project/init.lua'));
+    await run('edit', edit('half = n // 2', '/project/Main.elm'));
+    await run('edit', edit('const ratio = total / count / 2;'));
 
     process.env.OPENCODE_COMMENT_GUARD = 'off';
     await run('edit', edit('// As requested, retry twice.'));
