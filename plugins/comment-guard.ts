@@ -2,25 +2,44 @@ import type { Plugin } from '@opencode-ai/plugin';
 import { readFile } from 'node:fs/promises';
 import { basename, extname, resolve } from 'node:path';
 
-// Blocks edit, write, multiedit, and apply_patch calls that add code comments describing the conversation,
-// the prompt, or earlier iterations. Only added comment lines are checked; code, string literals, and prose
-// files (Markdown, plain text) are ignored. Detection is heuristic: it reads common line and trailing comment
-// syntaxes, not a full parser for each language.
+// Blocks edit, write, and apply_patch calls that add code comments describing the conversation, the prompt,
+// or earlier iterations. Only added comment lines are checked; code, string literals, and prose files
+// (Markdown, plain text) are ignored. Detection is heuristic: it follows common line, block, trailing, and
+// Python docstring syntaxes, not a full parser for each language.
 //
-// OPENCODE_COMMENT_GUARD selects the mode: unset or `leaks` blocks leaking comments, `all` blocks every new
-// comment except tool directives (lint, type-checker, and formatter pragmas), and `off` disables the guard.
+// OPENCODE_COMMENT_GUARD selects the mode: `all` blocks every new comment except tool directives (lint,
+// type-checker, and formatter pragmas), `off` disables the guard, and any other value or no value blocks only
+// leaking comments.
 
 type Mode = 'leaks' | 'all' | 'off';
 
+interface ChangedLine {
+  text: string;
+  added: boolean;
+  // Starts a new hunk, so comment block state from earlier lines does not carry over.
+  hunkStart?: boolean;
+}
+
 interface FileChange {
   path: string;
-  added: string[];
-  removed: string[];
+  lines: ChangedLine[];
 }
 
 interface Finding {
   path: string;
   comment: string;
+}
+
+interface Syntax {
+  slash: boolean;
+  hash: boolean;
+  dash: boolean;
+  docstring: boolean;
+}
+
+interface Scan {
+  comment: string | undefined;
+  blockEnd: string | undefined;
 }
 
 const PROSE_EXTENSIONS = new Set(['.md', '.mdx', '.markdown', '.txt', '.rst', '.adoc']);
@@ -52,38 +71,69 @@ const HASH_ONLY_EXTENSIONS = new Set([
   '.jl',
   '.coffee',
   '.properties',
-  '.gitignore',
-  '.dockerignore',
-  '.editorconfig',
 ]);
-const HASH_ONLY_BASENAMES = new Set(['dockerfile', 'makefile', 'gemfile', 'rakefile', 'procfile', 'justfile']);
+// Dotfiles have no extension for `extname`, so they are matched by full name.
+const HASH_ONLY_BASENAMES = new Set([
+  'dockerfile',
+  'containerfile',
+  'makefile',
+  'gemfile',
+  'rakefile',
+  'procfile',
+  'justfile',
+  'cmakelists.txt',
+  '.gitignore',
+  '.gitattributes',
+  '.dockerignore',
+  '.prettierignore',
+  '.eslintignore',
+  '.editorconfig',
+  '.npmrc',
+  '.env',
+]);
+const HASH_ONLY_PREFIXES = ['dockerfile.', 'containerfile.', '.env.'];
 const HASH_AND_SLASH_EXTENSIONS = new Set(['.php']);
 const DASH_EXTENSIONS = new Set(['.sql', '.lua', '.hs', '.elm']);
+const DOCSTRING_EXTENSIONS = new Set(['.py', '.pyi']);
+
+// Lines longer than this are treated as generated or minified code and skipped.
+const MAX_LINE_LENGTH = 4000;
+
+// Rejects "as requested by the caller" and "as discussed in #123", which cite a source rather than the chat.
+const NOT_A_SOURCE = String.raw`(?!\s+(?:by|in|via|at|from|with|for|on|under|below|above)\b)`;
 
 // Phrases that only make sense relative to a conversation, a request, or a previous draft. Each one must stay
-// narrow enough that ordinary descriptions of runtime behavior (for example "the user requested a reset") pass.
+// narrow enough that ordinary descriptions of runtime behavior pass.
 const LEAK_PATTERNS: readonly RegExp[] = [
-  /\b(?:as|like) (?:was )?(?:requested|asked|instructed|discussed)\b/i,
-  /\b(?:as|like) (?:you|the user) (?:requested|asked|instructed|suggested|discussed|agreed|wanted)\b/i,
-  /\bper (?:our|your|this) (?:discussion|conversation|chat|thread|request|instructions?|prompt|feedback)\b/i,
-  /\bper the (?:discussion|conversation|chat|prompt|feedback)\b/i,
+  new RegExp(String.raw`\b(?:as|like) (?:was )?(?:requested|asked|instructed|discussed)\b${NOT_A_SOURCE}`, 'i'),
+  new RegExp(
+    String.raw`\b(?:as|like) (?:you|the user) (?:requested|asked|instructed|suggested|discussed|agreed|wanted)\b` +
+      NOT_A_SOURCE,
+    'i',
+  ),
+  /\bper (?:our|your) (?:discussion|conversation|chat|instructions?|prompt|feedback)\b/i,
+  /\bper (?:this|the) (?:discussion|conversation|chat)\b/i,
+  /\bper the feedback\b/i,
   /\bper (?:the )?user(?:'s)? (?:request|instructions?|feedback)\b/i,
-  /\byou (?:asked|requested|said|mentioned|suggested)\b/i,
+  /^(?:as |like )?you (?:asked|requested|said|mentioned|suggested|wanted)\b/i,
+  /\byou (?:asked|told) (?:me|us)\b/i,
   /\b(?:as|like|what) (?:we|i) (?:discussed|agreed|decided|mentioned|talked about)\b/i,
   /\b(?:our|this|the) (?:conversation|chat|discussion) (?:above|earlier)\b/i,
   /\b(?:earlier|above) in (?:our|this|the) (?:conversation|chat|thread|discussion)\b/i,
-  /\b(?:as|per) (?:the|your|this) prompt\b/i,
-  /\b(?:our|my|your) (?:previous|last|earlier|prior) (?:iteration|draft|version|attempt|revision|round)\b/i,
+  /^(?:as|per) (?:the|this) prompt\s*[,.:;]/i,
+  /\b(?:as|per) your prompt\b/i,
+  /\b(?:our|my|your) (?:previous|last|earlier|prior) (?:iteration|draft|revision)\b/i,
   /\bpreviously (?:this|it|we|i) (?:was|were|used|did|returned|called|had)\b/i,
   /^(?:was |were |now )?(?:changed|switched) (?:from|back)\b/i,
   /\bnow uses? .+ instead of\b/i,
   /\b(?:addressing|addresses|per) (?:your|the|review) (?:feedback|review comments?)\b/i,
-  /\b(?:claude|the assistant|the ai|chatgpt|copilot) (?:suggested|recommended|wrote|generated|said)\b/i,
+  /^(?:claude|chatgpt|copilot|the assistant|the ai) (?:suggested|recommended|wrote|generated|said)\b/i,
+  /\b(?:claude|chatgpt|copilot) (?:suggested|recommended)\b/i,
 ];
 
 // Comments that configure tools rather than explain code. They stay allowed in `all` mode.
 const DIRECTIVE_PATTERN =
-  /^(?:eslint|@ts-|prettier-ignore|biome-ignore|istanbul |c8 |v8 |noqa|type: ?ignore|pylint:|mypy:|pyright:|nolint|go:|#?(?:end)?region\b|nosonar|phpcs|@phpstan|@psalm|rubocop:|deno-|jscpd:|@vitest-environment|@jest-environment|@license|@preserve|<reference |shellcheck |fmt: |isort:|pragma)/i;
+  /^(?:eslint|@ts-|prettier-ignore|biome-ignore|istanbul |c8 |v8 |noqa|type: ?ignore|pylint:|mypy:|pyright:|nolint|go:|#?(?:end)?region\b|nosonar|phpcs|@phpstan|@psalm|rubocop:|deno-|jscpd:|@vitest-environment|@jest-environment|@license|@preserve|@flow\b|<reference |shellcheck |fmt: |isort:|pragma|yaml-language-server:|-\*-|(?:frozen_string_literal|encoding|coding):|markdownlint|cspell:)/i;
 
 const PREPROCESSOR_PATTERN =
   /^#(?:!|\[|include|define|undef|if|ifdef|ifndef|elif|else|endif|pragma|error|warning|line|import)\b/;
@@ -102,75 +152,128 @@ const firstString = (...values: unknown[]): string =>
 
 const splitLines = (text: string): string[] => text.split(/\r?\n/);
 
-interface Syntax {
-  slash: boolean;
-  hash: boolean;
-  dash: boolean;
-}
-
 const syntaxFor = (path: string): Syntax | undefined => {
-  const extension = extname(path).toLowerCase();
+  const name = basename(path).toLowerCase();
+  const extension = extname(name);
+  if (
+    HASH_ONLY_BASENAMES.has(name) ||
+    HASH_ONLY_PREFIXES.some((prefix) => name.startsWith(prefix)) ||
+    HASH_ONLY_EXTENSIONS.has(extension)
+  ) {
+    return { slash: false, hash: true, dash: false, docstring: DOCSTRING_EXTENSIONS.has(extension) };
+  }
   if (PROSE_EXTENSIONS.has(extension)) {
     return undefined;
-  }
-  const name = basename(path).toLowerCase();
-  if (HASH_ONLY_EXTENSIONS.has(extension) || HASH_ONLY_BASENAMES.has(name) || name.startsWith('dockerfile.')) {
-    return { slash: false, hash: true, dash: false };
   }
   return {
     slash: true,
     hash: HASH_AND_SLASH_EXTENSIONS.has(extension),
     dash: DASH_EXTENSIONS.has(extension),
+    docstring: false,
   };
 };
 
-// A trailing marker counts only outside string literals, judged by quote parity before the marker.
-const outsideQuotes = (prefix: string): boolean => {
-  const unescaped = prefix.replace(/\\./g, '');
-  return ['"', "'", '`'].every((quote) => unescaped.split(quote).length % 2 === 1);
+// Index of the quote that closes the string opened at `start`, or -1 when the line never closes it,
+// as with an apostrophe in prose or a Rust lifetime.
+const closingQuote = (line: string, start: number): number => {
+  const quote = line[start];
+  for (let index = start + 1; index < line.length; index += 1) {
+    if (line[index] === '\\') {
+      index += 1;
+    } else if (line[index] === quote) {
+      return index;
+    }
+  }
+  return -1;
 };
 
-const trailingComment = (line: string, marker: RegExp): string | undefined => {
-  for (const match of line.matchAll(marker)) {
-    const prefix = line.slice(0, match.index);
-    if (outsideQuotes(prefix)) {
-      return line.slice(match.index + match[0].length);
+// Finds a trailing comment marker that follows whitespace and sits outside string literals.
+const trailingMarker = (line: string, syntax: Syntax): { index: number; marker: string } | undefined => {
+  for (let index = 1; index < line.length; index += 1) {
+    const char = line[index];
+    if (char === '"' || char === "'" || char === '`') {
+      const close = closingQuote(line, index);
+      if (close !== -1) {
+        index = close;
+      }
+      continue;
+    }
+    if (!/\s/.test(line[index - 1])) {
+      continue;
+    }
+    const pair = line.slice(index, index + 2);
+    if (syntax.slash && (pair === '//' || pair === '/*')) {
+      return { index, marker: pair };
+    }
+    if (syntax.hash && char === '#' && (index + 1 === line.length || /\s/.test(line[index + 1]))) {
+      return { index, marker: '#' };
     }
   }
   return undefined;
 };
 
-const commentText = (line: string, syntax: Syntax): string | undefined => {
+// Text after an opening delimiter; a missing terminator on the same line leaves the block open.
+const openBlock = (rest: string, end: string): Scan => {
+  const close = rest.indexOf(end);
+  return close === -1 ? { comment: rest, blockEnd: end } : { comment: rest.slice(0, close), blockEnd: undefined };
+};
+
+const NO_COMMENT: Scan = { comment: undefined, blockEnd: undefined };
+
+// Returns the comment text on a line, if any, and the terminator of a block comment the line leaves open.
+const scanLine = (line: string, syntax: Syntax, blockEnd: string | undefined): Scan => {
+  if (blockEnd !== undefined) {
+    const close = line.indexOf(blockEnd);
+    return close === -1 ? { comment: line, blockEnd } : { comment: line.slice(0, close), blockEnd: undefined };
+  }
   const trimmed = line.trim();
+  if (trimmed.length > MAX_LINE_LENGTH) {
+    return NO_COMMENT;
+  }
   if (syntax.slash) {
-    const leading = /^(?:\/{2,}!?|\/\*+!?|\*\/|\*(?!\*?\/)|\{\/\*+|<!--)/.exec(trimmed);
-    if (leading !== null) {
-      return trimmed.slice(leading[0].length);
+    if (trimmed.startsWith('//')) {
+      return { comment: trimmed.replace(/^\/+!?/, ''), blockEnd: undefined };
+    }
+    const block = /^\{?\/\*+!?/.exec(trimmed);
+    if (block !== null) {
+      return openBlock(trimmed.slice(block[0].length), '*/');
+    }
+    if (trimmed.startsWith('<!--')) {
+      return openBlock(trimmed.slice(4), '-->');
+    }
+    // A block comment body whose opening line lies outside the edited text.
+    if (/^\*(?:\s+\p{L}|\/|$)/u.test(trimmed)) {
+      return { comment: trimmed, blockEnd: undefined };
     }
   }
-  if (syntax.hash && trimmed.startsWith('#') && !PREPROCESSOR_PATTERN.test(trimmed)) {
-    return trimmed.replace(/^#+/, '');
+  if (syntax.docstring) {
+    const docstring = /^[ru]?("""|''')/i.exec(trimmed);
+    if (docstring !== null) {
+      return openBlock(trimmed.slice(docstring[0].length), docstring[1]);
+    }
+  }
+  if (syntax.hash && trimmed.startsWith('#')) {
+    return PREPROCESSOR_PATTERN.test(trimmed)
+      ? NO_COMMENT
+      : { comment: trimmed.replace(/^#+/, ''), blockEnd: undefined };
   }
   if (syntax.dash && trimmed.startsWith('--')) {
-    return trimmed.replace(/^-+/, '');
+    return { comment: trimmed.replace(/^-+/, ''), blockEnd: undefined };
   }
-  if (syntax.slash) {
-    const trailing = trailingComment(line, /(?<=\s)(?:\/\/|\/\*)/g);
-    if (trailing !== undefined) {
-      return trailing;
-    }
+  const trailing = trailingMarker(line, syntax);
+  if (trailing === undefined) {
+    return NO_COMMENT;
   }
-  if (syntax.hash) {
-    return trailingComment(line, /(?<=\s)#(?=\s)/g);
-  }
-  return undefined;
+  const rest = line.slice(trailing.index + trailing.marker.length);
+  return trailing.marker === '/*' ? openBlock(rest, '*/') : { comment: rest, blockEnd: undefined };
 };
 
 const cleanComment = (text: string): string =>
   text
-    .replace(/\*\/\s*\}?$|-->$/, '')
     .trim()
-    .replace(/^[-*:\s]+/, '');
+    .replace(/(?:\*\/\s*\}?|-->|"""|''')$/, '')
+    .trim()
+    .replace(/^[-*!:\s]+/, '');
 
 const isLeak = (comment: string): boolean => LEAK_PATTERNS.some((pattern) => pattern.test(comment));
 
@@ -192,28 +295,47 @@ const readExisting = async (path: string): Promise<string> => {
   }
 };
 
+// Marks new lines as added unless the same trimmed text was removed, so kept or moved lines pass.
+const markAdded = (path: string, newText: string, oldText: string): FileChange => {
+  const removed = new Set(splitLines(oldText).map((line) => line.trim()));
+  return { path, lines: splitLines(newText).map((text) => ({ text, added: !removed.has(text.trim()) })) };
+};
+
+interface PatchFile {
+  path: string;
+  lines: ChangedLine[];
+  removed: Set<string>;
+}
+
 const parsePatch = (patchText: string): FileChange[] => {
-  const changes: FileChange[] = [];
-  let current: FileChange | undefined;
+  const files: PatchFile[] = [];
+  let current: PatchFile | undefined;
   for (const line of splitLines(patchText)) {
     const header = /^\*\*\* (Add|Update|Delete) File: (.+)$/.exec(line);
     if (header !== null) {
-      current = header[1] === 'Delete' ? undefined : { path: header[2].trim(), added: [], removed: [] };
+      current = header[1] === 'Delete' ? undefined : { path: header[2].trim(), lines: [], removed: new Set() };
       if (current !== undefined) {
-        changes.push(current);
+        files.push(current);
       }
       continue;
     }
     if (current === undefined || line.startsWith('***')) {
       continue;
     }
-    if (line.startsWith('+')) {
-      current.added.push(line.slice(1));
+    if (line.startsWith('@@')) {
+      current.lines.push({ text: '', added: false, hunkStart: true });
+    } else if (line.startsWith('+')) {
+      current.lines.push({ text: line.slice(1), added: true });
     } else if (line.startsWith('-')) {
-      current.removed.push(line.slice(1));
+      current.removed.add(line.slice(1).trim());
+    } else {
+      current.lines.push({ text: line.slice(1), added: false });
     }
   }
-  return changes;
+  return files.map(({ path, lines, removed }) => ({
+    path,
+    lines: lines.map((line) => ({ ...line, added: line.added && !removed.has(line.text.trim()) })),
+  }));
 };
 
 const collectChanges = async (
@@ -225,21 +347,12 @@ const collectChanges = async (
   switch (tool) {
     case 'write': {
       const existing = path === '' ? '' : await readExisting(resolve(directory, path));
-      return [{ path, added: splitLines(asString(args.content)), removed: splitLines(existing) }];
+      return [markAdded(path, asString(args.content), existing)];
     }
     case 'edit':
-      return [{ path, added: splitLines(asString(args.newString)), removed: splitLines(asString(args.oldString)) }];
-    case 'multiedit': {
-      const edits = Array.isArray(args.edits) ? args.edits.filter(isRecord) : [];
-      return edits.map((edit) => ({
-        path,
-        added: splitLines(asString(edit.newString)),
-        removed: splitLines(asString(edit.oldString)),
-      }));
-    }
+      return [markAdded(path, asString(args.newString), asString(args.oldString))];
     case 'apply_patch':
-    case 'patch':
-      return parsePatch(firstString(args.patchText, args.patch));
+      return parsePatch(asString(args.patchText));
     default:
       return [];
   }
@@ -252,14 +365,16 @@ const findBlockedComments = (changes: FileChange[], mode: Mode): Finding[] => {
     if (syntax === undefined) {
       continue;
     }
-    const removed = new Set(change.removed.map((line) => line.trim()));
-    for (const line of change.added) {
-      if (removed.has(line.trim())) {
+    let blockEnd: string | undefined;
+    for (const line of change.lines) {
+      if (line.hunkStart === true) {
+        blockEnd = undefined;
         continue;
       }
-      const raw = commentText(line, syntax);
-      const comment = raw === undefined ? '' : cleanComment(raw);
-      if (isBlockedComment(comment, mode)) {
+      const scan = scanLine(line.text, syntax, blockEnd);
+      blockEnd = scan.blockEnd;
+      const comment = scan.comment === undefined ? '' : cleanComment(scan.comment);
+      if (line.added && isBlockedComment(comment, mode)) {
         findings.push({ path: change.path, comment });
       }
     }

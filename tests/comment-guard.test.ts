@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { afterEach, describe, it } from 'node:test';
+import { afterEach, beforeEach, describe, it } from 'node:test';
 
 import { CommentGuardPlugin } from '../plugins/comment-guard.ts';
 
@@ -34,8 +34,21 @@ const edit = (newString: string, filePath = '/project/src/app.ts', oldString = '
   newString,
 });
 
-afterEach(() => {
+const patch = (...body: string[]) => ({ patchText: ['*** Begin Patch', ...body, '*** End Patch'].join('\n') });
+
+let savedMode: string | undefined;
+
+beforeEach(() => {
+  savedMode = process.env.OPENCODE_COMMENT_GUARD;
   delete process.env.OPENCODE_COMMENT_GUARD;
+});
+
+afterEach(() => {
+  if (savedMode === undefined) {
+    delete process.env.OPENCODE_COMMENT_GUARD;
+  } else {
+    process.env.OPENCODE_COMMENT_GUARD = savedMode;
+  }
 });
 
 describe('comment-guard plugin', () => {
@@ -48,13 +61,39 @@ describe('comment-guard plugin', () => {
       '// Changed from forEach to a for loop.',
       '// Now uses Map instead of a plain object.',
       '// Kept the guard from our previous iteration.',
+      '// Per the prompt, keep both indexes.',
       '{/* As the user requested, hide the banner. */}',
       'const limit = 3; // per the user request',
+      'const label = "it\'s"; // as requested',
+      "fn first<'a>(value: &'a str) -> &'a str { value } // you said to borrow",
     ]) {
       await assertBlocked('edit', edit(comment), 'src/app.ts');
     }
     await assertBlocked('edit', edit('# As we discussed, skip vendored files.', '/project/tool.py'), 'tool.py');
+    await assertBlocked('edit', edit('retries = 3  # as requested', '/project/tool.py'), 'tool.py');
     await assertBlocked('edit', edit('-- Per the prompt, keep both indexes.', '/project/schema.sql'), 'schema.sql');
+    await assertBlocked('edit', edit('# As requested, ignore dist', '/project/.gitignore'), '.gitignore');
+    await assertBlocked('edit', edit('# you asked me to pin this', '/project/.env.local'), '.env.local');
+    await assertBlocked('edit', edit('# Per our discussion, use fpm.', '/project/index.php'), 'index.php');
+  });
+
+  it('checks block comment bodies and Python docstrings', async () => {
+    await assertBlocked('edit', edit('/*\n  As requested, retry twice.\n*/\nretry();'), 'As requested, retry twice.');
+    await assertBlocked(
+      'edit',
+      edit('<!--\nPer our discussion, keep the banner.\n-->', '/project/page.html'),
+      'banner',
+    );
+    await assertBlocked(
+      'edit',
+      edit('def retry():\n    """As requested, retry twice."""\n    pass', '/project/tool.py'),
+      'As requested, retry twice.',
+    );
+    await assertBlocked(
+      'edit',
+      edit('def retry():\n    """\n    Per our discussion, retry twice.\n    """', '/project/tool.py'),
+      'Per our discussion',
+    );
   });
 
   it('allows neutral comments, code, strings, and prose files', async () => {
@@ -63,6 +102,16 @@ describe('comment-guard plugin', () => {
       '// Fires when the state changed from idle to busy.',
       '// The user requested a password reset; send the email once.',
       '// Track the previous iteration so the loop can compare totals.',
+      '// Return the page as requested by the caller.',
+      '// Keep both indexes, as discussed in #123.',
+      '// Memoized per this request.',
+      '// Truncate per the prompt budget.',
+      '// Render the template, as the prompt expects.',
+      ' * Returns the records you requested, newest first.',
+      '// Echo what you said back to the user.',
+      '// Back off if our last attempt failed.',
+      '// Migrate settings from your previous version.',
+      '// Append what the assistant said to the history.',
       "const message = 'as requested'; // shown in the toast",
       "const url = 'https://example.com/as-requested'; // see docs",
       "const text = 'x(); // as requested';",
@@ -70,9 +119,11 @@ describe('comment-guard plugin', () => {
     ]) {
       await run('edit', edit(line));
     }
+    await run('edit', edit('# As requested, see subprocess docs', '/project/notes.txt'));
     await run('write', { filePath: '/project/NOTES.md', content: '# As requested\n\nPer our discussion, ship it.' });
     await run('edit', edit('#header { color: red; } /* brand color */', '/project/site.css'));
     await run('bash', { command: 'echo "// as requested" > file.ts' });
+    await run('edit', edit(`const minified = "${'a'.repeat(5000)}"; // as requested`));
   });
 
   it('ignores comment lines that the edit only keeps or moves', async () => {
@@ -92,30 +143,50 @@ describe('comment-guard plugin', () => {
     );
   });
 
-  it('reads added lines from apply_patch and multiedit inputs', async () => {
-    const patchText = [
-      '*** Begin Patch',
-      '*** Add File: src/new.ts',
-      '+// Per our conversation, export a default.',
-      '+export default 1;',
-      '*** Update File: README.md',
-      '+As requested, more docs.',
-      '*** End Patch',
-    ].join('\n');
-    await assertBlocked('apply_patch', { patchText }, 'src/new.ts: "Per our conversation, export a default."');
-
+  it('reads added lines from apply_patch file sections and hunks', async () => {
     await assertBlocked(
-      'multiedit',
-      { filePath: '/project/src/app.ts', edits: [{ oldString: 'a', newString: '// you said to inline this\nb' }] },
-      'you said to inline this',
+      'apply_patch',
+      patch('*** Add File: src/new.ts', '+// Per our conversation, export a default.', '+export default 1;'),
+      'src/new.ts: "Per our conversation, export a default."',
     );
+    await assertBlocked(
+      'apply_patch',
+      patch(
+        '*** Update File: src/app.ts',
+        '*** Move to: src/main.ts',
+        '@@ export function retry() {',
+        ' /*',
+        '+  As requested, retry twice.',
+        ' */',
+      ),
+      'As requested, retry twice.',
+    );
+    const crlfPatch = patch(
+      '*** Update File: src/app.ts',
+      '@@',
+      '-// As requested, retry twice.',
+      '-attempt();',
+      '+// As requested, retry twice.',
+      '+retry();',
+      '*** Delete File: src/old.ts',
+      '*** Add File: README.md',
+      '+As requested, more docs.',
+    ).patchText.replace(/\n/g, '\r\n');
+    await run('apply_patch', { patchText: crlfPatch });
   });
 
   it('blocks every new comment except directives in all mode, and nothing in off mode', async () => {
     process.env.OPENCODE_COMMENT_GUARD = 'all';
     await assertBlocked('edit', edit('// Retry twice.'), 'Retry twice.');
-    await run('edit', edit('// eslint-disable-next-line no-console -- CLI output'));
+    for (const line of [
+      '// eslint-disable-next-line no-console -- CLI output',
+      '* { box-sizing: border-box; }',
+      '*[Symbol.iterator]() {',
+    ]) {
+      await run('edit', edit(line, line.startsWith('* {') ? '/project/site.css' : '/project/src/app.ts'));
+    }
     await run('edit', edit('# type: ignore', '/project/tool.py'));
+    await run('edit', edit('# yaml-language-server: $schema=./schema.json', '/project/config.yaml'));
     await run('edit', edit('#include <stdio.h>', '/project/main.c'));
 
     process.env.OPENCODE_COMMENT_GUARD = 'off';
