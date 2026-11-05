@@ -111,6 +111,21 @@ describe('comment-guard plugin', () => {
     await assertBlocked('edit', edit('const re = /`/g;\n// As requested, escape backticks.'), 'escape backticks');
     await run('edit', edit('const re = /[([/`+-]/u;\nconst t = `\n// As requested\n`;'));
     await assertBlocked('edit', edit('SELECT 1 -- as requested', '/project/query.sql'), 'query.sql');
+    await assertBlocked(
+      'edit',
+      edit('return <a href={url}>link</a>; // as requested', '/project/src/link.tsx'),
+      'link.tsx',
+    );
+    await assertBlocked('edit', edit('  / denominator; // as requested'), 'src/app.ts');
+    await assertBlocked('edit', edit('x = i++ / 2; // as requested'), 'src/app.ts');
+    await assertBlocked(
+      'edit',
+      edit('background: url(/logo.png); /* as requested */', '/project/site.css'),
+      'site.css',
+    );
+    await assertBlocked('edit', edit('-- | Changed from foldr to foldl.', '/project/Main.hs'), 'Main.hs');
+    await assertBlocked('edit', edit('{-| You asked for a lazy fold. -}', '/project/Main.hs'), 'Main.hs');
+    await assertBlocked('edit', edit('x = 1 -- ^ Per the prompt, keep it.', '/project/Main.hs'), 'Main.hs');
     await assertBlocked('edit', edit('local x = 1 -- as requested', '/project/init.lua'), 'init.lua');
     await assertBlocked('edit', edit('{- Per our discussion, keep it lazy. -}', '/project/Main.hs'), 'Main.hs');
 
@@ -212,6 +227,7 @@ describe('comment-guard plugin', () => {
     await run('edit', edit('#include <stdio.h>', '/project/main.c'));
     await run('edit', edit('local q = a // b', '/project/init.lua'));
     await run('edit', edit('half = n // 2', '/project/Main.elm'));
+    await run('edit', edit('f = a --> b', '/project/Main.hs'));
     await run('edit', edit('const ratio = total / count / 2;'));
 
     process.env.OPENCODE_COMMENT_GUARD = 'off';

@@ -36,6 +36,7 @@ interface Syntax {
   dash: boolean;
   braceDash: boolean;
   markup: boolean;
+  regex: boolean;
   docstring: boolean;
 }
 
@@ -104,6 +105,19 @@ const HASH_AND_SLASH_EXTENSIONS = new Set(['.php']);
 const DASH_EXTENSIONS = new Set(['.sql', '.lua', '.hs', '.elm']);
 // In these languages `//` is an operator, so only `--` comments apply.
 const DASH_ONLY_EXTENSIONS = new Set(['.lua', '.hs', '.elm']);
+const REGEX_EXTENSIONS = new Set([
+  '.js',
+  '.jsx',
+  '.mjs',
+  '.cjs',
+  '.ts',
+  '.tsx',
+  '.mts',
+  '.cts',
+  '.vue',
+  '.svelte',
+  '.astro',
+]);
 const BRACE_DASH_EXTENSIONS = new Set(['.hs', '.elm']);
 const DOCSTRING_EXTENSIONS = new Set(['.py', '.pyi']);
 const MARKUP_EXTENSIONS = new Set(['.html', '.htm', '.xml', '.svg', '.xhtml']);
@@ -180,6 +194,7 @@ const syntaxFor = (path: string): Syntax | undefined => {
       dash: false,
       braceDash: false,
       markup: false,
+      regex: false,
       docstring: DOCSTRING_EXTENSIONS.has(extension),
     };
   }
@@ -192,6 +207,7 @@ const syntaxFor = (path: string): Syntax | undefined => {
     dash: DASH_EXTENSIONS.has(extension),
     braceDash: BRACE_DASH_EXTENSIONS.has(extension),
     markup: !DASH_ONLY_EXTENSIONS.has(extension),
+    regex: REGEX_EXTENSIONS.has(extension),
     docstring: false,
   };
 };
@@ -209,6 +225,9 @@ const findClose = (line: string, delimiter: string, from: number): number => {
   return -1;
 };
 
+// `--` starts a comment unless it begins an operator such as Haskell's `-->`.
+const DASH_COMMENT = /^-{2,}(?=[\s\p{L}[|^]|$)/u;
+
 const NO_COMMENT: Scan = { comment: undefined, state: undefined };
 
 // Text after an opening comment delimiter; a missing terminator on the same line leaves the block open.
@@ -220,7 +239,8 @@ const openBlock = (rest: string, end: string): Scan => {
 };
 
 // Characters and keywords after which a `/` starts a regex literal rather than a division.
-const REGEX_PREFIX = /(?:^|[(,=:[!&|?{};+\-*%<>~^]|\b(?:return|typeof|case|do|else|in|of|void|yield|await))\s*$/;
+const REGEX_PREFIX =
+  /(?:^|=>|(?<![+-])[+-]|[(,=:[!&|?{};*%~^]|\b(?:return|typeof|case|do|else|in|of|void|yield|await))\s*$/;
 
 // Index of the `/` that closes a regex literal starting at `start`, or -1 when `start` does not begin one.
 const regexEnd = (line: string, start: number): number => {
@@ -238,7 +258,9 @@ const regexEnd = (line: string, start: number): number => {
     } else if (char === ']') {
       inClass = false;
     } else if (char === '/' && !inClass) {
-      return index;
+      // A regex literal never ends right before `//` or `/*`; this is a trailing comment instead.
+      const after = line[index + 1];
+      return after === '/' || after === '*' ? -1 : index;
     }
   }
   return -1;
@@ -268,7 +290,7 @@ const scanCode = (line: string, syntax: Syntax, from: number): Scan => {
       // Any other unclosed quote is literal text, such as an apostrophe or a Rust lifetime.
       continue;
     }
-    if (char === '/' && syntax.slash) {
+    if (char === '/' && syntax.regex) {
       const end = regexEnd(line, index);
       if (end !== -1) {
         index = end;
@@ -288,7 +310,7 @@ const scanCode = (line: string, syntax: Syntax, from: number): Scan => {
     if (syntax.hash && char === '#' && (index + 1 === line.length || /\s/.test(line[index + 1]))) {
       return { comment: line.slice(index + 1), state: undefined };
     }
-    if (syntax.dash && pair === '--') {
+    if (syntax.dash && DASH_COMMENT.test(line.slice(index))) {
       const rest = line.slice(index + 2);
       return rest.startsWith('[[') ? openBlock(rest.slice(2), ']]') : { comment: rest, state: undefined };
     }
@@ -339,7 +361,7 @@ const scanLine = (line: string, syntax: Syntax, state: OpenState | undefined): S
   if (syntax.braceDash && trimmed.startsWith('{-')) {
     return openBlock(trimmed.slice(2), '-}');
   }
-  if (syntax.dash && trimmed.startsWith('--')) {
+  if (syntax.dash && DASH_COMMENT.test(trimmed)) {
     return trimmed.startsWith('--[[')
       ? openBlock(trimmed.slice(4), ']]')
       : { comment: trimmed.replace(/^-+/, ''), state: undefined };
@@ -352,7 +374,7 @@ const cleanComment = (text: string): string =>
     .trim()
     .replace(/(?:\*\/\s*\}?|-->|"""|''')$/, '')
     .trim()
-    .replace(/^[-*!:\s]+/, '');
+    .replace(/^[-*!:|^\s]+/, '');
 
 const isLeak = (comment: string): boolean => LEAK_PATTERNS.some((pattern) => pattern.test(comment));
 
