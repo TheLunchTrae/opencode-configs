@@ -54,8 +54,6 @@ test('native auto-discovery exposes git_inspect, blocks secret paths, and honors
     OPENCODE_DISABLE_PROJECT_CONFIG: '1',
     OPENCODE_DISABLE_DEFAULT_PLUGINS: 'true',
     OPENCODE_EXPERIMENTAL_DISABLE_FILEWATCHER: 'true',
-    // This fixture tests Git tools, not the separately tested optimizer runtime.
-    TE_DISABLE: '1',
   };
   const git = (...args: string[]) => {
     const result = spawnSync('git', args, { cwd: project, env, encoding: 'utf8', timeout: 30_000 });

@@ -6,7 +6,7 @@
     "useIgnoreFile": true
   },
   "files": {
-    "includes": ["**/*.json", "**/*.jsonc", "!package-lock.json", "!vendor"]
+    "includes": ["**/*.json", "**/*.jsonc", "!package-lock.json"]
   },
   "formatter": {
     "indentStyle": "space",
