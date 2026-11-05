@@ -35,6 +35,7 @@ interface Syntax {
   hash: boolean;
   dash: boolean;
   braceDash: boolean;
+  dashOperators: boolean;
   markup: boolean;
   regex: boolean;
   docstring: boolean;
@@ -193,6 +194,7 @@ const syntaxFor = (path: string): Syntax | undefined => {
       hash: true,
       dash: false,
       braceDash: false,
+      dashOperators: false,
       markup: false,
       regex: false,
       docstring: DOCSTRING_EXTENSIONS.has(extension),
@@ -206,6 +208,7 @@ const syntaxFor = (path: string): Syntax | undefined => {
     hash: HASH_AND_SLASH_EXTENSIONS.has(extension),
     dash: DASH_EXTENSIONS.has(extension),
     braceDash: BRACE_DASH_EXTENSIONS.has(extension),
+    dashOperators: extension === '.hs',
     markup: !DASH_ONLY_EXTENSIONS.has(extension),
     regex: REGEX_EXTENSIONS.has(extension),
     docstring: false,
@@ -225,8 +228,9 @@ const findClose = (line: string, delimiter: string, from: number): number => {
   return -1;
 };
 
-// `--` starts a comment unless it begins an operator such as Haskell's `-->`.
-const DASH_COMMENT = /^-{2,}(?=[\s\p{L}[|^]|$)/u;
+// `--` starts a comment, except that Haskell reads `--` followed by a symbol character (`-->`) as an operator.
+const isDashComment = (text: string, syntax: Syntax): boolean =>
+  syntax.dashOperators ? /^-{2,}(?![!#$%&*+./<=>?@\\~:])/.test(text) : text.startsWith('--');
 
 const NO_COMMENT: Scan = { comment: undefined, state: undefined };
 
@@ -297,10 +301,13 @@ const scanCode = (line: string, syntax: Syntax, from: number): Scan => {
         continue;
       }
     }
-    if (index === 0 || !/\s/.test(line[index - 1])) {
+    const pair = line.slice(index, index + 2);
+    const previous = index === 0 ? '' : line[index - 1];
+    // JSX comments may follow `{` directly: `<a /> {/* note */}`.
+    const jsxComment = syntax.regex && previous === '{' && pair === '/*';
+    if (!jsxComment && (previous === '' || !/\s/.test(previous))) {
       continue;
     }
-    const pair = line.slice(index, index + 2);
     if (syntax.slash && pair === '//') {
       return { comment: line.slice(index + 2), state: undefined };
     }
@@ -310,7 +317,7 @@ const scanCode = (line: string, syntax: Syntax, from: number): Scan => {
     if (syntax.hash && char === '#' && (index + 1 === line.length || /\s/.test(line[index + 1]))) {
       return { comment: line.slice(index + 1), state: undefined };
     }
-    if (syntax.dash && DASH_COMMENT.test(line.slice(index))) {
+    if (syntax.dash && isDashComment(line.slice(index), syntax)) {
       const rest = line.slice(index + 2);
       return rest.startsWith('[[') ? openBlock(rest.slice(2), ']]') : { comment: rest, state: undefined };
     }
@@ -361,7 +368,7 @@ const scanLine = (line: string, syntax: Syntax, state: OpenState | undefined): S
   if (syntax.braceDash && trimmed.startsWith('{-')) {
     return openBlock(trimmed.slice(2), '-}');
   }
-  if (syntax.dash && DASH_COMMENT.test(trimmed)) {
+  if (syntax.dash && isDashComment(trimmed, syntax)) {
     return trimmed.startsWith('--[[')
       ? openBlock(trimmed.slice(4), ']]')
       : { comment: trimmed.replace(/^-+/, ''), state: undefined };

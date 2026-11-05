@@ -111,6 +111,17 @@ describe('comment-guard plugin', () => {
     await assertBlocked('edit', edit('const re = /`/g;\n// As requested, escape backticks.'), 'escape backticks');
     await run('edit', edit('const re = /[([/`+-]/u;\nconst t = `\n// As requested\n`;'));
     await assertBlocked('edit', edit('SELECT 1 -- as requested', '/project/query.sql'), 'query.sql');
+    await assertBlocked('edit', edit('SELECT 1 --1 as requested', '/project/query.sql'), 'query.sql');
+    await assertBlocked(
+      'edit',
+      edit('---@param x number As requested, take a number', '/project/init.lua'),
+      'init.lua',
+    );
+    await assertBlocked(
+      'edit',
+      edit('{cond && <a href="/x">y</a>} {/* as requested */}', '/project/src/a.tsx'),
+      'a.tsx',
+    );
     await assertBlocked(
       'edit',
       edit('return <a href={url}>link</a>; // as requested', '/project/src/link.tsx'),
