@@ -92,6 +92,11 @@ Bash token checks are heuristic; expansion, aliases, symlinks, and parent-direct
 Use synthetic credential-shaped values in its tests.
 Do not describe the plugin as a sandbox.
 
+`plugins/comment-guard.ts` blocks edit, write, multiedit, and apply_patch calls whose added comment lines reference
+the conversation, prompt, requests, or earlier iterations. It checks only added comment lines in code files, not
+strings, code, or prose files. Keep its phrase list narrow to avoid false positives. `OPENCODE_COMMENT_GUARD=all`
+blocks every new non-directive comment; `off` disables the guard. Comment detection is heuristic, not a parser.
+
 Session tools live in `extensions/session-tools/` with shared UI helpers outside auto-discovered plugin directories.
 Their TUI-only entrypoints are registered in `tui.jsonc` and stay outside server plugin auto-discovery.
 Keep config/context views read-only and preserve evidence limits. Bookmark storage stays scoped by project,
