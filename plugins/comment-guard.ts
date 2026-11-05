@@ -16,7 +16,7 @@ type Mode = 'leaks' | 'all' | 'off';
 interface ChangedLine {
   text: string;
   added: boolean;
-  // Starts a new hunk, so comment block state from earlier lines does not carry over.
+  // Starts a new hunk, so comment and string state from earlier lines does not carry over.
   hunkStart?: boolean;
 }
 
@@ -34,12 +34,19 @@ interface Syntax {
   slash: boolean;
   hash: boolean;
   dash: boolean;
+  markup: boolean;
   docstring: boolean;
+}
+
+// A block comment or multi-line string left open at the end of a line.
+interface OpenState {
+  end: string;
+  comment: boolean;
 }
 
 interface Scan {
   comment: string | undefined;
-  blockEnd: string | undefined;
+  state: OpenState | undefined;
 }
 
 const PROSE_EXTENSIONS = new Set(['.md', '.mdx', '.markdown', '.txt', '.rst', '.adoc']);
@@ -95,6 +102,7 @@ const HASH_ONLY_PREFIXES = ['dockerfile.', 'containerfile.', '.env.'];
 const HASH_AND_SLASH_EXTENSIONS = new Set(['.php']);
 const DASH_EXTENSIONS = new Set(['.sql', '.lua', '.hs', '.elm']);
 const DOCSTRING_EXTENSIONS = new Set(['.py', '.pyi']);
+const MARKUP_EXTENSIONS = new Set(['.html', '.htm', '.xml', '.svg', '.xhtml']);
 
 // Lines longer than this are treated as generated or minified code and skipped.
 const MAX_LINE_LENGTH = 4000;
@@ -106,6 +114,7 @@ const NOT_A_SOURCE = String.raw`(?!\s+(?:by|in|via|at|from|with|for|on|under|bel
 // narrow enough that ordinary descriptions of runtime behavior pass.
 const LEAK_PATTERNS: readonly RegExp[] = [
   new RegExp(String.raw`\b(?:as|like) (?:was )?(?:requested|asked|instructed|discussed)\b${NOT_A_SOURCE}`, 'i'),
+  /\bas (?:requested|asked|instructed|discussed|agreed) (?:by (?:you|me|us|the user)|in (?:our|this|the) (?:chat|conversation|thread|discussion))\b/i,
   new RegExp(
     String.raw`\b(?:as|like) (?:you|the user) (?:requested|asked|instructed|suggested|discussed|agreed|wanted)\b` +
       NOT_A_SOURCE,
@@ -114,6 +123,7 @@ const LEAK_PATTERNS: readonly RegExp[] = [
   /\bper (?:our|your) (?:discussion|conversation|chat|instructions?|prompt|feedback)\b/i,
   /\bper (?:this|the) (?:discussion|conversation|chat)\b/i,
   /\bper the feedback\b/i,
+  /\bper (?:your|the user's) request\b/i,
   /\bper (?:the )?user(?:'s)? (?:request|instructions?|feedback)\b/i,
   /^(?:as |like )?you (?:asked|requested|said|mentioned|suggested|wanted)\b/i,
   /\byou (?:asked|told) (?:me|us)\b/i,
@@ -160,71 +170,94 @@ const syntaxFor = (path: string): Syntax | undefined => {
     HASH_ONLY_PREFIXES.some((prefix) => name.startsWith(prefix)) ||
     HASH_ONLY_EXTENSIONS.has(extension)
   ) {
-    return { slash: false, hash: true, dash: false, docstring: DOCSTRING_EXTENSIONS.has(extension) };
+    return { slash: false, hash: true, dash: false, markup: false, docstring: DOCSTRING_EXTENSIONS.has(extension) };
   }
   if (PROSE_EXTENSIONS.has(extension)) {
     return undefined;
   }
   return {
-    slash: true,
+    slash: !MARKUP_EXTENSIONS.has(extension),
     hash: HASH_AND_SLASH_EXTENSIONS.has(extension),
     dash: DASH_EXTENSIONS.has(extension),
+    markup: true,
     docstring: false,
   };
 };
 
-// Index of the quote that closes the string opened at `start`, or -1 when the line never closes it,
-// as with an apostrophe in prose or a Rust lifetime.
-const closingQuote = (line: string, start: number): number => {
-  const quote = line[start];
-  for (let index = start + 1; index < line.length; index += 1) {
+// Index where `delimiter` closes a string or comment, searching from `from` and skipping backslash escapes,
+// or -1 when the line does not close it.
+const findClose = (line: string, delimiter: string, from: number): number => {
+  for (let index = from; index < line.length; index += 1) {
     if (line[index] === '\\') {
       index += 1;
-    } else if (line[index] === quote) {
+    } else if (line.startsWith(delimiter, index)) {
       return index;
     }
   }
   return -1;
 };
 
-// Finds a trailing comment marker that follows whitespace and sits outside string literals.
-const trailingMarker = (line: string, syntax: Syntax): { index: number; marker: string } | undefined => {
-  for (let index = 1; index < line.length; index += 1) {
-    const char = line[index];
-    if (char === '"' || char === "'" || char === '`') {
-      const close = closingQuote(line, index);
-      if (close !== -1) {
-        index = close;
+const NO_COMMENT: Scan = { comment: undefined, state: undefined };
+
+// Text after an opening comment delimiter; a missing terminator on the same line leaves the block open.
+const openBlock = (rest: string, end: string): Scan => {
+  const close = rest.indexOf(end);
+  return close === -1
+    ? { comment: rest, state: { end, comment: true } }
+    : { comment: rest.slice(0, close), state: undefined };
+};
+
+// Scans code from `from` for a trailing comment that follows whitespace outside string literals. Strings that
+// stay open at the end of the line (template literals, Python triple-quoted strings) carry over as string state.
+const scanCode = (line: string, syntax: Syntax, from: number): Scan => {
+  for (let index = from; index < line.length; index += 1) {
+    const triple = line.slice(index, index + 3);
+    if (syntax.docstring && (triple === '"""' || triple === "'''")) {
+      const close = findClose(line, triple, index + 3);
+      if (close === -1) {
+        return { comment: undefined, state: { end: triple, comment: false } };
       }
+      index = close + 2;
       continue;
     }
-    if (!/\s/.test(line[index - 1])) {
+    const char = line[index];
+    if (char === '"' || char === "'" || char === '`') {
+      const close = findClose(line, char, index + 1);
+      if (close !== -1) {
+        index = close;
+      } else if (char === '`' && syntax.slash) {
+        return { comment: undefined, state: { end: '`', comment: false } };
+      }
+      // Any other unclosed quote is literal text, such as an apostrophe or a Rust lifetime.
+      continue;
+    }
+    if (index === 0 || !/\s/.test(line[index - 1])) {
       continue;
     }
     const pair = line.slice(index, index + 2);
-    if (syntax.slash && (pair === '//' || pair === '/*')) {
-      return { index, marker: pair };
+    if (syntax.slash && pair === '//') {
+      return { comment: line.slice(index + 2), state: undefined };
+    }
+    if (syntax.slash && pair === '/*') {
+      return openBlock(line.slice(index + 2), '*/');
     }
     if (syntax.hash && char === '#' && (index + 1 === line.length || /\s/.test(line[index + 1]))) {
-      return { index, marker: '#' };
+      return { comment: line.slice(index + 1), state: undefined };
     }
   }
-  return undefined;
+  return NO_COMMENT;
 };
 
-// Text after an opening delimiter; a missing terminator on the same line leaves the block open.
-const openBlock = (rest: string, end: string): Scan => {
-  const close = rest.indexOf(end);
-  return close === -1 ? { comment: rest, blockEnd: end } : { comment: rest.slice(0, close), blockEnd: undefined };
-};
-
-const NO_COMMENT: Scan = { comment: undefined, blockEnd: undefined };
-
-// Returns the comment text on a line, if any, and the terminator of a block comment the line leaves open.
-const scanLine = (line: string, syntax: Syntax, blockEnd: string | undefined): Scan => {
-  if (blockEnd !== undefined) {
-    const close = line.indexOf(blockEnd);
-    return close === -1 ? { comment: line, blockEnd } : { comment: line.slice(0, close), blockEnd: undefined };
+// Returns the comment text on a line, if any, and the comment or string state the line leaves open.
+const scanLine = (line: string, syntax: Syntax, state: OpenState | undefined): Scan => {
+  if (state !== undefined) {
+    const close = findClose(line, state.end, 0);
+    if (close === -1) {
+      return { comment: state.comment ? line : undefined, state };
+    }
+    return state.comment
+      ? { comment: line.slice(0, close), state: undefined }
+      : scanCode(line, syntax, close + state.end.length);
   }
   const trimmed = line.trim();
   if (trimmed.length > MAX_LINE_LENGTH) {
@@ -232,19 +265,19 @@ const scanLine = (line: string, syntax: Syntax, blockEnd: string | undefined): S
   }
   if (syntax.slash) {
     if (trimmed.startsWith('//')) {
-      return { comment: trimmed.replace(/^\/+!?/, ''), blockEnd: undefined };
+      return { comment: trimmed.replace(/^\/+!?/, ''), state: undefined };
     }
     const block = /^\{?\/\*+!?/.exec(trimmed);
     if (block !== null) {
       return openBlock(trimmed.slice(block[0].length), '*/');
     }
-    if (trimmed.startsWith('<!--')) {
-      return openBlock(trimmed.slice(4), '-->');
-    }
     // A block comment body whose opening line lies outside the edited text.
     if (/^\*(?:\s+\p{L}|\/|$)/u.test(trimmed)) {
-      return { comment: trimmed, blockEnd: undefined };
+      return { comment: trimmed, state: undefined };
     }
+  }
+  if (syntax.markup && trimmed.startsWith('<!--')) {
+    return openBlock(trimmed.slice(4), '-->');
   }
   if (syntax.docstring) {
     const docstring = /^[ru]?("""|''')/i.exec(trimmed);
@@ -253,19 +286,14 @@ const scanLine = (line: string, syntax: Syntax, blockEnd: string | undefined): S
     }
   }
   if (syntax.hash && trimmed.startsWith('#')) {
-    return PREPROCESSOR_PATTERN.test(trimmed)
-      ? NO_COMMENT
-      : { comment: trimmed.replace(/^#+/, ''), blockEnd: undefined };
+    return PREPROCESSOR_PATTERN.test(trimmed) ? NO_COMMENT : { comment: trimmed.replace(/^#+/, ''), state: undefined };
   }
   if (syntax.dash && trimmed.startsWith('--')) {
-    return { comment: trimmed.replace(/^-+/, ''), blockEnd: undefined };
+    return trimmed.startsWith('--[[')
+      ? openBlock(trimmed.slice(4), ']]')
+      : { comment: trimmed.replace(/^-+/, ''), state: undefined };
   }
-  const trailing = trailingMarker(line, syntax);
-  if (trailing === undefined) {
-    return NO_COMMENT;
-  }
-  const rest = line.slice(trailing.index + trailing.marker.length);
-  return trailing.marker === '/*' ? openBlock(rest, '*/') : { comment: rest, blockEnd: undefined };
+  return syntax.slash || syntax.hash || syntax.docstring ? scanCode(line, syntax, 0) : NO_COMMENT;
 };
 
 const cleanComment = (text: string): string =>
@@ -365,14 +393,14 @@ const findBlockedComments = (changes: FileChange[], mode: Mode): Finding[] => {
     if (syntax === undefined) {
       continue;
     }
-    let blockEnd: string | undefined;
+    let state: OpenState | undefined;
     for (const line of change.lines) {
       if (line.hunkStart === true) {
-        blockEnd = undefined;
+        state = undefined;
         continue;
       }
-      const scan = scanLine(line.text, syntax, blockEnd);
-      blockEnd = scan.blockEnd;
+      const scan = scanLine(line.text, syntax, state);
+      state = scan.state;
       const comment = scan.comment === undefined ? '' : cleanComment(scan.comment);
       if (line.added && isBlockedComment(comment, mode)) {
         findings.push({ path: change.path, comment });

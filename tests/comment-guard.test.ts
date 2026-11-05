@@ -75,6 +75,7 @@ describe('comment-guard plugin', () => {
     await assertBlocked('edit', edit('# As requested, ignore dist', '/project/.gitignore'), '.gitignore');
     await assertBlocked('edit', edit('# you asked me to pin this', '/project/.env.local'), '.env.local');
     await assertBlocked('edit', edit('# Per our discussion, use fpm.', '/project/index.php'), 'index.php');
+    await assertBlocked('edit', edit('--[[\nAs requested, keep both.\n]]', '/project/init.lua'), 'keep both');
   });
 
   it('checks block comment bodies and Python docstrings', async () => {
@@ -94,6 +95,22 @@ describe('comment-guard plugin', () => {
       edit('def retry():\n    """\n    Per our discussion, retry twice.\n    """', '/project/tool.py'),
       'Per our discussion',
     );
+  });
+
+  it('treats multi-line strings as strings, not comments', async () => {
+    const python = 'SQL = """\nSELECT 1\n"""\n\ndef f():\n    return "as requested"\n';
+    await run('edit', edit(python, '/project/query.py'));
+    await assertBlocked(
+      'edit',
+      edit(`${python}\ndef g():\n    """As requested, retry twice."""\n`, '/project/query.py'),
+      'As requested, retry twice.',
+    );
+    await run('edit', edit('const prompt = `\n* You asked for a summary.\n`;\nrun(prompt);'));
+    await assertBlocked('edit', edit('const prompt = `\nSummary\n`; // you said to inline it'), 'inline it');
+    await run('edit', edit('<p>a // as requested</p>', '/project/index.html'));
+
+    process.env.OPENCODE_COMMENT_GUARD = 'all';
+    await run('edit', edit('SQL = """\nSELECT 1\n"""\nx = 1\ny = 2\n', '/project/query.py'));
   });
 
   it('allows neutral comments, code, strings, and prose files', async () => {
