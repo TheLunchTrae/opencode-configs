@@ -2,8 +2,9 @@
   "$schema": "https://opencode.ai/tui.json",
   "theme": "pink",
   "plugin": [
-    "@lunchbox-labs/opencode-config-composer@0.4.1",
+    "@lunchbox-labs/opencode-model-profiles@0.1.1",
     "@lunchbox-labs/opencode-prompt-composer@0.2.1",
+    "@lunchbox-labs/opencode-tool-inspector@0.2.0",
     "@slkiser/opencode-quota@4.10.11",
     "./extensions/session-tools/config.ts",
     "./extensions/session-tools/context.ts",

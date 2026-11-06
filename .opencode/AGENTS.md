@@ -11,13 +11,13 @@ Read affected source before editing. Follow root authorization, tool-selection, 
 
 ## Configuration and prompts
 
-- Native agent files own prompts, modes, colors, ordered group membership, and final permission exceptions.
-  `opencode.jsonc` owns global defaults, built-ins, plugin registrations, and native boundaries.
-  `config-composer.jsonc` owns shared groups, named patches, model aliases, and profiles.
+- Native agent files own prompts, modes, colors, `modelRef`, and agent permissions.
+  `opencode.jsonc` owns global defaults, built-in agent settings, plugin registrations, and native boundaries.
+  `models.jsonc` owns model refs, profiles, and refs for built-in agents.
 - Preserve provider/model choices unless explicitly requested. Inspect installed dependencies and current native
   behavior before changing runtime assumptions. Do not infer loading or permissions from JSON parsing alone.
 - Preserve system edit approval, title/compaction `options.reasoningEffort`, global edit/Task denials,
-  ordered shell rules, and secret Read guards. Distinct permission patterns combine; exact replacements move last.
+  ordered shell rules, and secret Read guards. Agent permissions append to global rules; the last matching rule wins.
 - Builder is the primary integrator. Planner/reviewers are read-only leaves. Built-in general is an editing worker;
   explore retains native restrictions. Keep delegation exact and deny by default. No routes from reviewers to writers.
   Verify transitive reachability and the depth ceiling without granting tools to make a check pass.
@@ -32,14 +32,20 @@ Read affected source before editing. Follow root authorization, tool-selection, 
   Built-ins without authored prompts must retain native fallback prompts.
 - Keep utility commands in the selected role. `/test-audit` explicitly invokes a fresh reviewer subtask.
   Preserve `$ARGUMENTS`, the native `/resume` selector, and `/resume-work` handoff behavior.
-- Register pinned Config Composer and Prompt Composer packages once each in both server/TUI lists, in that order.
+- Register pinned Model Profiles and Prompt Composer packages once each in both server/TUI lists, in that order.
+  Register pinned Tool Inspector once, in the TUI list only; it has no server entrypoint.
   OpenCode installs npm plugins from these lists; do not add them to `package.json`.
-  `config-composer.jsonc` uses the published schema of the pinned Config Composer version; update its URL with the pin.
-  Its only plugin option is `configFile`; Prompt Composer uses `prompts/`.
-  Keep runtime metadata out of provider request options. Do not add compatibility layers for removed roles.
-- `/profiles` selects default/shared-only/named worktree choices. Selection persists outside definitions.
-  Shared-only retains shared permissions and fixed system settings, without profile alias variants.
-  Restart the server after editing definitions, prompts, or native files. Existing sessions may retain model selections.
+  `models.jsonc` uses the published schema of the pinned Model Profiles version; update its URL with the pin.
+  Model Profiles' only plugin option is `configFile`; Prompt Composer uses `prompts/`.
+  Keep runtime metadata out of provider request options. Model Profiles removes `modelRef` before OpenCode builds
+  agents; do not add other plugin-only agent keys. Do not add compatibility layers for removed roles.
+- `/model-config` selects defaults only or a named profile per worktree. Selection persists in OpenCode state,
+  outside `models.jsonc`. A profile overrides only the refs it names; `system` and `title` stay on defaults.
+  A ref whose model no connected provider offers falls back to the model OpenCode would use without the ref.
+  Model Profiles rereads `models.jsonc` when OpenCode loads a project. Restart the server after editing prompts or
+  native files. Existing sessions may retain model selections.
+- `/tools` is read-only. It omits MCP tools, and its agent access lists omit hidden agents such as `compaction`
+  and `title`.
 - `/view-prompts` is read-only, shows full loaded agents/commands, and does not expose full model context or skills.
   Inspect loaded text and diagnostics after restart; host hook errors can leave unresolved includes.
 - Keep GitHub/Playwright MCP typed and disabled without credential interpolation. Do not inspect secrets for verification.
@@ -69,10 +75,10 @@ Native installation supports x64 Linux/Windows. Source TUI activation needs Linu
 Set `npm_config_cache` to a writable task-local directory when necessary.
 
 Test only what lives in this repository: `plugins/`, `extensions/`, their native loading, and `opencode.jsonc` policy.
-Never test npm-installed or other third-party plugins here, including Config Composer, Prompt Composer, and
-OpenCode Quota. Do not add unit or native tests that load, configure, or assert their behavior, and do not install
-them as dependencies to make such tests possible. Their behavior belongs in their owning repositories.
-Native fixtures load only local plugins and extensions.
+Never test npm-installed or other third-party plugins here, including Model Profiles, Tool Inspector,
+Prompt Composer, and OpenCode Quota. Do not add unit or native tests that load, configure, or assert their behavior,
+and do not install them as dependencies to make such tests possible. Their behavior belongs in their owning
+repositories. Native fixtures load only local plugins and extensions.
 Do not add unit or native snapshot assertions for personal config shapes, fixed agent names/counts, model inventories,
 or exact permission maps. Use ad hoc reference and permission inspection during migrations.
 Report native loading separately from model-assisted execution.

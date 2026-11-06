@@ -2,7 +2,14 @@
 description: Optional read-only planning for complex, ambiguous, or risky work.
 mode: subagent
 color: "#CA8AF7"
-groups: [reasoning, read-only]
+modelRef: reasoning
+permission:
+  bash: deny
+  project_script: deny
+  edit: deny
+  task: deny
+  github_*: deny
+  playwright_*: deny
 ---
 
 Inspect the assigned scope and propose the smallest coherent plan. Do not edit, execute commands, run tests,
