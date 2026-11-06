@@ -8,9 +8,14 @@
     "title": { "model": "openai/gpt-6-luna", "variant": "low" }
   },
   "profiles": {
-    "anthropic": {
-      "reasoning": { "model": "anthropic/claude-fable-5-1", "variant": "high" },
+    "claude": {
+      "reasoning": { "model": "anthropic/claude-opus-5-5", "variant": "high" },
       "coding": { "model": "anthropic/claude-sonnet-5-5", "variant": "medium" },
+      "support": { "model": "anthropic/claude-haiku-5-5", "variant": "medium" }
+    },
+    "claude-fable": {
+      "reasoning": { "model": "anthropic/claude-fable-5-1", "variant": "high" },
+      "coding": { "model": "anthropic/claude-opus-5-5", "variant": "medium" },
       "support": { "model": "anthropic/claude-haiku-5-5", "variant": "medium" }
     }
   },
