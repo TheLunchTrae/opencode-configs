@@ -39,8 +39,10 @@ Read affected source before editing. Follow root authorization, tool-selection, 
   Model Profiles' only plugin option is `configFile`; Prompt Composer uses `prompts/`.
   Keep runtime metadata out of provider request options. Model Profiles removes `modelRef` before OpenCode builds
   agents; do not add other plugin-only agent keys. Do not add compatibility layers for removed roles.
-- `/model-config` selects defaults only or a named profile per worktree. Selection persists in OpenCode state,
-  outside `models.jsonc`. A profile overrides only the refs it names; `system` and `title` stay on defaults.
+- `/model-config` saves defaults only or a named profile per worktree, in OpenCode state outside `models.jsonc`.
+  `OPENCODE_MODEL_PROFILE` overrides the saved choice; with neither, `defaultProfile` applies. A profile that
+  `models.jsonc` does not define falls through to the next source. A profile overrides only the refs it names;
+  `system` and `title` stay on defaults.
   A ref whose model no connected provider offers falls back to the model OpenCode would use without the ref.
   Model Profiles rereads `models.jsonc` when OpenCode loads a project. Restart the server after editing prompts or
   native files. Existing sessions may retain model selections.
