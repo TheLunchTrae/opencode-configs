@@ -44,7 +44,8 @@ Read affected source before editing. Follow root authorization, tool-selection, 
   A ref whose model no connected provider offers falls back to the model OpenCode would use without the ref.
   Model Profiles rereads `models.jsonc` when OpenCode loads a project. Restart the server after editing prompts or
   native files. Existing sessions may retain model selections.
-- `/tools` is read-only. It omits MCP tools and hidden built-ins such as `compaction` and `title`.
+- `/tools` is read-only. It omits MCP tools, and its agent access lists omit hidden agents such as `compaction`
+  and `title`.
 - `/view-prompts` is read-only, shows full loaded agents/commands, and does not expose full model context or skills.
   Inspect loaded text and diagnostics after restart; host hook errors can leave unresolved includes.
 - Keep GitHub/Playwright MCP typed and disabled without credential interpolation. Do not inspect secrets for verification.

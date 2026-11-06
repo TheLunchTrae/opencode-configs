@@ -3,7 +3,7 @@
   "defaults": {
     "reasoning": { "model": "openai/gpt-6-astra", "variant": "high" },
     "coding": { "model": "openai/gpt-6.1-sol", "variant": "medium" },
-    "support": { "model": "openai/gpt-6.1-terra", "variant": "medium" },
+    "support": { "model": "openai/gpt-6-luna", "variant": "medium" },
     "system": { "model": "openai/gpt-6.1-terra", "variant": "medium" },
     "title": { "model": "openai/gpt-6-luna", "variant": "low" }
   },
