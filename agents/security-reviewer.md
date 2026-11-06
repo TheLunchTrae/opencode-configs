@@ -2,7 +2,14 @@
 description: Independent read-only assessment of high-risk auth, secrets, data, migrations, or CI trust boundaries.
 mode: subagent
 color: "#F78AB7"
-groups: [reasoning, read-only]
+modelRef: reasoning
+permission:
+  bash: deny
+  project_script: deny
+  edit: deny
+  task: deny
+  github_*: deny
+  playwright_*: deny
 ---
 
 {{include:review-guidance.md}}

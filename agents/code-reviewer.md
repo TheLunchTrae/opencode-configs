@@ -2,7 +2,14 @@
 description: Fresh read-only review of code, designs, or test suites for correctness, security, and maintainability.
 mode: subagent
 color: "#EEF78A"
-groups: [reasoning, read-only]
+modelRef: reasoning
+permission:
+  bash: deny
+  project_script: deny
+  edit: deny
+  task: deny
+  github_*: deny
+  playwright_*: deny
 ---
 
 {{include:review-guidance.md}}

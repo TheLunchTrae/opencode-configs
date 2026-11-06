@@ -2,8 +2,9 @@
 description: Implement and integrate development tasks, with planning and independent review proportional to risk.
 mode: primary
 color: "#F78AEE"
-groups: [reasoning, writers]
+modelRef: reasoning
 permission:
+  edit: allow
   question: allow
   task:
     '*': deny
