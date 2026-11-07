@@ -1,5 +1,5 @@
 {
-  "enabledProviders": ["openai"],
+  "enabledProviders": ["openai", "anthropic"],
   "formatStyle": "allWindows",
   "percentDisplayMode": "remaining",
   "tuiCommandDisplay": "inline",

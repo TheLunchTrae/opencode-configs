@@ -11,10 +11,20 @@
   "profiles": {
     // Uses every ref from defaults.
     "openai": {},
+    "openai-menial": {
+      "reasoning": { "model": "openai/gpt-5.4-mini", "variant": "none" },
+      "coding": { "model": "openai/gpt-5.4-mini", "variant": "none" },
+      "support": { "model": "openai/gpt-5.4-mini", "variant": "none" }
+    },
     "claude": {
       "reasoning": { "model": "anthropic/claude-opus-5-5", "variant": "high" },
       "coding": { "model": "anthropic/claude-sonnet-5-5", "variant": "medium" },
       "support": { "model": "anthropic/claude-haiku-5-5", "variant": "medium" }
+    },
+    "claude-menial": {
+      "reasoning": { "model": "anthropic/claude-haiku-5-5", "variant": "low" },
+      "coding": { "model": "anthropic/claude-haiku-5-5", "variant": "low" },
+      "support": { "model": "anthropic/claude-haiku-5-5", "variant": "low" }
     },
     "claude-fable": {
       "reasoning": { "model": "anthropic/claude-fable-5-1", "variant": "high" },
