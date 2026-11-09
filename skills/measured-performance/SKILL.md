@@ -1,6 +1,6 @@
 ---
 name: measured-performance
-description: Establish comparable performance measurements and test one bottleneck hypothesis at a time.
+description: Use when investigating performance bottlenecks or comparing implementation performance.
 ---
 
 # Measured performance
@@ -18,6 +18,19 @@ without requiring a new measurement plan. Keep any approved unmeasured change di
 5. Implement only the approved change. Establish data ownership before caching or concurrency.
 6. Re-run the same measurement under comparable conditions, with the same correctness checks.
 7. Report baseline and candidate values, variance or measurement limits, and the user-visible consequence.
+
+## Compare implementations
+
+Define one correctness contract before comparing candidates. Include relevant output types, errors, boundary cases,
+precision, and side effects. Use the same cases and expected results for every candidate, with an independent oracle
+when available. Retain mismatching inputs as counterexamples. Separate passing suites do not establish equivalence.
+Do not rank candidates that fail the shared contract as interchangeable implementations.
+
+For timing comparisons, retain every raw trial and record warmup conditions. Use consistent warmup and alternate
+execution order when order can bias results. Report the distribution or representative values with their spread,
+not just the fastest run. If subtracting a baseline, retain raw baseline and candidate measurements separately.
+
+## Limits and reporting
 
 Prefer eliminating work before caching or parallelizing it. For a cache, specify invalidation and memory bounds.
 For concurrency, check shared state, ordering, capacity, and failure handling. Shared outputs require one owner.

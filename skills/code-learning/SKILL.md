@@ -14,7 +14,9 @@ Delegate focused evidence requests only when permitted. Leaf agents cannot deleg
 3. Explain the mechanism beyond the diff. Identify the invariant each safeguard preserves.
 4. Check available history before attributing a guard to an incident. Label hypotheses when history is unavailable.
 5. Contrast a plausible but unsafe alternative with the invariant-preserving approach.
-6. End with remaining unknowns and one useful next concept to investigate.
+6. When an explanation remains uncertain, propose one observable check. State how its possible results distinguish
+   the plausible explanations. Keep the check a proposal. Do not execute it or imply it ran.
+7. End with remaining unknowns and one useful next concept to investigate.
 
 For quizzes, ask a few questions about the traced behavior and a counterexample. Wait for answers before giving the key.
 Correct misconceptions with source evidence.
