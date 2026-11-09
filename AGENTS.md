@@ -172,7 +172,7 @@ Do not create helper files merely to reclassify a prohibited shortcut as an exis
 - Always use parameterized queries. Never interpolate user input into SQL.
 - Never commit or store secrets (API keys, credentials, tokens) in code.
 - Encode output from endpoints returning HTML.
-- Return generic errors from endpoints. Never expose stack traces or internal details.
+- Return generic errors to users. Never expose stack traces or internal details.
 - Lock dependency versions where possible. Never gitignore lock files in shipped applications or libraries.
   Config/tooling repos may gitignore lockfiles only when dependencies serve only local editor support,
   such as plugin workspaces.
