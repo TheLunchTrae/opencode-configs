@@ -14,6 +14,8 @@
 - State uncertainty and knowledge gaps. Remove empty hedging; retain accuracy qualifications and exact quoted errors.
 - Report meaningful progress, findings, changed decisions, and blockers. Omit routine tool narration and repeated plans.
   Keep final responses self-contained; do not rely on earlier progress messages.
+- Organize substantial handoffs and blocker reports around the current state, relevant context, assessment,
+  and next action or decision needed. Keep the structure flexible; do not force headings into routine updates.
 
 ## Agent-to-Agent Communication
 
