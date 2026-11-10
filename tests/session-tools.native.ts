@@ -18,7 +18,7 @@ interface PluginStatus {
   active: boolean;
 }
 
-test('native TUI activates the three session inspection panels from source', { timeout: 90_000 }, async (t) => {
+test('native TUI activates session inspection and branch panels from source', { timeout: 90_000 }, async (t) => {
   if (process.platform !== 'linux' || spawnSync('script', ['--version']).status !== 0) {
     t.skip('Native TUI smoke test requires Linux util-linux script');
     return;
@@ -31,6 +31,7 @@ test('native TUI activates the three session inspection panels from source', { t
   const project = join(root, 'project');
   await mkdir(config, { recursive: true });
   await mkdir(project);
+  assert.equal(spawnSync('git', ['init', '-b', 'main'], { cwd: project }).status, 0);
   await cp(join(repository, 'extensions'), join(config, 'extensions'), { recursive: true });
   // Real copies prevent the host installer from mutating the checkout's dependencies.
   await cp(await realpath(join(repository, 'node_modules')), join(config, 'node_modules'), { recursive: true });
@@ -43,7 +44,7 @@ test('native TUI activates the three session inspection panels from source', { t
   await writeFile(join(config, 'tui.json'), JSON.stringify({ plugin: [...entries, './audit.js'] }));
   await writeFile(
     join(config, 'audit.js'),
-    "import {writeFileSync} from 'node:fs'; export default {id:'session-panel-audit',async tui(api){writeFileSync(process.env.PANEL_MARKER,JSON.stringify(api.plugins.list()));}};",
+    "import {writeFileSync} from 'node:fs'; export default {id:'session-panel-audit',async tui(api){for(let i=0;i<100&&!api.state.ready;i++)await new Promise(r=>setTimeout(r,50));await api.keymap.dispatchCommand('branches.open');for(let i=0;i<100&&!api.ui.dialog.open;i++)await new Promise(r=>setTimeout(r,50));writeFileSync(process.env.PANEL_MARKER,JSON.stringify({plugins:api.plugins.list(),branchPanelOpen:api.ui.dialog.open}));}};",
   );
   const registryRequests: string[] = [];
   const registry = createServer((request, response) => {
@@ -102,9 +103,15 @@ test('native TUI activates the three session inspection panels from source', { t
   });
   try {
     let statuses: PluginStatus[] | undefined;
+    let branchPanelOpen = false;
     for (let attempt = 0; attempt < 400; attempt++) {
       try {
-        statuses = JSON.parse(await readFile(marker, 'utf8')) as PluginStatus[];
+        const result = JSON.parse(await readFile(marker, 'utf8')) as {
+          plugins: PluginStatus[];
+          branchPanelOpen: boolean;
+        };
+        statuses = result.plugins;
+        branchPanelOpen = result.branchPanelOpen;
         break;
       } catch (error) {
         if (!(error instanceof Error && 'code' in error && error.code === 'ENOENT')) {
@@ -117,10 +124,11 @@ test('native TUI activates the three session inspection panels from source', { t
       await delay(100);
     }
     assert.ok(statuses !== undefined, `Native TUI did not complete panel activation: ${logs}`);
-    const panels = statuses.filter((status) => status.spec.includes('/extensions/session-tools/'));
+    assert.equal(branchPanelOpen, true, `Native /branches did not open: ${logs}`);
+    const panels = statuses.filter((status) => status.spec.includes('/extensions/'));
     assert.deepEqual(
       panels.map((status) => status.id),
-      ['effective-config', 'context-inspector', 'session-bookmarks'],
+      ['effective-config', 'context-inspector', 'session-bookmarks', 'branches'],
     );
     assert.ok(panels.every((status) => status.active && status.enabled && status.source === 'file'));
     assert.deepEqual(registryRequests, [], 'Source panels must load using the installed fixture dependencies');

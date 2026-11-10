@@ -146,6 +146,9 @@ export function dialogNavigation(api: TuiPluginApi) {
     back,
     close,
     reset,
+    get revision() {
+      return revision;
+    },
     get canGoBack() {
       return frames.length > 1;
     },
