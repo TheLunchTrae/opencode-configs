@@ -1,6 +1,6 @@
 ---
 name: unslop
-description:
+description: |-
   Use when polishing or reviewing an interface with generic styling, weak hierarchy, distracting decoration, or
   repetitive copy, and when writing or tightening UI labels, hints, messages, confirmations, or empty states.
 ---
