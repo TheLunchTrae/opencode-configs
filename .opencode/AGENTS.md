@@ -112,6 +112,14 @@ Keep config/context views read-only and preserve evidence limits. Bookmark stora
 workspace, directory, and session; preserve malformed records on errors. Handoff drafts require explicit copy
 and must never submit prompts automatically. Do not add workflow-stage tracking to these panels.
 
+`/branches` is a TUI-only extension in `extensions/branches/`. It requires the embedded local V1 server and a
+worktree-root launch. Attached servers and workspace routing are blocked. Git operations require explicit confirmation.
+Never add automatic stash, discard, force deletion, reset, rebase, push, or remote deletion to this panel.
+Activity checks cover the current directory instance, not other instances or processes. They are warnings, not locks.
+Keep confirmation cancellation, stale-state checks, worktree checks, and ignored-file protection on every mutation path.
+Pull fetches first, then merges the upstream with fast-forward-only and ignored-file protection.
+An interrupted command can leave Git changes or conflicts. Refresh and inspect before retrying. Never auto-abort.
+
 ## Documentation and third-party material
 
 Read `@agent-references/asd-ste100.md`; apply repository rules first. Use LF, readable Markdown, and 120-character

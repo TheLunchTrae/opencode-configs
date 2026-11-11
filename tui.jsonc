@@ -8,6 +8,7 @@
     "@slkiser/opencode-quota@4.10.12",
     "./extensions/session-tools/config.ts",
     "./extensions/session-tools/context.ts",
-    "./extensions/session-tools/bookmarks.tsx"
+    "./extensions/session-tools/bookmarks.tsx",
+    "./extensions/branches/index.ts"
   ]
 }
