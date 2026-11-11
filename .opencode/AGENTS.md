@@ -78,7 +78,7 @@ Set `npm_config_cache` to a writable task-local directory when necessary.
 
 Test only what lives in this repository: `plugins/`, `extensions/`, their native loading, and `opencode.jsonc` policy.
 Never test npm-installed or other third-party plugins here, including Model Profiles, Tool Inspector,
-Prompt Composer, and OpenCode Quota. Do not add unit or native tests that load, configure, or assert their behavior,
+and Prompt Composer. Do not add unit or native tests that load, configure, or assert their behavior,
 and do not install them as dependencies to make such tests possible. Their behavior belongs in their owning
 repositories. Native fixtures load only local plugins and extensions.
 Do not add unit or native snapshot assertions for personal config shapes, fixed agent names/counts, model inventories,
