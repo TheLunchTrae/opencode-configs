@@ -22,6 +22,10 @@ permission:
     'jq *': allow
     'git *--output*': deny
     'sort *-o*': deny
+    'sort -?o*': deny
+    'sort * -?o*': deny
+    'sort -??o*': deny
+    'sort * -??o*': deny
     'uniq * * *': deny
     'sort *--compress-program*': deny
     '*>*': deny
