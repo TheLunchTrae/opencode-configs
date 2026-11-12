@@ -92,13 +92,14 @@ const REDACTIONS: readonly (readonly [string, RegExp])[] = [
 // `diff -ru`. A `diff ` header or a `--- ` and `+++ ` pair names each file. Hunk lines of a denied file are dropped,
 // and so is the text after its hunk headers, because Git copies a nearby file line there. A hunk ends when its header
 // counts run out, or at the first line that cannot belong to it, so a cut or combined (`@@@`) hunk cannot hide the
-// next `diff ` header. `GIT binary patch` data of a denied file is dropped up to its second blank line. Color codes are
+// next `diff ` header. A denied hunk instead fails closed and drops other lines until a `diff `, `commit `, or `@@` line. `GIT binary patch` data of a denied file is dropped up to its second blank line. Color codes are
 // ignored when matching. Word diffs, prefixed lines, and escaped text are not recognized.
 const SECRET_DIFF = '[REDACTED:secret-file-diff]';
 const HUNK_HEADER = /^@{2,} [^@]*@{2,}/;
 const HUNK_COUNTS = /^@@ -\d+(?:,(\d+))? \+\d+(?:,(\d+))? @@/;
 const HUNK_LINE = /^[ +\-\\]|^$/;
 const BINARY_PATCH = 'GIT binary patch';
+const NEW_UNIT = /^(?:diff |commit |From [\da-f]{7,} |@@|GIT binary patch|Binary files )/;
 // eslint-disable-next-line no-control-regex -- Terminal color sequences start with ESC.
 const COLOR = /\x1b\[[\d;]*m/g;
 const BINARY_LINE = /^(?:(?:literal|delta) \d+|[A-Za-z][\w!#$%&()*+;<=>?@^`{|}~-]*)?$/;
@@ -133,6 +134,10 @@ const redactSecretDiffs = (text: string): string => {
       binaryBlanks = 0;
     }
     if (oldLeft !== undefined && !HUNK_LINE.test(content)) {
+      // A denied hunk fails closed: word diffs, graph prefixes, or a cut marker drop until a new unit starts.
+      if (secret && !NEW_UNIT.test(content)) {
+        continue;
+      }
       oldLeft = undefined;
     }
     if (oldLeft !== undefined) {

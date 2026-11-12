@@ -384,6 +384,30 @@ describe('scrub-secrets plugin', () => {
     assert.match(output.output, /\nabcdef0123456789abcdef0123456789abcdef01$/);
   });
 
+  it('keeps dropping a denied hunk across word-diff and cut-marker lines', async () => {
+    const { after } = await create();
+    const text = [
+      'diff --git a/.env b/.env',
+      '@@ -1,3 +1,3 @@',
+      ' HOST=synthetic-word-host',
+      '~',
+      '+K=synthetic-porcelain-new',
+      '[-K=synthetic-word-old-]{+K=synthetic-word-new+}',
+      '... 200 lines truncated ...',
+      '+K2=synthetic-after-cut',
+      'commit 0123456789abcdef0123456789abcdef01234567',
+      'diff --git a/app.ts b/app.ts',
+      '@@ -1 +1 @@',
+      '-old line',
+      '+new line',
+    ].join('\n');
+    const output = { title: '', output: text, metadata: {} };
+    await after({ tool: 'bash', sessionID: 's', callID: 'c', args: {} }, output);
+    assert.doesNotMatch(output.output, /synthetic-/);
+    assert.match(output.output, /\ncommit 0123456789abcdef0123456789abcdef01234567\n/);
+    assert.match(output.output, /-old line\n\+new line$/);
+  });
+
   it('keeps CRLF line endings on redaction markers', async () => {
     const { after } = await create();
     const text = ['diff --git a/.env b/.env', '@@ -1 +1 @@ K=synthetic-crlf', '-K=a', '+K=b', 'done'].join('\r\n');
