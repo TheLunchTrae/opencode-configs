@@ -24,7 +24,8 @@ Read affected source before editing. Follow root authorization, tool-selection, 
   skip them. OpenCode checks each command in a chain, pipeline, or substitution separately, but it does not parse
   `bash -c` strings, so wrapper denials match the whole string.
   Root `AGENTS.md` Shell Safety carries the written limits.
-  Global `project_script` also allows. Its subprocesses do not receive the scrubbed shell environment.
+  Agents run project scripts through the shell, so `shell.env` scrubbing covers them. Do not restore a separate
+  script-runner tool.
 - Read-only agents keep a deny-by-default shell: Git inspection plus filters for its output (`wc`, `sort`, `uniq`,
   `cut`, `tr`, `comm`, `diff`, `jq`). Output files, program-running options, and redirection stay denied.
   File reads and searches use the native `read`, `grep`, and `glob` tools.

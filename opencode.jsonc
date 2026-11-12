@@ -267,7 +267,6 @@
     "task": {
       "*": "deny"
     },
-    "project_script": "allow",
     "github_*": "ask",
     "playwright_*": "ask"
   },
