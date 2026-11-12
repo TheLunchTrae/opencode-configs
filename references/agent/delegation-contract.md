@@ -14,7 +14,6 @@ Do not repeat full paths or prescribe `cd` or `git -C` on every command when the
 
 Built-in workers do not inherit the parent's prompt. Supply the relevant implementation or research constraints
 explicitly. Workers must not delegate. The configured depth ceiling is two, not permission to add another layer.
-Do not route around a denial through another agent or tool.
 
 Validate returned citations, scope, source state, uncertainty, and actual versus supplied check evidence.
 The builder owns integration and final conclusions. A worker's completion does not establish merge readiness.
