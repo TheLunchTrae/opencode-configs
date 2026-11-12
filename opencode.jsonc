@@ -35,7 +35,6 @@
       "*/secrets/*": "deny"
     },
     "bash": {
-      "*": "allow",
       "git push*": "ask",
       "git -* push*": "ask",
       "gh pr merge*": "ask",

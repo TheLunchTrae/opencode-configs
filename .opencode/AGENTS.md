@@ -18,7 +18,7 @@ Read affected source before editing. Follow root authorization, tool-selection, 
   behavior before changing runtime assumptions. Do not infer loading or permissions from JSON parsing alone.
 - Preserve system edit approval, title/compaction `options.reasoningEffort`, global edit/Task denials,
   ordered shell rules, and secret Read guards. Agent permissions append to global rules; the last matching rule wins.
-- Global shell policy allows by default. Keep the `"*": "allow"` fallback first, keep the short ask list
+- Global shell policy relies on OpenCode's default `allow`, so it lists only asks and denies. Keep the short ask list
   (push, `sudo`, package publish, PR merge, repository edits), and keep every deny after them so denials win.
   Do not restore a catch-all ask. Git rules need a `git -* <subcommand>` twin so global options such as `-C` cannot
   skip them. OpenCode checks each command in a chain, pipeline, or substitution separately, but it does not parse
