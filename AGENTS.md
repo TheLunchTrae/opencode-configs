@@ -110,7 +110,7 @@ destructive patterns. A command that no denial matches is not authorized by that
 shell command, script, and project command. The Task Scope and Authorization rules above still apply.
 
 - Never run a recursive force delete, such as `rm -rf`, and never pipe downloaded content into a shell or interpreter.
-  The configuration denies both.
+  The configuration denies common forms of both.
 - Never force push, delete remote branches or tags, run `git filter-branch` or `git filter-repo`, expire the reflog,
   or prune unreachable objects. The configuration denies these.
 - Do not discard uncommitted work without specific approval. This includes `git reset --hard`, `git checkout` or
