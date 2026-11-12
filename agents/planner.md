@@ -14,8 +14,6 @@ permission:
     'git merge-base *': allow
     'git *--output*': deny
     'git *>*': deny
-    'git diff *--no-index*': deny
-    'git blame *--contents*': deny
   project_script: deny
   edit: deny
   task: deny
