@@ -18,6 +18,13 @@ Read affected source before editing. Follow root authorization, tool-selection, 
   behavior before changing runtime assumptions. Do not infer loading or permissions from JSON parsing alone.
 - Preserve system edit approval, title/compaction `options.reasoningEffort`, global edit/Task denials,
   ordered shell rules, and secret Read guards. Agent permissions append to global rules; the last matching rule wins.
+- Global shell policy relies on OpenCode's default `allow`. It blocks a few whole commands and asks before `git push`
+  and `sudo`. Do not add flag variants or pattern lists; root `AGENTS.md` Shell Safety lists the commands agents must
+  not run. Agents run project scripts through the shell, so `shell.env` scrubbing covers them.
+- Keep permissions minimal. Add a rule only when it changes behavior; never restate a default or an inherited rule.
+- Read-only agents inherit the global shell policy. Their prompts forbid commands that change files, Git state, or
+  remote services.
+  File reads and searches use the native `read`, `grep`, and `glob` tools.
 - Builder is the primary integrator. Planner/reviewers are read-only leaves. Built-in general is an editing worker;
   explore retains native restrictions. Keep delegation exact and deny by default. No routes from reviewers to writers.
   Verify transitive reachability and the depth ceiling without granting tools to make a check pass.
