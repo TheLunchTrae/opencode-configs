@@ -96,11 +96,13 @@ Preserve path keys `filePath`, `file_path`, and `path`; `pattern` is a path only
 and normalize backslashes. A complete `secrets` segment overrides template basenames. Reject calls even when the error
 toast fails. Keep denial diagnostics accurate.
 Bash token checks are heuristic; expansion, aliases, symlinks, and parent-directory searches limit protection.
-Bash words split at whitespace and control operators, and the text after each `:` or `=` is also checked, so Git
-`rev:path` reads such as `git show HEAD:.env` are denied. Blob ids, globs, and archives still bypass the check.
+Bash words split at whitespace and control operators, and the text after the first few and the last `:` or `=` is
+also checked, so Git `rev:path` reads such as `git show HEAD:.env` are denied. Keep that bound; checking every suffix
+of a long word takes quadratic time. Blob ids, globs, brace expansion, and archives still bypass the check.
 `plugins/scrub-secrets.ts` blanks variables only for session shell calls; keep terminal panels unscrubbed.
 It also drops hunk lines and binary patch data of denied paths from diff output. Keep hunk header counts and the
-non-hunk-line check as the hunk end, so a cut or malformed hunk cannot hide the next file header.
+non-hunk-line check as the hunk end, so a cut or combined hunk cannot hide the next `diff ` header. Word diffs,
+indented or line-numbered patches, JSON-escaped patches, and hunks without a file header are not redacted.
 Use synthetic credential-shaped values in its tests.
 Do not describe the plugin as a sandbox.
 
