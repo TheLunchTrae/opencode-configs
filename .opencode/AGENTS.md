@@ -18,6 +18,11 @@ Read affected source before editing. Follow root authorization, tool-selection, 
   behavior before changing runtime assumptions. Do not infer loading or permissions from JSON parsing alone.
 - Preserve system edit approval, title/compaction `options.reasoningEffort`, global edit/Task denials,
   ordered shell rules, and secret Read guards. Agent permissions append to global rules; the last matching rule wins.
+- Global shell policy allows by default. Keep the `"*": "allow"` fallback first, keep the short ask list
+  (push, `sudo`, package publish), and keep every deny after them so denials win. Do not restore a catch-all ask.
+  OpenCode checks each command in a chain, pipeline, or substitution separately; `bash -c` strings are not parsed,
+  so wrapper denials match the whole string. Root `AGENTS.md` Shell Safety carries the written limits.
+  Read-only agents keep a deny-by-default shell with Git inspection and text utilities, and deny redirection.
 - Builder is the primary integrator. Planner/reviewers are read-only leaves. Built-in general is an editing worker;
   explore retains native restrictions. Keep delegation exact and deny by default. No routes from reviewers to writers.
   Verify transitive reachability and the depth ceiling without granting tools to make a check pass.
