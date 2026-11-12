@@ -4,33 +4,6 @@ mode: subagent
 color: "#F78AB7"
 modelRef: reasoning
 permission:
-  bash:
-    '*': deny
-    'git status *': allow
-    'git diff *': allow
-    'git log *': allow
-    'git show *': allow
-    'git blame *': allow
-    'git merge-base *': allow
-    'wc *': allow
-    'sort *': allow
-    'uniq *': allow
-    'cut *': allow
-    'tr *': allow
-    'diff *': allow
-    'comm *': allow
-    'jq *': allow
-    'git *--output*': deny
-    'sort *-o*': deny
-    'sort -?o*': deny
-    'sort * -?o*': deny
-    'sort -??o*': deny
-    'sort * -??o*': deny
-    'uniq * * *': deny
-    'sort *--compress-program*': deny
-    '*>*': deny
-  edit: deny
-  task: deny
   github_*: deny
   playwright_*: deny
 ---
@@ -44,7 +17,7 @@ when detailed vulnerability patterns or remediation guidance are needed.
 Do not read secret files, reproduce secret values, or infer a confirmed CVE from a dependency's age.
 Use verified advisories or supplied scanner evidence. Distinguish public identifiers and synthetic fixtures from secrets.
 
-Do not edit, run commands other than read-only Git inspection and text utilities, run tests, delegate,
+Do not edit files or change them through the shell, run tests, delegate,
 approve implementation, or authorize shipping.
 For a supported critical vulnerability, immediately report location, evidence, impact, remediation, and unfinished
 scope. Recommend rotation when credentials were exposed; do not claim notification, rotation, or blocking occurred.

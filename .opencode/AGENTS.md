@@ -18,16 +18,11 @@ Read affected source before editing. Follow root authorization, tool-selection, 
   behavior before changing runtime assumptions. Do not infer loading or permissions from JSON parsing alone.
 - Preserve system edit approval, title/compaction `options.reasoningEffort`, global edit/Task denials,
   ordered shell rules, and secret Read guards. Agent permissions append to global rules; the last matching rule wins.
-- Global shell policy relies on OpenCode's default `allow`, so it lists only asks and denies. Keep the short ask list
-  (push, `sudo`, package publish, PR merge, repository edits), and keep every deny after them so denials win.
-  Do not restore a catch-all ask. Git rules need a `git -* <subcommand>` twin so global options such as `-C` cannot
-  skip them. OpenCode checks each command in a chain, pipeline, or substitution separately, but it does not parse
-  `bash -c` strings, so wrapper denials match the whole string.
-  Root `AGENTS.md` Shell Safety carries the written limits.
-  Agents run project scripts through the shell, so `shell.env` scrubbing covers them. Do not restore a separate
-  script-runner tool.
-- Read-only agents keep a deny-by-default shell: Git inspection plus filters for its output (`wc`, `sort`, `uniq`,
-  `cut`, `tr`, `comm`, `diff`, `jq`). Output files, program-running options, and redirection stay denied.
+- Global shell policy relies on OpenCode's default `allow`. It blocks a few whole commands and asks before `git push`
+  and `sudo`. Do not add flag variants or pattern lists; root `AGENTS.md` Shell Safety lists the commands agents must
+  not run. Agents run project scripts through the shell, so `shell.env` scrubbing covers them.
+- Keep permissions minimal. Add a rule only when it changes behavior; never restate a default or an inherited rule.
+- Read-only agents inherit the global shell policy. Their prompts forbid changing files through the shell.
   File reads and searches use the native `read`, `grep`, and `glob` tools.
 - Builder is the primary integrator. Planner/reviewers are read-only leaves. Built-in general is an editing worker;
   explore retains native restrictions. Keep delegation exact and deny by default. No routes from reviewers to writers.

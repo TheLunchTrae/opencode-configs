@@ -7,7 +7,6 @@ permission:
   edit: allow
   question: allow
   task:
-    '*': deny
     planner: allow
     code-reviewer: allow
     security-reviewer: allow
