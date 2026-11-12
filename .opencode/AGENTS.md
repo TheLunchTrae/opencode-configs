@@ -19,10 +19,14 @@ Read affected source before editing. Follow root authorization, tool-selection, 
 - Preserve system edit approval, title/compaction `options.reasoningEffort`, global edit/Task denials,
   ordered shell rules, and secret Read guards. Agent permissions append to global rules; the last matching rule wins.
 - Global shell policy allows by default. Keep the `"*": "allow"` fallback first, keep the short ask list
-  (push, `sudo`, package publish), and keep every deny after them so denials win. Do not restore a catch-all ask.
-  OpenCode checks each command in a chain, pipeline, or substitution separately; `bash -c` strings are not parsed,
-  so wrapper denials match the whole string. Root `AGENTS.md` Shell Safety carries the written limits.
-  Read-only agents keep a deny-by-default shell with Git inspection and text utilities, and deny redirection.
+  (push, `sudo`, package publish, PR merge, repository edits), and keep every deny after them so denials win.
+  Do not restore a catch-all ask. Git rules need a `git * <subcommand>` twin so global options such as `-C` cannot
+  skip them. OpenCode checks each command in a chain, pipeline, or substitution separately, but it does not parse
+  `bash -c` strings, so wrapper denials match the whole string.
+  Root `AGENTS.md` Shell Safety carries the written limits.
+- Read-only agents keep a deny-by-default shell: Git inspection plus filters for its output (`wc`, `sort`, `uniq`,
+  `cut`, `tr`, `comm`, `diff`, `jq`). Output files, program-running options, and redirection stay denied.
+  File reads and searches use the native `read`, `grep`, and `glob` tools.
 - Builder is the primary integrator. Planner/reviewers are read-only leaves. Built-in general is an editing worker;
   explore retains native restrictions. Keep delegation exact and deny by default. No routes from reviewers to writers.
   Verify transitive reachability and the depth ceiling without granting tools to make a check pass.

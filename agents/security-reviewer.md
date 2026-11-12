@@ -15,21 +15,15 @@ permission:
     'wc *': allow
     'sort *': allow
     'uniq *': allow
-    'head *': allow
-    'tail *': allow
     'cut *': allow
     'tr *': allow
-    'cat *': allow
-    'ls *': allow
-    'grep *': allow
-    'rg *': allow
     'diff *': allow
     'comm *': allow
     'jq *': allow
     'git *--output*': deny
     'sort *-o*': deny
     'uniq * * *': deny
-    'rg *--pre*': deny
+    'sort *--compress-program*': deny
     '*>*': deny
   project_script: deny
   edit: deny
