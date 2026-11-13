@@ -35,7 +35,10 @@
       "*/secrets/*": "deny"
     },
     "bash": {
+      "git commit *": "ask",
       "git push*": "ask",
+      "git stash *": "ask",
+      "git checkout *": "ask",
       "sudo *": "ask",
       "rm -rf*": "deny",
       "rm -fr*": "deny",

@@ -18,9 +18,10 @@ Read affected source before editing. Follow root authorization, tool-selection, 
   behavior before changing runtime assumptions. Do not infer loading or permissions from JSON parsing alone.
 - Preserve system edit approval, title/compaction `options.reasoningEffort`, global edit/Task denials,
   ordered shell rules, and secret Read guards. Agent permissions append to global rules; the last matching rule wins.
-- Global shell policy relies on OpenCode's default `allow`. It blocks a few whole commands and asks before `git push`
-  and `sudo`. Do not add flag variants or pattern lists; root `AGENTS.md` Shell Safety lists the commands agents must
-  not run. Agents run project scripts through the shell, so `shell.env` scrubbing covers them.
+- Global shell policy relies on OpenCode's default `allow`. It blocks a few whole commands and asks before
+  `git commit`, `git push`, `git stash`, `git checkout`, and `sudo`. Do not add flag variants or pattern lists; root
+  `AGENTS.md` Shell Safety lists the commands agents must not run. Agents run project scripts through the shell, so
+  `shell.env` scrubbing covers them.
 - Keep permissions minimal. Add a rule only when it changes behavior; never restate a default or an inherited rule.
 - Read-only agents inherit the global shell policy. Their prompts forbid commands that change files, Git state, or
   remote services.
