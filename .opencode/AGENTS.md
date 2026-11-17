@@ -18,6 +18,8 @@ Read affected source before editing. Follow root authorization, tool-selection, 
   behavior before changing runtime assumptions. Do not infer loading or permissions from JSON parsing alone.
 - Preserve system edit approval, title/compaction `options.reasoningEffort`, global edit/Task denials,
   ordered shell rules, and secret Read guards. Agent permissions append to global rules; the last matching rule wins.
+- Keep object-valued permissions in object form across global defaults, JSON agent overrides, and agent frontmatter.
+  Use `edit: { "*": allow }` in YAML to override `"edit": { "*": "deny" }`; do not use `edit: allow`.
 - Global shell policy relies on OpenCode's default `allow`. It blocks a few whole commands and asks before
   `git commit`, `git push`, `git stash`, `git checkout`, and `sudo`. Do not add flag variants or pattern lists; root
   `AGENTS.md` Shell Safety lists the commands agents must not run. Agents run project scripts through the shell, so

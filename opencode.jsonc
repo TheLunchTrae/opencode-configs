@@ -72,7 +72,9 @@
     "general": {
       "color": "#8AF793",
       "permission": {
-        "edit": "allow"
+        "edit": {
+          "*": "allow"
+        }
       }
     },
     "explore": {
@@ -80,7 +82,9 @@
     },
     "summary": {
       "permission": {
-        "edit": "ask"
+        "edit": {
+          "*": "ask"
+        }
       }
     },
     "compaction": {
@@ -88,7 +92,9 @@
         "reasoningEffort": "medium"
       },
       "permission": {
-        "edit": "ask"
+        "edit": {
+          "*": "ask"
+        }
       }
     },
     "title": {
@@ -96,7 +102,9 @@
         "reasoningEffort": "low"
       },
       "permission": {
-        "edit": "ask"
+        "edit": {
+          "*": "ask"
+        }
       }
     }
   },
