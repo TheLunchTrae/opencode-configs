@@ -45,7 +45,7 @@ Read affected source before editing. Follow root authorization, tool-selection, 
 - Register pinned Model Profiles and Prompt Composer packages once each in both server/TUI lists, in that order.
   Register pinned Tool Inspector once, in the TUI list only; it has no server entrypoint.
   OpenCode installs npm plugins from these lists; do not add them to `package.json`.
-  `models.jsonc` uses the published schema of the pinned Model Profiles version; update its URL with the pin.
+  `models.jsonc` uses the published Model Profiles schema at `@latest` for IDE validation.
   Model Profiles' only plugin option is `configFile`; Prompt Composer uses `prompts/`.
   Keep runtime metadata out of provider request options. Model Profiles removes `modelRef` before OpenCode builds
   agents; do not add other plugin-only agent keys. Do not add compatibility layers for removed roles.
