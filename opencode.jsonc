@@ -36,22 +36,22 @@
     },
     "bash": {
       "git commit *": "ask",
-      "git push*": "ask",
+      "git push *": "ask",
       "git stash *": "ask",
       "git checkout *": "ask",
       "sudo *": "ask",
       "rm -rf*": "deny",
       "rm -fr*": "deny",
       "git reset --hard*": "deny",
-      "git clean*": "deny",
-      "git filter-branch*": "deny",
-      "git filter-repo*": "deny",
-      "gh pr merge*": "deny",
-      "gh repo delete*": "deny",
-      "npm publish*": "deny",
-      "pnpm publish*": "deny",
-      "npm unpublish*": "deny",
-      "kubectl delete*": "deny"
+      "git clean *": "deny",
+      "git filter-branch *": "deny",
+      "git filter-repo *": "deny",
+      "gh pr merge *": "deny",
+      "gh repo delete *": "deny",
+      "npm publish *": "deny",
+      "pnpm publish *": "deny",
+      "npm unpublish *": "deny",
+      "kubectl delete *": "deny"
     },
     "edit": {
       "*": "deny"
