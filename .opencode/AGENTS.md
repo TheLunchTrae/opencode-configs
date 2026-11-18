@@ -80,9 +80,9 @@ Keep npm, pinned dependencies, loader-required exports, and Promise-returning ho
 | `npm run format` | Format plugin/extension code, tests, and tooling configuration. |
 | `npm run test:native` | Install and verify newest supported V1 runtime, then exercise native integration. |
 | `npm run test:native:minimum` | Same checks on oldest published supported runtime. |
-| `npm run test:render` | Render the bookmark panel with Bun. |
+| `npm run test:render` | Render the shared value view with Bun. |
 
-Use Node 22.18 or newer. Rendered bookmark tests need Bun on PATH.
+Use Node 22.18 or newer. Rendered value-view tests need Bun on PATH.
 Native installation supports x64 Linux/Windows. Source TUI activation needs Linux `script`; report skips elsewhere.
 Set `npm_config_cache` to a writable task-local directory when necessary.
 
@@ -126,9 +126,8 @@ blocks only leaks. Comment detection is heuristic, not a parser.
 
 Session tools live in `extensions/session-tools/` with shared UI helpers outside auto-discovered plugin directories.
 Their TUI-only entrypoints are registered in `tui.jsonc` and stay outside server plugin auto-discovery.
-Keep config/context views read-only and preserve evidence limits. Bookmark storage stays scoped by project,
-workspace, directory, and session; preserve malformed records on errors. Handoff drafts require explicit copy
-and must never submit prompts automatically. Do not add workflow-stage tracking to these panels.
+Keep config/context views read-only and preserve evidence limits. Leave existing bookmark data untouched.
+Do not add workflow-stage tracking to these panels.
 
 `/branches` is a TUI-only extension in `extensions/branches/`. It requires the embedded local V1 server and a
 worktree-root launch. Attached servers and workspace routing are blocked. Git operations require explicit confirmation.
