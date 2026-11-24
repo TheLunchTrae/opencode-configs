@@ -128,9 +128,10 @@ blocks only leaks. Comment detection is heuristic, not a parser.
 spec in `<XDG cache>/opencode/packages/<name>@<spec>` with no expiry, so a dist-tag such as `@latest` or a range such
 as `^1.2.0` keeps its first install.
 Once per process, in the background, they check each cached tag or range install against the registry npm would use.
-A range resolves as npm does: `latest` when it satisfies the range, otherwise the highest non-deprecated match.
+A range resolves as npm-pick-manifest does: `latest` when it satisfies the range and is published, not deprecated,
+and compatible with the running Node version; otherwise the best-ranked satisfying version.
 Bare specs are cached as `@latest` and are covered. Exact versions, Git, and alias specs are left alone.
-On Windows, ranges with `<`, `>`, or `*` are stored under replaced names and are not checked.
+On Windows, ranges with `<`, `>`, `|`, or `*` are stored under replaced names and are not checked.
 `semver` is a runtime dependency for range matching; `extensions/plugin-cache/semver.d.ts` declares its types.
 Outdated entries are removed only at process exit, and the next start reinstalls them. Instances are disposed and
 recreated while OpenCode runs, so disposal is not a safe removal point.

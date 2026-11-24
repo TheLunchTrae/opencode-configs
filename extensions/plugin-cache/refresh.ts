@@ -3,7 +3,7 @@ import { mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node
 import { readFile, readdir, rm } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
-import { maxSatisfying, satisfies, valid, validRange } from 'semver';
+import { rcompare, satisfies, valid, validRange } from 'semver';
 // OpenCode V1 installs each npm plugin spec once into `<cache>/packages/<spec>` and reuses that directory while
 // `node_modules/<name>` exists. A bare spec is installed as `<name>@latest`. Nothing expires these directories, so a
 // dist-tag such as `@latest` or a range such as `^1.2.0` keeps the version that was current at the first install.
@@ -17,6 +17,8 @@ const STALE_DIRECTORY = '.stale';
 const STATE_FILE = '.plugin-cache-refresh.json';
 const DEFAULT_REGISTRY = 'https://registry.npmjs.org';
 const REQUEST_TIMEOUT_MS = 10_000;
+// npm parses versions and ranges loosely.
+const LOOSE = { loose: true };
 
 export interface CachedPackage {
   readonly name: string;
@@ -32,9 +34,16 @@ export interface OutdatedPackage extends CachedPackage {
   readonly availableVersion: string;
 }
 
+export interface PackumentVersion {
+  readonly version: string;
+  readonly deprecated: boolean;
+  // The `engines.node` range the version declares, if any.
+  readonly node?: string;
+}
+
 export interface Packument {
   readonly distTags: Readonly<Partial<Record<string, string>>>;
-  readonly versions: readonly { readonly version: string; readonly deprecated: boolean }[];
+  readonly versions: readonly PackumentVersion[];
 }
 
 export type PackumentLookup = (name: string) => Promise<Packument | undefined>;
@@ -222,30 +231,60 @@ export function parseCacheEntry(entry: string): Pick<CachedPackage, 'name' | 'sp
   if (DIST_TAG.test(spec) && !RANGE_LIKE_TAG.test(spec)) {
     return { name, spec, kind: 'tag' };
   }
-  // An exact version never changes, so only ranges are checked.
-  if (valid(spec) === null && validRange(spec) !== null) {
+  // An exact version never changes, so only ranges are checked. `_` never appears in a range, but Windows cache names
+  // use it in place of `<`, `>`, `|`, and `*`, and loose parsing would still accept some of those names.
+  if (!spec.includes('_') && valid(spec, LOOSE) === null && validRange(spec, LOOSE) !== null) {
     return { name, spec, kind: 'range' };
   }
   return undefined;
 }
 
-// Follows npm's choice for a range: the `latest` dist-tag when it satisfies the range, otherwise the highest
-// satisfying version, preferring versions that are not deprecated.
-export function resolveSpec(packument: Packument, entry: Pick<CachedPackage, 'spec' | 'kind'>): string | undefined {
+// npm-install-checks treats a version as installable when the running Node version satisfies its `engines.node`.
+const engineOk = (item: PackumentVersion, nodeVersion: string) =>
+  item.node === undefined || satisfies(nodeVersion, item.node, { includePrerelease: true });
+
+// Follows npm-pick-manifest for a range. The `latest` dist-tag wins when it satisfies the range (a literal `*` always
+// does), is published, is not deprecated, and supports the running Node version. Otherwise the satisfying versions are
+// ranked: not deprecated and engine-compatible first, then engine-compatible, then not deprecated, then highest.
+export function resolveSpec(
+  packument: Packument,
+  entry: Pick<CachedPackage, 'spec' | 'kind'>,
+  nodeVersion: string = process.version,
+): string | undefined {
   if (entry.kind === 'tag') {
     return packument.distTags[entry.spec];
   }
   const latest = packument.distTags.latest;
-  if (latest !== undefined && satisfies(latest, entry.spec)) {
-    return latest;
+  if (latest !== undefined && (entry.spec === '*' || satisfies(latest, entry.spec, LOOSE))) {
+    const manifest = packument.versions.find((item) => item.version === latest);
+    if (manifest !== undefined && !manifest.deprecated && engineOk(manifest, nodeVersion)) {
+      return latest;
+    }
   }
-  const pick = (deprecated: boolean) =>
-    maxSatisfying(
-      packument.versions.filter((item) => deprecated || !item.deprecated).map((item) => item.version),
-      entry.spec,
-    ) ?? undefined;
-  return pick(false) ?? pick(true);
+  const rank = (item: PackumentVersion) => {
+    const engine = engineOk(item, nodeVersion);
+    return [Number(!item.deprecated && engine), Number(engine), Number(!item.deprecated)];
+  };
+  const compare = (first: PackumentVersion, second: PackumentVersion) => {
+    const firstRank = rank(first);
+    const secondRank = rank(second);
+    for (const [index, value] of secondRank.entries()) {
+      const difference = value - (firstRank[index] ?? 0);
+      if (difference !== 0) {
+        return difference;
+      }
+    }
+    return rcompare(first.version, second.version, LOOSE);
+  };
+  const best = packument.versions
+    .filter((item) => satisfies(item.version, entry.spec, LOOSE))
+    .sort(compare)
+    .at(0);
+  return best?.version;
 }
+
+// The registry stores versions without build metadata, while an installed manifest can keep it, as in `1.2.3+build`.
+const comparableVersion = (version: string) => valid(version, LOOSE) ?? version;
 
 const directoryNames = async (directory: string): Promise<string[]> => {
   try {
@@ -334,7 +373,7 @@ export async function findOutdatedPackages(options: FindOptions): Promise<Outdat
       try {
         const resolved = await packument;
         const availableVersion = resolved === undefined ? undefined : resolveSpec(resolved, entry);
-        if (availableVersion === undefined || availableVersion === entry.installedVersion) {
+        if (availableVersion === undefined || availableVersion === comparableVersion(entry.installedVersion)) {
           return undefined;
         }
         if (removedFor[entry.entry] === availableVersion) {
@@ -439,15 +478,14 @@ export function registryPackument(settings: NpmSettings): PackumentLookup {
       distTags: Object.fromEntries(
         Object.entries(tags).filter((tag): tag is [string, string] => typeof tag[1] === 'string'),
       ),
-      versions: Object.entries(versions).map(([version, manifest]: [string, unknown]) => ({
-        version,
-        deprecated:
-          typeof manifest === 'object' &&
-          manifest !== null &&
-          'deprecated' in manifest &&
-          typeof manifest.deprecated === 'string' &&
-          manifest.deprecated !== '',
-      })),
+      versions: Object.entries(versions).map(([version, manifest]: [string, unknown]) => {
+        const fields = typeof manifest === 'object' && manifest !== null ? manifest : {};
+        const deprecated = 'deprecated' in fields && typeof fields.deprecated === 'string' && fields.deprecated !== '';
+        const engines = 'engines' in fields && typeof fields.engines === 'object' ? fields.engines : null;
+        const node =
+          engines !== null && 'node' in engines && typeof engines.node === 'string' ? engines.node : undefined;
+        return { version, deprecated, ...(node === undefined ? {} : { node }) };
+      }),
     };
   };
 }

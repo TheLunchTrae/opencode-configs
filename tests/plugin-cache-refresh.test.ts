@@ -78,6 +78,9 @@ test('cache entries are parsed for dist-tag and range specs, not exact versions'
     'plugin@1.2.3',
     'plugin@_=1',
     'plugin@X.1',
+    'plugin@=1.2.3',
+    'plugin@_=1.0.0',
+    'plugin@1.x __ 2.x',
     'alias@npm:plugin@1.0.0',
     'alias@npm_plugin@1.0.0',
     'plugin@github:owner/repo',
@@ -517,4 +520,75 @@ test('registry packuments include each version and whether it is deprecated', as
       { version: '1.2.0', deprecated: false },
     ],
   });
+});
+
+test('range resolution follows npm for deprecated, prerelease, unpublished, and engine-restricted versions', () => {
+  const version = (value: string, fields: { deprecated?: boolean; node?: string } = {}) => ({
+    version: value,
+    deprecated: fields.deprecated ?? false,
+    ...(fields.node === undefined ? {} : { node: fields.node }),
+  });
+  const resolve = (latest: string, versions: ReturnType<typeof version>[], spec: string, node = 'v22.18.0') =>
+    resolveSpec({ distTags: { latest }, versions }, { spec, kind: 'range' }, node);
+  assert.equal(
+    resolve('1.3.0', [version('1.2.0'), version('1.3.0', { deprecated: true })], '^1.0.0'),
+    '1.2.0',
+    'a deprecated latest is skipped',
+  );
+  assert.equal(
+    resolve('2.0.0-rc.1', [version('1.9.0'), version('2.0.0-rc.1')], '*'),
+    '2.0.0-rc.1',
+    'a literal * takes a prerelease latest',
+  );
+  assert.equal(resolve('2.0.0-rc.1', [version('1.9.0'), version('2.0.0-rc.1')], 'x'), '1.9.0');
+  assert.equal(resolve('1.3.0', [version('1.2.0')], '^1.0.0'), '1.2.0', 'an unpublished latest is skipped');
+  assert.equal(
+    resolve('1.3.0', [version('1.2.0'), version('1.3.0', { node: '>=24' })], '^1.0.0'),
+    '1.2.0',
+    'a latest that needs a newer Node is skipped',
+  );
+  assert.equal(resolve('2.0.0', [version('1.2.0'), version('1.3.0', { node: '>=24' })], '^1.0.0', 'v24.1.0'), '1.3.0');
+  assert.equal(
+    resolve('2.0.0', [version('1.2.0', { deprecated: true }), version('1.3.0', { node: '>=24' })], '^1.0.0'),
+    '1.2.0',
+    'engine compatibility ranks above deprecation when neither version has both',
+  );
+});
+
+test('an installed version with build metadata matches the registry version', async (t) => {
+  const { root, install } = await packagesFixture(t);
+  await install('built@latest', 'built', '1.2.3+build.5');
+  const outdated = await findOutdatedPackages({
+    packagesDirectory: root,
+    fetchPackument: () => Promise.resolve(tagsOnly({ latest: '1.2.3' })),
+    warn: noWarning,
+  });
+  assert.deepEqual(outdated, []);
+});
+
+test('registry packuments include the Node engine range of each version', async (t) => {
+  const server = createServer((_request, response) => {
+    response.setHeader('content-type', 'application/json');
+    response.end(
+      JSON.stringify({
+        'dist-tags': { latest: '1.0.0' },
+        versions: { '1.0.0': { engines: { node: '>=22' } }, '1.1.0': { engines: { npm: '>=10' } } },
+      }),
+    );
+  });
+  server.listen(0, '127.0.0.1');
+  await once(server, 'listening');
+  t.after(() => new Promise<void>((resolve) => server.close(() => resolve())));
+  const address = server.address();
+  assert.ok(address !== null && typeof address === 'object');
+  const fetchPackument = registryPackument({
+    registry: `http://127.0.0.1:${String(address.port)}`,
+    scopes: {},
+    credentials: {},
+    pinnedDate: false,
+  });
+  assert.deepEqual((await fetchPackument('plugin'))?.versions, [
+    { version: '1.0.0', deprecated: false, node: '>=22' },
+    { version: '1.1.0', deprecated: false },
+  ]);
 });
