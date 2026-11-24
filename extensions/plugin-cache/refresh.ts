@@ -144,7 +144,7 @@ export async function refreshTaggedPackages(options: RefreshOptions): Promise<Re
 
 export function registryDistTags(registry: string) {
   return async (name: string): Promise<Readonly<Record<string, string>> | undefined> => {
-    const response = await fetch(`${registry}/${name.replace('/', '%2f')}`, {
+    const response = await fetch(`${registry}/${name.replaceAll('/', '%2f')}`, {
       headers: { accept: 'application/vnd.npm.install-v1+json' },
       signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     });
