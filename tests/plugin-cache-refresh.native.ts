@@ -18,7 +18,7 @@ const exists = (path: string) =>
     () => false,
   );
 
-test('native OpenCode loads the plugin cache refresh plugin and clears an outdated tagged package', async (t) => {
+test('native OpenCode reports an outdated tagged package and removes it after its instance is disposed', async (t) => {
   const binary = nativeBinary();
   const repository = fileURLToPath(new URL('../', import.meta.url));
   const root = await mkdtemp(join(tmpdir(), 'opencode-plugin-cache-native-'));
@@ -78,8 +78,13 @@ test('native OpenCode loads the plugin cache refresh plugin and clears an outdat
     OPENCODE_DISABLE_DEFAULT_PLUGINS: 'true',
     OPENCODE_DISABLE_MODELS_FETCH: '1',
     npm_config_registry: `http://127.0.0.1:${String(address.port)}`,
+    npm_config_userconfig: join(root, 'npmrc'),
   };
-  const server = spawn(binary, ['serve', '--hostname', '127.0.0.1', '--port', '0'], { cwd: project, env });
+  const server = spawn(
+    binary,
+    ['serve', '--hostname', '127.0.0.1', '--port', '0', '--print-logs', '--log-level', 'INFO'],
+    { cwd: project, env },
+  );
   t.after(() => {
     server.kill();
   });
@@ -100,8 +105,16 @@ test('native OpenCode loads the plugin cache refresh plugin and clears an outdat
   // Server plugins load when the first request for a directory starts its instance.
   const response = await fetch(`${url}/config?directory=${encodeURIComponent(project)}`);
   assert.equal(response.status, 200, await response.text());
+  while (!output.includes('fixture-plugin@latest: 1.0.0 -> 2.0.0')) {
+    assert.ok(Date.now() < deadline, `Outdated package was not reported: ${output}`);
+    await delay(POLL_INTERVAL_MS);
+  }
+  // The running instance keeps the outdated files; they are removed when its last instance is disposed.
+  assert.equal(await exists(outdated), true);
+  const disposed = await fetch(`${url}/instance/dispose?directory=${encodeURIComponent(project)}`, { method: 'POST' });
+  assert.equal(disposed.status, 200, await disposed.text());
   while (await exists(outdated)) {
-    assert.ok(Date.now() < deadline, `Outdated package was not cleared: ${output}`);
+    assert.ok(Date.now() < deadline, `Outdated package was not removed after dispose: ${output}`);
     await delay(POLL_INTERVAL_MS);
   }
   assert.equal(await exists(current), true);

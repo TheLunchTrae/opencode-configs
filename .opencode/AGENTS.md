@@ -126,10 +126,16 @@ blocks only leaks. Comment detection is heuristic, not a parser.
 
 `plugins/plugin-cache-refresh.ts` works around V1 caching each npm plugin spec in
 `<XDG cache>/opencode/packages/<name>@<spec>` with no expiry, so a dist-tag such as `@latest` keeps its first install.
-At startup it reads dist-tags from `npm_config_registry` or the public registry, in the background, once per process.
-It removes a tagged entry whose tag now names another version, so the next start reinstalls it.
+Once per process, in the background, it reads each cached tagged package's dist-tags from the registry npm would use.
 Bare specs are cached as `@latest` and are covered. Exact versions, ranges, Git, and alias specs are left alone.
-It does not read `.npmrc`, so scoped private registries are not checked. Registry failures keep the cache.
+It removes an outdated entry when the last instance is disposed or the process exits, not while an instance runs.
+The next start reinstalls it. A process killed by a signal keeps the entry, and the next start checks again.
+It records the version each removal targeted. If a reinstall still differs, it warns and does not remove it again.
+Registry settings come from environment variables, the user npmrc, and the npmrc in `npm_config_globalconfig`.
+It reads `registry`, `@scope:registry`, `before`, and per-registry `_authToken`, `_auth`, or `username`/`_password`.
+Credentials go only to their matching registry, without following redirects. Registry failures keep the cache.
+A `before` setting disables the check. Custom CA settings such as `cafile` are not read.
+Other running processes that use a removed entry can fail to read its files later.
 Logic lives in `extensions/plugin-cache/` because the loader treats every export of a `plugins/` file as a plugin.
 
 Session tools live in `extensions/session-tools/` with shared UI helpers outside auto-discovered plugin directories.
