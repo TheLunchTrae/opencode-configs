@@ -21,7 +21,7 @@ const exists = (path: string) =>
   );
 
 test(
-  'native TUI reports an outdated tagged package and removes it after the user quits',
+  'native TUI reports outdated tag and range packages and removes them after the user quits',
   { timeout: 90_000 },
   async (t) => {
     if (process.platform !== 'linux' || spawnSync('script', ['--version']).status !== 0) {
@@ -37,6 +37,7 @@ test(
     const packages = join(root, 'cache', 'opencode', 'packages');
     const outdated = join(packages, 'fixture-plugin@latest');
     const current = join(packages, 'current-plugin@latest');
+    const ranged = join(packages, 'ranged-plugin@^1.0.0');
     await mkdir(join(config, 'plugins'), { recursive: true });
     await mkdir(project);
     assert.equal(spawnSync('git', ['init', '-b', 'main'], { cwd: project }).status, 0);
@@ -55,6 +56,7 @@ test(
     for (const [directory, name] of [
       [outdated, 'fixture-plugin'],
       [current, 'current-plugin'],
+      [ranged, 'ranged-plugin'],
     ] as const) {
       await mkdir(join(directory, 'node_modules', name), { recursive: true });
       await writeFile(
@@ -66,14 +68,18 @@ test(
     const registryRequests: string[] = [];
     const registry = createServer((request, response) => {
       registryRequests.push(request.url ?? '');
-      const latest = { '/fixture-plugin': '2.0.0', '/current-plugin': '1.0.0' }[request.url ?? ''];
+      const packument = {
+        '/fixture-plugin': { 'dist-tags': { latest: '2.0.0' } },
+        '/current-plugin': { 'dist-tags': { latest: '1.0.0' } },
+        '/ranged-plugin': { 'dist-tags': { latest: '2.0.0' }, versions: { '1.0.0': {}, '1.2.0': {}, '2.0.0': {} } },
+      }[request.url ?? ''];
       response.setHeader('content-type', 'application/json');
-      if (latest === undefined) {
+      if (packument === undefined) {
         response.statusCode = 404;
         response.end('{}');
         return;
       }
-      response.end(JSON.stringify({ 'dist-tags': { latest } }));
+      response.end(JSON.stringify(packument));
     });
     registry.listen(0, '127.0.0.1');
     await once(registry, 'listening');
@@ -125,21 +131,26 @@ test(
     });
     try {
       const deadline = Date.now() + TIMEOUT_MS;
-      while (!logs.includes('fixture-plugin@latest: 1.0.0 -> 2.0.0')) {
+      while (
+        !logs.includes('fixture-plugin@latest: 1.0.0 -> 2.0.0') ||
+        !logs.includes('ranged-plugin@^1.0.0: 1.0.0 -> 1.2.0')
+      ) {
         assert.ok(running() && Date.now() < deadline, `Outdated package was not reported: ${logs}`);
         await delay(POLL_INTERVAL_MS);
       }
       // The running TUI keeps the outdated files; they are removed when it exits.
       assert.equal(await exists(outdated), true);
+      assert.equal(await exists(ranged), true);
       // The server plugin in the TUI's worker thread must not check the registry again.
       await delay(1_000);
-      assert.deepEqual(registryRequests.sort(), ['/current-plugin', '/fixture-plugin']);
+      assert.deepEqual(registryRequests.sort(), ['/current-plugin', '/fixture-plugin', '/ranged-plugin']);
       while (running()) {
         assert.ok(Date.now() < deadline, `TUI did not exit: ${logs}`);
         child.stdin.write(CTRL_C);
         await Promise.race([once(child, 'exit'), delay(1_000)]);
       }
       assert.equal(await exists(outdated), false, `Outdated package was not removed at exit: ${logs}`);
+      assert.equal(await exists(ranged), false, `Outdated range package was not removed at exit: ${logs}`);
       assert.equal(await exists(current), true);
     } finally {
       if (running() && child.pid !== undefined) {

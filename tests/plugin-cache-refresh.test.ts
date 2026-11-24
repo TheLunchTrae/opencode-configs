@@ -17,7 +17,8 @@ import {
   parseCacheEntry,
   parseNpmrc,
   registryAuthorization,
-  registryDistTags,
+  registryPackument,
+  resolveSpec,
 } from '../extensions/plugin-cache/refresh.ts';
 import { isAttachCommand } from '../extensions/plugin-cache/tui.ts';
 
@@ -58,25 +59,25 @@ async function registryFixture(t: TestContext, packuments: Partial<Record<string
   return { url: `http://127.0.0.1:${String(address.port)}`, requests };
 }
 
+const tagsOnly = (distTags: Record<string, string>) => ({ distTags, versions: [] });
+
 const exists = async (directory: string, entry: string) => (await readdir(directory)).includes(entry);
 const noWarning = () => assert.fail('No warning expected');
 
-test('cache entries are parsed only for dist-tag specs', () => {
-  assert.deepEqual(parseCacheEntry('plugin@latest'), { name: 'plugin', tag: 'latest' });
-  assert.deepEqual(parseCacheEntry('@scope/plugin@next'), { name: '@scope/plugin', tag: 'next' });
-  assert.deepEqual(parseCacheEntry('plugin@beta.2'), { name: 'plugin', tag: 'beta.2' });
+test('cache entries are parsed for dist-tag and range specs, not exact versions', () => {
+  assert.deepEqual(parseCacheEntry('plugin@latest'), { name: 'plugin', spec: 'latest', kind: 'tag' });
+  assert.deepEqual(parseCacheEntry('@scope/plugin@next'), { name: '@scope/plugin', spec: 'next', kind: 'tag' });
+  assert.deepEqual(parseCacheEntry('plugin@beta.2'), { name: 'plugin', spec: 'beta.2', kind: 'tag' });
+  for (const range of ['^1.2.0', '~1', 'v1.2', 'x', 'X', '*', '>=1', '1.x', '>=1.2.0 <2']) {
+    assert.deepEqual(parseCacheEntry(`plugin@${range}`), { name: 'plugin', spec: range, kind: 'range' }, range);
+  }
+  assert.deepEqual(parseCacheEntry('@scope/plugin@^0.3.2'), { name: '@scope/plugin', spec: '^0.3.2', kind: 'range' });
   for (const entry of [
     'plugin',
     '@scope/plugin',
     'plugin@1.2.3',
-    'plugin@^1.2.0',
-    'plugin@~1',
-    'plugin@v1.2',
-    'plugin@x',
-    'plugin@X.1',
-    'plugin@*',
-    'plugin@>=1',
     'plugin@_=1',
+    'plugin@X.1',
     'alias@npm:plugin@1.0.0',
     'alias@npm_plugin@1.0.0',
     'plugin@github:owner/repo',
@@ -200,7 +201,7 @@ test('registry credentials match the registry path and then its parent paths on 
   assert.equal(registryAuthorization(settings, 'not a url'), undefined);
 });
 
-test('only tagged packages whose tag names another version are reported', async (t) => {
+test('only cached tag and range installs whose spec names another version are reported', async (t) => {
   const { root, install } = await packagesFixture(t);
   await install('stale@latest', 'stale', '1.0.0');
   await install('current@latest', 'current', '2.0.0');
@@ -212,7 +213,7 @@ test('only tagged packages whose tag names another version are reported', async 
   await install('pyright', 'pyright', '1.0.0');
   await mkdir(join(root, 'incomplete@latest'));
   const requested: string[] = [];
-  const tags: Record<string, Record<string, string>> = {
+  const tags: Partial<Record<string, Record<string, string>>> = {
     stale: { latest: '1.1.0' },
     current: { latest: '2.0.0' },
     '@scope/scoped': { latest: '2.0.0', next: '3.0.0-next.2' },
@@ -220,9 +221,10 @@ test('only tagged packages whose tag names another version are reported', async 
   };
   const outdated = await findOutdatedPackages({
     packagesDirectory: root,
-    fetchDistTags: (name) => {
+    fetchPackument: (name) => {
       requested.push(name);
-      return Promise.resolve(tags[name]);
+      const distTags = tags[name];
+      return Promise.resolve(distTags === undefined ? undefined : tagsOnly(distTags));
     },
     warn: noWarning,
   });
@@ -230,7 +232,7 @@ test('only tagged packages whose tag names another version are reported', async 
     ['@scope/scoped@next', '3.0.0-next.1', '3.0.0-next.2'],
     ['stale@latest', '1.0.0', '1.1.0'],
   ]);
-  assert.deepEqual(requested.sort(), ['@scope/scoped', 'current', 'missing-tag', 'stale']);
+  assert.deepEqual(requested.sort(), ['@scope/scoped', 'current', 'missing-tag', 'ranged', 'stale']);
   assert.equal(await exists(root, 'stale@latest'), true, 'Finding outdated packages must not remove them');
 });
 
@@ -241,7 +243,7 @@ test('registry failures keep the cached package and report a warning', async (t)
   const warnings: unknown[] = [];
   const outdated = await findOutdatedPackages({
     packagesDirectory: root,
-    fetchDistTags: (name) => (name === 'offline' ? Promise.reject(new Error('offline')) : Promise.resolve(undefined)),
+    fetchPackument: (name) => (name === 'offline' ? Promise.reject(new Error('offline')) : Promise.resolve(undefined)),
     warn: (_message, extra) => {
       warnings.push(extra);
     },
@@ -253,7 +255,7 @@ test('registry failures keep the cached package and report a warning', async (t)
 test('a missing cache directory reports nothing', async () => {
   const outdated = await findOutdatedPackages({
     packagesDirectory: join(tmpdir(), `plugin-cache-refresh-missing-${String(process.pid)}-${String(Date.now())}`),
-    fetchDistTags: () => assert.fail('No registry request expected'),
+    fetchPackument: () => assert.fail('No registry request expected'),
     warn: noWarning,
   });
   assert.deepEqual(outdated, []);
@@ -262,8 +264,8 @@ test('a missing cache directory reports nothing', async () => {
 test('discarded packages are removed whole and are not removed again for the same version', async (t) => {
   const { root, install } = await packagesFixture(t);
   await install('stale@latest', 'stale', '1.0.0');
-  const lookup = () => Promise.resolve({ latest: '1.1.0' });
-  const first = await findOutdatedPackages({ packagesDirectory: root, fetchDistTags: lookup, warn: noWarning });
+  const lookup = () => Promise.resolve(tagsOnly({ latest: '1.1.0' }));
+  const first = await findOutdatedPackages({ packagesDirectory: root, fetchPackument: lookup, warn: noWarning });
   assert.deepEqual(discardPackagesSync(root, first), ['stale@latest']);
   assert.equal(await exists(root, 'stale@latest'), false);
   assert.deepEqual(await readdir(join(root, '.stale')), []);
@@ -276,7 +278,7 @@ test('discarded packages are removed whole and are not removed again for the sam
   const warnings: unknown[] = [];
   const again = await findOutdatedPackages({
     packagesDirectory: root,
-    fetchDistTags: lookup,
+    fetchPackument: lookup,
     warn: (_message, extra) => {
       warnings.push(extra);
     },
@@ -287,7 +289,7 @@ test('discarded packages are removed whole and are not removed again for the sam
 
   const newer = await findOutdatedPackages({
     packagesDirectory: root,
-    fetchDistTags: () => Promise.resolve({ latest: '1.2.0' }),
+    fetchPackument: () => Promise.resolve(tagsOnly({ latest: '1.2.0' })),
     warn: noWarning,
   });
   assert.deepEqual(
@@ -300,7 +302,8 @@ test('a package that cannot be moved stays in place', async (t) => {
   const { root } = await packagesFixture(t);
   const missing: OutdatedPackage = {
     name: 'gone',
-    tag: 'latest',
+    spec: 'latest',
+    kind: 'tag',
     entry: 'gone@latest',
     directory: join(root, 'gone@latest'),
     installedVersion: '1.0.0',
@@ -310,19 +313,19 @@ test('a package that cannot be moved stays in place', async (t) => {
   assert.equal(await exists(root, '.plugin-cache-refresh.json'), false);
 });
 
-test('registry dist-tags use the scope registry, its credential, and the abbreviated packument', async (t) => {
+test('registry packuments use the scope registry, its credential, and the abbreviated packument', async (t) => {
   const main = await registryFixture(t, { '/plugin': { latest: '1.0.0' } });
   const scoped = await registryFixture(t, { '/@scope%2fplugin': { latest: '1.2.3' } });
-  const fetchDistTags = registryDistTags({
+  const fetchPackument = registryPackument({
     registry: main.url,
     scopes: { '@scope': scoped.url },
     credentials: { [String(nerfDart(scoped.url))]: { _authToken: 'synthetic-scope' } },
     pinnedDate: false,
   });
-  assert.deepEqual(await fetchDistTags('@scope/plugin'), { latest: '1.2.3' });
-  assert.deepEqual(await fetchDistTags('plugin'), { latest: '1.0.0' });
-  assert.equal(await fetchDistTags('missing'), undefined);
-  assert.equal(await fetchDistTags('redirected'), undefined);
+  assert.deepEqual(await fetchPackument('@scope/plugin'), tagsOnly({ latest: '1.2.3' }));
+  assert.deepEqual(await fetchPackument('plugin'), tagsOnly({ latest: '1.0.0' }));
+  assert.equal(await fetchPackument('missing'), undefined);
+  assert.equal(await fetchPackument('redirected'), undefined);
   assert.deepEqual(scoped.requests, [
     {
       url: '/@scope%2fplugin',
@@ -343,8 +346,8 @@ test('registry dist-tags use the scope registry, its credential, and the abbrevi
 test('registry credentials in the URL are sent as a header and removed from the request URL', async (t) => {
   const main = await registryFixture(t, { '/plugin': { latest: '1.0.0' } });
   const withUser = main.url.replace('http://', 'http://synthetic%40user:pass%3Aword@');
-  const fetchDistTags = registryDistTags({ registry: withUser, scopes: {}, credentials: {}, pinnedDate: false });
-  assert.deepEqual(await fetchDistTags('plugin'), { latest: '1.0.0' });
+  const fetchPackument = registryPackument({ registry: withUser, scopes: {}, credentials: {}, pinnedDate: false });
+  assert.deepEqual(await fetchPackument('plugin'), tagsOnly({ latest: '1.0.0' }));
   assert.deepEqual(
     main.requests.map((request) => [request.url, request.authorization]),
     [['/plugin', `Basic ${Buffer.from('synthetic@user:pass:word').toString('base64')}`]],
@@ -356,7 +359,7 @@ test('a package reinstalled after the check is not removed', async (t) => {
   await install('stale@latest', 'stale', '1.0.0');
   const outdated = await findOutdatedPackages({
     packagesDirectory: root,
-    fetchDistTags: () => Promise.resolve({ latest: '2.0.0' }),
+    fetchPackument: () => Promise.resolve(tagsOnly({ latest: '2.0.0' })),
     warn: noWarning,
   });
   await install('stale@latest', 'stale', '2.0.0');
@@ -429,11 +432,89 @@ test('the TUI entrypoint recognizes the attach command', () => {
 });
 
 test('an invalid registry URL is reported without its text', async () => {
-  const fetchDistTags = registryDistTags({
+  const fetchPackument = registryPackument({
     registry: 'https://synthetic:secret@exa mple.test',
     scopes: {},
     credentials: {},
     pinnedDate: false,
   });
-  await assert.rejects(fetchDistTags('plugin'), { message: 'The configured registry URL is not valid' });
+  await assert.rejects(fetchPackument('plugin'), { message: 'The configured registry URL is not valid' });
+});
+
+test('ranges resolve like npm: latest when it satisfies the range, otherwise the highest non-deprecated match', () => {
+  const packument = {
+    distTags: { latest: '2.1.0', next: '3.0.0-next.1' },
+    versions: [
+      { version: '1.0.0', deprecated: false },
+      { version: '1.4.0', deprecated: false },
+      { version: '1.5.0', deprecated: true },
+      { version: '1.6.0-beta.1', deprecated: false },
+      { version: '2.0.0', deprecated: false },
+      { version: '2.1.0', deprecated: false },
+      { version: '2.2.0', deprecated: false },
+      { version: '3.0.0-next.1', deprecated: false },
+    ],
+  };
+  const range = (spec: string) => resolveSpec(packument, { spec, kind: 'range' });
+  assert.equal(range('^2.0.0'), '2.1.0', 'latest wins over a higher match');
+  assert.equal(range('^1.0.0'), '1.4.0', 'deprecated and prerelease versions are skipped');
+  assert.equal(range('1.5.x'), '1.5.0', 'a deprecated version is used when nothing else matches');
+  assert.equal(range('x'), '2.1.0');
+  assert.equal(range('^4.0.0'), undefined);
+  assert.equal(resolveSpec(packument, { spec: 'next', kind: 'tag' }), '3.0.0-next.1');
+  assert.equal(resolveSpec(packument, { spec: 'missing', kind: 'tag' }), undefined);
+});
+
+test('a cached range install is reported when the range now resolves to another version', async (t) => {
+  const { root, install } = await packagesFixture(t);
+  await install('ranged@^1.0.0', 'ranged', '1.0.0');
+  await install('@scope/current@^2.0.0', '@scope/current', '2.1.0');
+  const versions = (...list: string[]) => list.map((version) => ({ version, deprecated: false }));
+  const packuments: Record<
+    string,
+    { distTags: Record<string, string>; versions: { version: string; deprecated: boolean }[] }
+  > = {
+    ranged: { distTags: { latest: '2.0.0' }, versions: versions('1.0.0', '1.3.0', '2.0.0') },
+    '@scope/current': { distTags: { latest: '2.1.0' }, versions: versions('2.0.0', '2.1.0') },
+  };
+  const outdated = await findOutdatedPackages({
+    packagesDirectory: root,
+    fetchPackument: (name) => Promise.resolve(packuments[name]),
+    warn: noWarning,
+  });
+  assert.deepEqual(
+    outdated.map((entry) => [entry.entry, entry.kind, entry.installedVersion, entry.availableVersion]),
+    [['ranged@^1.0.0', 'range', '1.0.0', '1.3.0']],
+  );
+});
+
+test('registry packuments include each version and whether it is deprecated', async (t) => {
+  const server = createServer((_request, response) => {
+    response.setHeader('content-type', 'application/json');
+    response.end(
+      JSON.stringify({
+        'dist-tags': { latest: '1.1.0' },
+        versions: { '1.0.0': { deprecated: 'Use 1.1.0' }, '1.1.0': {}, '1.2.0': { deprecated: '' } },
+      }),
+    );
+  });
+  server.listen(0, '127.0.0.1');
+  await once(server, 'listening');
+  t.after(() => new Promise<void>((resolve) => server.close(() => resolve())));
+  const address = server.address();
+  assert.ok(address !== null && typeof address === 'object');
+  const fetchPackument = registryPackument({
+    registry: `http://127.0.0.1:${String(address.port)}`,
+    scopes: {},
+    credentials: {},
+    pinnedDate: false,
+  });
+  assert.deepEqual(await fetchPackument('plugin'), {
+    distTags: { latest: '1.1.0' },
+    versions: [
+      { version: '1.0.0', deprecated: true },
+      { version: '1.1.0', deprecated: false },
+      { version: '1.2.0', deprecated: false },
+    ],
+  });
 });

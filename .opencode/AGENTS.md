@@ -125,10 +125,13 @@ comments in code files, not strings, code, or prose files. Keep its phrase list 
 blocks only leaks. Comment detection is heuristic, not a parser.
 
 `plugins/plugin-cache-refresh.ts` and `extensions/plugin-cache/tui.ts` work around V1 caching each npm plugin
-spec in `<XDG cache>/opencode/packages/<name>@<spec>` with no expiry, so a dist-tag such as `@latest` keeps its
-first install.
-Once per process, in the background, they check each cached tagged package against the registry npm would use.
-Bare specs are cached as `@latest` and are covered. Exact versions, ranges, Git, and alias specs are left alone.
+spec in `<XDG cache>/opencode/packages/<name>@<spec>` with no expiry, so a dist-tag such as `@latest` or a range such
+as `^1.2.0` keeps its first install.
+Once per process, in the background, they check each cached tag or range install against the registry npm would use.
+A range resolves as npm does: `latest` when it satisfies the range, otherwise the highest non-deprecated match.
+Bare specs are cached as `@latest` and are covered. Exact versions, Git, and alias specs are left alone.
+On Windows, ranges with `<`, `>`, or `*` are stored under replaced names and are not checked.
+`semver` is a runtime dependency for range matching; `extensions/plugin-cache/semver.d.ts` declares its types.
 Outdated entries are removed only at process exit, and the next start reinstalls them. Instances are disposed and
 recreated while OpenCode runs, so disposal is not a safe removal point.
 The TUI runs server plugins in a worker that it terminates without exit handlers. The TUI entrypoint does the work

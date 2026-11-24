@@ -4,7 +4,7 @@ import {
   discardPackagesSync,
   findOutdatedPackages,
   npmSettings,
-  registryDistTags,
+  registryPackument,
 } from './refresh.ts';
 
 export type Log = (level: 'info' | 'warn', message: string, extra: Record<string, unknown>) => Promise<void>;
@@ -32,14 +32,14 @@ export function startPluginCacheRefresh(log: Log, env: NodeJS.ProcessEnv = proce
   started[STARTED] = true;
   void (async () => {
     const settings = npmSettings(env);
-    // With `before` set, npm installs the newest version published before that date, not the current tag version.
+    // With `before` set, npm installs the newest version published before that date, not the current version.
     if (settings.pinnedDate) {
       return;
     }
     const packagesDirectory = defaultPackagesDirectory(env);
     const packages: readonly OutdatedPackage[] = await findOutdatedPackages({
       packagesDirectory,
-      fetchDistTags: registryDistTags(settings),
+      fetchPackument: registryPackument(settings),
       warn: (message, extra) => log('warn', message, extra),
     });
     if (packages.length === 0) {
@@ -51,7 +51,7 @@ export function startPluginCacheRefresh(log: Log, env: NodeJS.ProcessEnv = proce
       'Cached plugin packages have newer versions; they are removed when OpenCode exits normally and reinstalled at the next start',
       {
         packages: packages.map(
-          (entry) => `${entry.name}@${entry.tag}: ${entry.installedVersion} -> ${entry.availableVersion}`,
+          (entry) => `${entry.name}@${entry.spec}: ${entry.installedVersion} -> ${entry.availableVersion}`,
         ),
       },
     );
