@@ -364,7 +364,13 @@ export function registryDistTags(settings: NpmSettings): DistTagLookup {
     const configured = (scope === undefined ? undefined : settings.scopes[scope]) ?? settings.registry;
     // npm accepts credentials inside the registry URL. They are moved to the header so that request errors, which
     // can include the URL, do not expose them in logs.
-    const url = new URL(`${configured}/`);
+    let url: URL;
+    try {
+      url = new URL(`${configured}/`);
+    } catch {
+      // The parse error can include the URL and any credentials in it, so it is not passed on.
+      throw new Error('The configured registry URL is not valid');
+    }
     const urlAuthorization =
       url.username === ''
         ? undefined

@@ -133,7 +133,11 @@ Outdated entries are removed only at process exit, and the next start reinstalls
 recreated while OpenCode runs, so disposal is not a safe removal point.
 The TUI runs server plugins in a worker that it terminates without exit handlers. The TUI entrypoint does the work
 from the main thread, and the server entrypoint skips worker threads. Keep both registrations.
-A process killed by a signal keeps the entries, and the next start checks again. Removal skips an entry whose
+The TUI entrypoint skips `opencode attach`, whose server runs in another process and can still use the entries.
+A process ended by a signal keeps the entries for a later normal exit. `opencode serve` and `web` usually end that
+way, and closing the terminal window can too. Do not add SIGINT or SIGTERM listeners: libraries that re-raise a
+signal only as its sole listener would stop doing so, and `opencode run` handles SIGINT without exiting.
+Removal skips an entry whose
 installed version changed since the check. It records the version each removal targeted. If a reinstall still
 differs, it warns and does not remove the entry again.
 Registry settings come from environment variables, the user npmrc, and the npmrc in `npm_config_globalconfig`.

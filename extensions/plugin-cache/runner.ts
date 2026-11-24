@@ -21,7 +21,9 @@ export const errorText = (error: unknown) => (error instanceof Error ? error.mes
 // Checks the cache in the background, so registry requests do not delay startup. Outdated entries are removed when
 // the process exits: the process has already loaded them, and a plugin can read more of its files later. OpenCode
 // also disposes and recreates instances while it runs, so instance disposal is not a safe point. The next start
-// installs the current versions. A process killed by a signal keeps the entries, and the next start checks again.
+// installs the current versions. A process ended by a signal, as `opencode serve` usually is, keeps the entries; they
+// are removed when a later process exits normally. Signal listeners are not added: libraries that re-raise signals
+// only when they are the sole listener would stop doing so, and `opencode run` uses SIGINT without exiting.
 export function startPluginCacheRefresh(log: Log, env: NodeJS.ProcessEnv = process.env): void {
   const started = globalThis as Started;
   if (started[STARTED] === true) {
@@ -44,10 +46,14 @@ export function startPluginCacheRefresh(log: Log, env: NodeJS.ProcessEnv = proce
       return;
     }
     process.once('exit', () => discardPackagesSync(packagesDirectory, packages));
-    await log('info', 'Cached plugin packages have newer versions; they update after OpenCode restarts', {
-      packages: packages.map(
-        (entry) => `${entry.name}@${entry.tag}: ${entry.installedVersion} -> ${entry.availableVersion}`,
-      ),
-    });
+    await log(
+      'info',
+      'Cached plugin packages have newer versions; they are removed when OpenCode exits normally and reinstalled at the next start',
+      {
+        packages: packages.map(
+          (entry) => `${entry.name}@${entry.tag}: ${entry.installedVersion} -> ${entry.availableVersion}`,
+        ),
+      },
+    );
   })().catch((error: unknown) => log('warn', 'Plugin cache refresh failed', { error: errorText(error) }));
 }

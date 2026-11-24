@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
+import { once } from 'node:events';
 import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { createServer } from 'node:http';
 import { homedir, tmpdir } from 'node:os';
@@ -18,6 +19,7 @@ import {
   registryAuthorization,
   registryDistTags,
 } from '../extensions/plugin-cache/refresh.ts';
+import { commandName } from '../extensions/plugin-cache/tui.ts';
 
 async function packagesFixture(t: TestContext) {
   const root = await mkdtemp(join(tmpdir(), 'plugin-cache-refresh-test-'));
@@ -382,8 +384,8 @@ async function runPlugin(t: TestContext, mode: 'process' | 'worker') {
   );
   let output = '';
   child.stdout.setEncoding('utf8').on('data', (chunk: string) => (output += chunk));
-  const code = await new Promise<number | null>((resolve) => child.on('exit', resolve));
-  assert.equal(code, 0);
+  const [code, signal] = (await once(child, 'exit')) as [number | null, NodeJS.Signals | null];
+  assert.deepEqual([code, signal], [0, null]);
   return {
     logs: (JSON.parse(output) as { logs: unknown[] }).logs,
     requests: registry.requests.map((request) => request.url).sort(),
@@ -398,7 +400,8 @@ test('the server plugin checks once per process and removes outdated packages wh
       {
         service: 'plugin-cache-refresh',
         level: 'info',
-        message: 'Cached plugin packages have newer versions; they update after OpenCode restarts',
+        message:
+          'Cached plugin packages have newer versions; they are removed when OpenCode exits normally and reinstalled at the next start',
         extra: { packages: ['stale@latest: 1.0.0 -> 2.0.0'] },
       },
     ],
@@ -415,4 +418,21 @@ test('the server plugin does nothing in a worker thread, where the TUI entrypoin
     staleExists: true,
     currentExists: true,
   });
+});
+
+test('the TUI entrypoint recognizes the attach command', () => {
+  assert.equal(commandName(['bun', 'opencode', 'attach', 'http://localhost:4096']), 'attach');
+  assert.equal(commandName(['bun', 'opencode', '--print-logs', 'attach']), 'attach');
+  assert.equal(commandName(['bun', 'opencode']), undefined);
+  assert.equal(commandName(['bun', 'opencode', '--print-logs', 'project']), 'project');
+});
+
+test('an invalid registry URL is reported without its text', async () => {
+  const fetchDistTags = registryDistTags({
+    registry: 'https://synthetic:secret@exa mple.test',
+    scopes: {},
+    credentials: {},
+    pinnedDate: false,
+  });
+  await assert.rejects(fetchDistTags('plugin'), { message: 'The configured registry URL is not valid' });
 });
