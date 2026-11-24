@@ -127,22 +127,21 @@ blocks only leaks. Comment detection is heuristic, not a parser.
 `plugins/plugin-cache-refresh.ts` works around V1 caching each npm plugin spec in
 `<XDG cache>/opencode/packages/<name>@<spec>` with no expiry, so a dist-tag such as `@latest` or a range such as
 `^1.2.0` keeps its first install.
-Once per process, in the background, it checks each cached tag or range install against the registry npm would use.
+Once per process, in the background, it checks each cached tag or range install against the registry.
 A range resolves as npm-pick-manifest does: `latest` when it satisfies the range and is published, not deprecated,
 and compatible with the running Node version; otherwise the best-ranked satisfying version.
 Bare specs are cached as `@latest` and are covered. Exact versions, Git, and alias specs are left alone.
 On Windows, ranges with `<`, `>`, `|`, or `*` are stored under replaced names and are not checked.
 `semver` is a runtime dependency for range matching; `extensions/plugin-cache/semver.d.ts` declares its types.
-It removes outdated entries as soon as it finds them, then logs and shows a toast asking for a restart. The next
-start installs the new versions. A reload does not: the loader imports the same path and gets the cached module.
+About 15 seconds after startup, it removes outdated entries and shows a toast asking for a restart. The delay keeps
+removal out of the TUI's own plugin loading. A reload reinstalls the files but keeps the loaded modules, so only a
+restart loads the new versions.
 Removal while running is safe only for plugins that import all their code at load and read no files from their
-package folder later. The pinned Lunchbox packages meet this; check that again before relying on it for others.
-Removal skips an entry whose installed version changed since the check. It records the version each removal
-targeted. If a reinstall still differs, it warns and does not remove the entry again.
-Registry settings come from environment variables, the user npmrc, and the npmrc in `npm_config_globalconfig`.
-It reads `registry`, `@scope:registry`, `before`, and per-registry `_authToken`, `_auth`, or `username`/`_password`.
-Credentials go only to their matching registry, without following redirects. Registry failures keep the cache.
-A `before` setting disables the check. Custom CA settings such as `cafile` are not read.
+package folder later. Check a plugin for this before using a tag or range spec for it.
+Removal skips an entry whose installed version changed since the check, and renames an entry before deleting it.
+Registry settings come only from `~/.npmrc`, the file these machines use: `registry`, `@scope:registry`, and
+per-registry `_authToken` or `_auth`. Credentials go only to their matching registry, without following redirects.
+Registry failures keep the cache. Custom CA settings such as `cafile` are not read.
 Shared logic lives in `extensions/plugin-cache/` because the loader treats every export of a `plugins/` file as a
 plugin.
 

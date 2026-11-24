@@ -73,6 +73,7 @@ test('native OpenCode removes outdated tag and range packages while it runs', { 
   const address = registry.address();
   assert.ok(address !== null && typeof address !== 'string');
 
+  await writeFile(join(root, '.npmrc'), `registry=http://127.0.0.1:${String(address.port)}\n`);
   const env: NodeJS.ProcessEnv = {
     ...process.env,
     XDG_CONFIG_HOME: join(root, 'config'),
@@ -84,8 +85,8 @@ test('native OpenCode removes outdated tag and range packages while it runs', { 
     OPENCODE_DISABLE_PROJECT_CONFIG: 'true',
     OPENCODE_DISABLE_DEFAULT_PLUGINS: 'true',
     OPENCODE_DISABLE_MODELS_FETCH: '1',
-    npm_config_registry: `http://127.0.0.1:${String(address.port)}`,
-    npm_config_userconfig: join(root, 'empty-npmrc'),
+    HOME: root,
+    USERPROFILE: root,
   };
   const server = spawn(
     binary,
