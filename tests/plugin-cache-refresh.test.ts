@@ -109,9 +109,10 @@ test('npmrc registry settings are read and other keys are ignored', () => {
     registry: 'https://mirror.example.test/npm',
     scopes: { '@scope': 'https://scope.example.test' },
     credentials: {
-      '//mirror.example.test/npm/': 'Bearer synthetic-token',
-      '//basic.example.test/': 'Basic c3ludGhldGljOnBhc3N3b3Jk',
-      '//split.example.test/': `Basic ${Buffer.from('synthetic:password').toString('base64')}`,
+      '//mirror.example.test/npm/': { _authToken: 'synthetic-token' },
+      '//basic.example.test/': { _auth: 'c3ludGhldGljOnBhc3N3b3Jk' },
+      '//split.example.test/': { username: 'synthetic', _password: Buffer.from('password').toString('base64') },
+      '//partial.example.test/': { username: 'synthetic' },
     },
     pinnedDate: true,
   });
@@ -125,19 +126,20 @@ test('npm settings merge the global npmrc, the user npmrc, and environment varia
   await writeFile(
     globalConfig,
     'registry=https://global.example.test\n@other:registry=https://other.example.test\n' +
-      '//global.example.test/:_authToken=synthetic-global\n',
+      '//global.example.test/:_authToken=synthetic-global\n//split.example.test/:username=synthetic\n',
   );
   await writeFile(
     userConfig,
     'registry=https://file.example.test\n@scope:registry=https://scope-file.example.test\n' +
-      '//file.example.test/:_authToken=synthetic-user\n',
+      '//file.example.test/:_authToken=synthetic-user\n//split.example.test/:_password=cGFzc3dvcmQ=\n',
   );
   assert.deepEqual(npmSettings({ npm_config_userconfig: userConfig, npm_config_globalconfig: globalConfig }), {
     registry: 'https://file.example.test',
     scopes: { '@other': 'https://other.example.test', '@scope': 'https://scope-file.example.test' },
     credentials: {
-      '//global.example.test/': 'Bearer synthetic-global',
-      '//file.example.test/': 'Bearer synthetic-user',
+      '//global.example.test/': { _authToken: 'synthetic-global' },
+      '//split.example.test/': { username: 'synthetic', _password: 'cGFzc3dvcmQ=' },
+      '//file.example.test/': { _authToken: 'synthetic-user' },
     },
     pinnedDate: false,
   });
@@ -151,7 +153,10 @@ test('npm settings merge the global npmrc, the user npmrc, and environment varia
     {
       registry: 'https://env.example.test',
       scopes: { '@scope': 'https://scope-env.example.test' },
-      credentials: { '//file.example.test/': 'Bearer synthetic-user' },
+      credentials: {
+        '//file.example.test/': { _authToken: 'synthetic-user' },
+        '//split.example.test/': { _password: 'cGFzc3dvcmQ=' },
+      },
       pinnedDate: true,
     },
   );
@@ -168,9 +173,12 @@ test('registry credentials match the registry path and then its parent paths on 
     registry: 'https://registry.example.test',
     scopes: {},
     credentials: {
-      '//npm.example.test/api/npm/': 'Bearer synthetic-path',
-      '//host.example.test/': 'Bearer synthetic-host',
-      '//port.example.test:8443/': 'Bearer synthetic-port',
+      '//npm.example.test/api/npm/': { _authToken: 'synthetic-path' },
+      '//host.example.test/': { _authToken: 'synthetic-host' },
+      '//port.example.test:8443/': { _auth: 'c3ludGhldGljOnBvcnQ=' },
+      '//nested.example.test/': { _authToken: 'synthetic-parent' },
+      '//nested.example.test/incomplete/': { username: 'synthetic' },
+      '//split.example.test/': { username: 'synthetic', _password: Buffer.from('password').toString('base64') },
     },
     pinnedDate: false,
   };
@@ -178,7 +186,13 @@ test('registry credentials match the registry path and then its parent paths on 
   assert.equal(registryAuthorization(settings, 'https://npm.example.test/api/npm/virtual/'), 'Bearer synthetic-path');
   assert.equal(registryAuthorization(settings, 'https://npm.example.test/api'), undefined);
   assert.equal(registryAuthorization(settings, 'https://host.example.test/a/b'), 'Bearer synthetic-host');
-  assert.equal(registryAuthorization(settings, 'https://port.example.test:8443'), 'Bearer synthetic-port');
+  assert.equal(registryAuthorization(settings, 'https://port.example.test:8443'), 'Basic c3ludGhldGljOnBvcnQ=');
+  assert.equal(registryAuthorization(settings, 'https://nested.example.test/incomplete/x'), undefined);
+  assert.equal(registryAuthorization(settings, 'https://nested.example.test/other'), 'Bearer synthetic-parent');
+  assert.equal(
+    registryAuthorization(settings, 'https://split.example.test'),
+    `Basic ${Buffer.from('synthetic:password').toString('base64')}`,
+  );
   assert.equal(registryAuthorization(settings, 'https://port.example.test'), undefined);
   assert.equal(registryAuthorization(settings, 'https://other.example.test'), undefined);
   assert.equal(registryAuthorization(settings, 'not a url'), undefined);
@@ -300,7 +314,7 @@ test('registry dist-tags use the scope registry, its credential, and the abbrevi
   const fetchDistTags = registryDistTags({
     registry: main.url,
     scopes: { '@scope': scoped.url },
-    credentials: { [String(nerfDart(scoped.url))]: 'Bearer synthetic-scope' },
+    credentials: { [String(nerfDart(scoped.url))]: { _authToken: 'synthetic-scope' } },
     pinnedDate: false,
   });
   assert.deepEqual(await fetchDistTags('@scope/plugin'), { latest: '1.2.3' });
@@ -324,7 +338,31 @@ test('registry dist-tags use the scope registry, its credential, and the abbrevi
   );
 });
 
-async function runPlugin(t: TestContext, mode: 'dispose' | 'exit') {
+test('registry credentials in the URL are sent as a header and removed from the request URL', async (t) => {
+  const main = await registryFixture(t, { '/plugin': { latest: '1.0.0' } });
+  const withUser = main.url.replace('http://', 'http://synthetic%40user:pass%3Aword@');
+  const fetchDistTags = registryDistTags({ registry: withUser, scopes: {}, credentials: {}, pinnedDate: false });
+  assert.deepEqual(await fetchDistTags('plugin'), { latest: '1.0.0' });
+  assert.deepEqual(
+    main.requests.map((request) => [request.url, request.authorization]),
+    [['/plugin', `Basic ${Buffer.from('synthetic@user:pass:word').toString('base64')}`]],
+  );
+});
+
+test('a package reinstalled after the check is not removed', async (t) => {
+  const { root, install } = await packagesFixture(t);
+  await install('stale@latest', 'stale', '1.0.0');
+  const outdated = await findOutdatedPackages({
+    packagesDirectory: root,
+    fetchDistTags: () => Promise.resolve({ latest: '2.0.0' }),
+    warn: noWarning,
+  });
+  await install('stale@latest', 'stale', '2.0.0');
+  assert.deepEqual(discardPackagesSync(root, outdated), []);
+  assert.equal(await exists(root, 'stale@latest'), true);
+});
+
+async function runPlugin(t: TestContext, mode: 'process' | 'worker') {
   const { root, install } = await packagesFixture(t);
   const packages = join(root, 'cache', 'opencode', 'packages');
   await install('cache/opencode/packages/stale@latest', 'stale', '1.0.0');
@@ -346,27 +384,35 @@ async function runPlugin(t: TestContext, mode: 'dispose' | 'exit') {
   child.stdout.setEncoding('utf8').on('data', (chunk: string) => (output += chunk));
   const code = await new Promise<number | null>((resolve) => child.on('exit', resolve));
   assert.equal(code, 0);
-  const result = JSON.parse(output) as { logs: unknown[]; existsAfterDispose: boolean[] };
-  assert.deepEqual(result.logs, [
-    {
-      service: 'plugin-cache-refresh',
-      level: 'info',
-      message: 'Cached plugin packages have newer versions; they update after OpenCode restarts',
-      extra: { packages: ['stale@latest: 1.0.0 -> 2.0.0'] },
-    },
-  ]);
-  assert.deepEqual(registry.requests.map((request) => request.url).sort(), ['/current', '/stale']);
-  assert.equal(await exists(packages, 'stale@latest'), false);
-  assert.equal(await exists(packages, 'current@latest'), true);
-  return result;
+  return {
+    logs: (JSON.parse(output) as { logs: unknown[] }).logs,
+    requests: registry.requests.map((request) => request.url).sort(),
+    staleExists: await exists(packages, 'stale@latest'),
+    currentExists: await exists(packages, 'current@latest'),
+  };
 }
 
-test('the plugin checks once per process and removes outdated packages after the last instance is disposed', async (t) => {
-  const { existsAfterDispose } = await runPlugin(t, 'dispose');
-  assert.deepEqual(existsAfterDispose, [true, false]);
+test('the server plugin checks once per process and removes outdated packages when the process exits', async (t) => {
+  assert.deepEqual(await runPlugin(t, 'process'), {
+    logs: [
+      {
+        service: 'plugin-cache-refresh',
+        level: 'info',
+        message: 'Cached plugin packages have newer versions; they update after OpenCode restarts',
+        extra: { packages: ['stale@latest: 1.0.0 -> 2.0.0'] },
+      },
+    ],
+    requests: ['/current', '/stale'],
+    staleExists: false,
+    currentExists: true,
+  });
 });
 
-test('the plugin removes outdated packages when the process exits without disposing its instances', async (t) => {
-  const { existsAfterDispose } = await runPlugin(t, 'exit');
-  assert.deepEqual(existsAfterDispose, []);
+test('the server plugin does nothing in a worker thread, where the TUI entrypoint does the work', async (t) => {
+  assert.deepEqual(await runPlugin(t, 'worker'), {
+    logs: [],
+    requests: [],
+    staleExists: true,
+    currentExists: true,
+  });
 });

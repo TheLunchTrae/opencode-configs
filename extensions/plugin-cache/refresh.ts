@@ -40,10 +40,12 @@ export interface FindOptions {
 export interface NpmSettings {
   readonly registry: string;
   readonly scopes: Readonly<Record<string, string>>;
-  // Authorization header values by registry "nerf dart", the `//host/path/` form npmrc credential keys use.
-  readonly credentials: Readonly<Partial<Record<string, string>>>;
+  // Credential fields by registry "nerf dart", the `//host/path/` form npmrc credential keys use.
+  readonly credentials: Readonly<Partial<Record<string, CredentialFields>>>;
   readonly pinnedDate: boolean;
 }
+
+export type CredentialFields = Partial<Record<'_authToken' | '_auth' | 'username' | '_password', string>>;
 
 export type NpmrcValues = Partial<Pick<NpmSettings, 'registry'>> & Omit<NpmSettings, 'registry'>;
 
@@ -69,6 +71,9 @@ export function nerfDart(url: string): string | undefined {
   }
 }
 
+const CREDENTIAL_FIELDS: readonly string[] = ['_authToken', '_auth', 'username', '_password'];
+const isCredentialField = (field: string): field is keyof CredentialFields => CREDENTIAL_FIELDS.includes(field);
+
 const CREDENTIAL_KEY = /^(\/\/.+\/):(_authToken|_auth|username|_password)$/;
 
 // Reads the settings that decide where a plugin install comes from and how it authenticates: `registry`,
@@ -77,7 +82,7 @@ const CREDENTIAL_KEY = /^(\/\/.+\/):(_authToken|_auth|username|_password)$/;
 export function parseNpmrc(text: string, env: NodeJS.ProcessEnv = process.env): NpmrcValues {
   let registry: string | undefined;
   const scopes: Record<string, string> = {};
-  const credentialParts: Record<string, Partial<Record<string, string>>> = {};
+  const credentials: Record<string, CredentialFields> = {};
   let pinnedDate = false;
   for (const rawLine of text.split(/\r?\n/)) {
     const line = rawLine.trim();
@@ -108,18 +113,9 @@ export function parseNpmrc(text: string, env: NodeJS.ProcessEnv = process.env): 
       pinnedDate = true;
     } else if (credential !== null) {
       const [, dart, field] = credential;
-      credentialParts[dart] = { ...credentialParts[dart], [field]: value };
-    }
-  }
-  const credentials: Record<string, string> = {};
-  for (const [dart, parts] of Object.entries(credentialParts)) {
-    if (parts._authToken !== undefined) {
-      credentials[dart] = `Bearer ${parts._authToken}`;
-    } else if (parts._auth !== undefined) {
-      credentials[dart] = `Basic ${parts._auth}`;
-    } else if (parts.username !== undefined && parts._password !== undefined) {
-      const password = Buffer.from(parts._password, 'base64').toString('utf8');
-      credentials[dart] = `Basic ${Buffer.from(`${parts.username}:${password}`).toString('base64')}`;
+      if (isCredentialField(field)) {
+        credentials[dart] = { ...credentials[dart], [field]: value };
+      }
     }
   }
   return { ...(registry === undefined ? {} : { registry }), scopes, credentials, pinnedDate };
@@ -148,10 +144,13 @@ export function npmSettings(env: NodeJS.ProcessEnv = process.env): NpmSettings {
     readNpmrc(nonEmpty(env.npm_config_userconfig, env.NPM_CONFIG_USERCONFIG) ?? join(homedir(), '.npmrc'), env),
   ].filter((values) => values !== undefined);
   const scopes: Record<string, string> = {};
-  const credentials: Record<string, string> = {};
+  const credentials: Record<string, CredentialFields> = {};
   for (const values of files) {
     Object.assign(scopes, values.scopes);
-    Object.assign(credentials, values.credentials);
+    // npm merges each credential field separately, so a username and password can come from different files.
+    for (const [dart, fields] of Object.entries(values.credentials)) {
+      credentials[dart] = { ...credentials[dart], ...fields };
+    }
   }
   for (const [key, value] of Object.entries(env)) {
     const scope = /^npm_config_(@[^:]+):registry$/i.exec(key)?.[1];
@@ -173,13 +172,28 @@ export function npmSettings(env: NodeJS.ProcessEnv = process.env): NpmSettings {
   };
 }
 
-// npm matches credentials to the registry URL and then to each parent path on the same host.
+const authorizationHeader = (fields: CredentialFields): string | undefined => {
+  if (fields._authToken !== undefined) {
+    return `Bearer ${fields._authToken}`;
+  }
+  if (fields._auth !== undefined) {
+    return `Basic ${fields._auth}`;
+  }
+  if (fields.username !== undefined && fields._password !== undefined) {
+    const password = Buffer.from(fields._password, 'base64').toString('utf8');
+    return `Basic ${Buffer.from(`${fields.username}:${password}`).toString('base64')}`;
+  }
+  return undefined;
+};
+
+// Like npm, this walks from the registry URL up through its parent paths on the same host and uses the first one
+// that has any credential field. An incomplete credential there gives no authorization.
 export function registryAuthorization(settings: NpmSettings, registry: string): string | undefined {
   let dart = nerfDart(registry);
   while (dart !== undefined) {
-    const authorization = settings.credentials[dart];
-    if (authorization !== undefined) {
-      return authorization;
+    const fields = settings.credentials[dart];
+    if (fields !== undefined) {
+      return authorizationHeader(fields);
     }
     const parent = dart.replace(/[^/]+\/$/, '');
     dart = parent === dart || parent === '//' ? undefined : parent;
@@ -209,13 +223,19 @@ const directoryNames = async (directory: string): Promise<string[]> => {
   }
 };
 
+const manifestVersion = (text: string): string | undefined => {
+  const manifest: unknown = JSON.parse(text);
+  if (typeof manifest !== 'object' || manifest === null || !('version' in manifest)) {
+    return undefined;
+  }
+  return typeof manifest.version === 'string' ? manifest.version : undefined;
+};
+
+const manifestPath = (directory: string, name: string) => join(directory, 'node_modules', name, 'package.json');
+
 const installedVersion = async (directory: string, name: string): Promise<string | undefined> => {
   try {
-    const manifest: unknown = JSON.parse(await readFile(join(directory, 'node_modules', name, 'package.json'), 'utf8'));
-    if (typeof manifest !== 'object' || manifest === null || !('version' in manifest)) {
-      return undefined;
-    }
-    return typeof manifest.version === 'string' ? manifest.version : undefined;
+    return manifestVersion(await readFile(manifestPath(directory, name), 'utf8'));
   } catch {
     return undefined;
   }
@@ -304,15 +324,19 @@ export async function findOutdatedPackages(options: FindOptions): Promise<Outdat
   return results.filter((result) => result !== undefined);
 }
 
-// Runs from a process `exit` handler, so it must be synchronous. The directory is renamed before it is deleted:
-// OpenCode treats any existing `node_modules/<name>` as a complete install, so a recursive delete that stopped partway
-// would leave a broken package that is never reinstalled. Errors are not reported because the process is ending;
-// an entry that stays in place is checked again at the next start.
+// Runs from a process `exit` handler, so it must be synchronous. An entry is skipped when its installed version has
+// changed since the check, because another process may have reinstalled it already. The directory is renamed before it
+// is deleted: OpenCode treats any existing `node_modules/<name>` as a complete install, so a recursive delete that
+// stopped partway would leave a broken package that is never reinstalled. Errors are not reported because the process
+// is ending; an entry that stays in place is checked again at the next start.
 export function discardPackagesSync(packagesDirectory: string, packages: readonly OutdatedPackage[]): string[] {
   const discarded: string[] = [];
   const state = readState(packagesDirectory);
   for (const entry of packages) {
     try {
+      if (manifestVersion(readFileSync(manifestPath(entry.directory, entry.name), 'utf8')) !== entry.installedVersion) {
+        continue;
+      }
       const staleRoot = join(packagesDirectory, STALE_DIRECTORY);
       mkdirSync(staleRoot, { recursive: true });
       const staleDirectory = join(staleRoot, randomUUID());
@@ -337,8 +361,18 @@ export function discardPackagesSync(packagesDirectory: string, packages: readonl
 export function registryDistTags(settings: NpmSettings): DistTagLookup {
   return async (name) => {
     const scope = name.startsWith('@') ? name.slice(0, name.indexOf('/')) : undefined;
-    const registry = (scope === undefined ? undefined : settings.scopes[scope]) ?? settings.registry;
-    const authorization = registryAuthorization(settings, registry);
+    const configured = (scope === undefined ? undefined : settings.scopes[scope]) ?? settings.registry;
+    // npm accepts credentials inside the registry URL. They are moved to the header so that request errors, which
+    // can include the URL, do not expose them in logs.
+    const url = new URL(`${configured}/`);
+    const urlAuthorization =
+      url.username === ''
+        ? undefined
+        : `Basic ${Buffer.from(`${decodeURIComponent(url.username)}:${decodeURIComponent(url.password)}`).toString('base64')}`;
+    url.username = '';
+    url.password = '';
+    const registry = trimRegistry(url.href);
+    const authorization = registryAuthorization(settings, registry) ?? urlAuthorization;
     const response = await fetch(`${registry}/${name.replaceAll('/', '%2f')}`, {
       headers: {
         accept: 'application/vnd.npm.install-v1+json',

@@ -1,19 +1,23 @@
 import type { PluginInput } from '@opencode-ai/plugin';
-import { existsSync } from 'node:fs';
-import { join } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
+import { isMainThread } from 'node:worker_threads';
 import { PluginCacheRefreshPlugin } from '../plugins/plugin-cache-refresh.ts';
 
-// Runs the plugin as OpenCode would for two project instances. In `dispose` mode it disposes both instances before
-// it exits; in `exit` mode it exits without disposing them, so only the exit handler can remove packages.
+// Runs the server plugin as OpenCode would for two project instances, then exits normally so the exit handler runs.
+// With `worker`, it runs the plugin in a worker thread, as the TUI does, and exits once the worker has started it.
 const POLL_INTERVAL_MS = 20;
 const TIMEOUT_MS = 10_000;
-const mode = process.argv[2];
-const cacheHome = process.env.XDG_CACHE_HOME;
-if (cacheHome === undefined) {
-  throw new Error('XDG_CACHE_HOME is required');
+
+if (isMainThread && process.argv[2] === 'worker') {
+  const { Worker } = await import('node:worker_threads');
+  const worker = new Worker(new URL(import.meta.url), { execArgv: ['--experimental-strip-types'] });
+  await new Promise((resolve) => worker.once('message', resolve));
+  await delay(500);
+  await worker.terminate();
+  process.stdout.write(JSON.stringify({ logs: [] }));
+  process.exit(0);
 }
-const stale = join(cacheHome, 'opencode', 'packages', 'stale@latest');
+
 const logs: unknown[] = [];
 const client = {
   app: {
@@ -24,17 +28,16 @@ const client = {
   },
 };
 const input = { client } as unknown as PluginInput;
-const instances = [await PluginCacheRefreshPlugin(input), await PluginCacheRefreshPlugin(input)];
-const deadline = Date.now() + TIMEOUT_MS;
-while (logs.length === 0 && Date.now() < deadline) {
-  await delay(POLL_INTERVAL_MS);
-}
-const existsAfterDispose: boolean[] = [];
-if (mode === 'dispose') {
-  for (const hooks of instances) {
-    await hooks.dispose?.();
-    existsAfterDispose.push(existsSync(stale));
+await PluginCacheRefreshPlugin(input);
+await PluginCacheRefreshPlugin(input);
+if (!isMainThread) {
+  const { parentPort } = await import('node:worker_threads');
+  parentPort?.postMessage('started');
+} else {
+  const deadline = Date.now() + TIMEOUT_MS;
+  while (logs.length === 0 && Date.now() < deadline) {
+    await delay(POLL_INTERVAL_MS);
   }
+  process.stdout.write(JSON.stringify({ logs }));
+  process.exit(0);
 }
-process.stdout.write(JSON.stringify({ logs, existsAfterDispose }));
-process.exit(0);
