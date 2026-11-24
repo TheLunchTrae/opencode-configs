@@ -124,6 +124,14 @@ comments in code files, not strings, code, or prose files. Keep its phrase list 
 `OPENCODE_COMMENT_GUARD=all` blocks every new non-directive comment, `off` disables the guard, and any other value
 blocks only leaks. Comment detection is heuristic, not a parser.
 
+`plugins/plugin-cache-refresh.ts` works around V1 caching each npm plugin spec in
+`<XDG cache>/opencode/packages/<name>@<spec>` with no expiry, so a dist-tag such as `@latest` keeps its first install.
+At startup it reads dist-tags from `npm_config_registry` or the public registry, in the background, once per process.
+It removes a tagged entry whose tag now names another version, so the next start reinstalls it.
+Bare specs are cached as `@latest` and are covered. Exact versions, ranges, Git, and alias specs are left alone.
+It does not read `.npmrc`, so scoped private registries are not checked. Registry failures keep the cache.
+Logic lives in `extensions/plugin-cache/` because the loader treats every export of a `plugins/` file as a plugin.
+
 Session tools live in `extensions/session-tools/` with shared UI helpers outside auto-discovered plugin directories.
 Their TUI-only entrypoints are registered in `tui.jsonc` and stay outside server plugin auto-discovery.
 Keep config/context views read-only and preserve evidence limits. Leave existing bookmark data untouched.
