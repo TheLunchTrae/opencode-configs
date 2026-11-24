@@ -3,23 +3,28 @@ import { mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node
 import { readFile, readdir, rm } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
-
+import { rcompare, satisfies, valid, validRange } from 'semver';
 // OpenCode V1 installs each npm plugin spec once into `<cache>/packages/<spec>` and reuses that directory while
 // `node_modules/<name>` exists. A bare spec is installed as `<name>@latest`. Nothing expires these directories, so a
-// dist-tag such as `@latest` keeps resolving to the version that was current at the first install.
+// dist-tag such as `@latest` or a range such as `^1.2.0` keeps the version that was current at the first install.
 const PACKAGE_NAME = /^(?:@[a-z0-9~-][\w.~-]*\/)?[a-z0-9~-][\w.~-]*$/i;
 // A dist-tag must not parse as a semver version or range. Ranges start with a digit, `v` and a digit, an operator,
-// or an `x` wildcard; tags are otherwise limited to the characters a cache directory name can hold.
+// or an `x` wildcard; tags are otherwise limited to the characters a cache directory name can hold. On Windows the
+// cache directory name replaces `<`, `>`, and `*` with `_`, so such ranges no longer parse and are skipped.
 const DIST_TAG = /^[a-z][\w.-]*$/i;
 const RANGE_LIKE_TAG = /^(?:v\d|[x*](?:\.|$))/i;
 const STALE_DIRECTORY = '.stale';
 const STATE_FILE = '.plugin-cache-refresh.json';
 const DEFAULT_REGISTRY = 'https://registry.npmjs.org';
 const REQUEST_TIMEOUT_MS = 10_000;
+// npm parses versions and ranges loosely.
+const LOOSE = { loose: true };
 
 export interface CachedPackage {
   readonly name: string;
-  readonly tag: string;
+  // The dist-tag or semver range after the package name, as in `latest` or `^1.2.0`.
+  readonly spec: string;
+  readonly kind: 'tag' | 'range';
   readonly entry: string;
   readonly directory: string;
   readonly installedVersion: string;
@@ -29,11 +34,23 @@ export interface OutdatedPackage extends CachedPackage {
   readonly availableVersion: string;
 }
 
-export type DistTagLookup = (name: string) => Promise<Readonly<Record<string, string>> | undefined>;
+export interface PackumentVersion {
+  readonly version: string;
+  readonly deprecated: boolean;
+  // The `engines.node` range the version declares, if any.
+  readonly node?: string;
+}
+
+export interface Packument {
+  readonly distTags: Readonly<Partial<Record<string, string>>>;
+  readonly versions: readonly PackumentVersion[];
+}
+
+export type PackumentLookup = (name: string) => Promise<Packument | undefined>;
 
 export interface FindOptions {
   readonly packagesDirectory: string;
-  readonly fetchDistTags: DistTagLookup;
+  readonly fetchPackument: PackumentLookup;
   readonly warn: (message: string, extra: Record<string, unknown>) => Promise<void> | void;
 }
 
@@ -201,18 +218,73 @@ export function registryAuthorization(settings: NpmSettings, registry: string): 
   return undefined;
 }
 
-export function parseCacheEntry(entry: string): { name: string; tag: string } | undefined {
+export function parseCacheEntry(entry: string): Pick<CachedPackage, 'name' | 'spec' | 'kind'> | undefined {
   const separator = entry.indexOf('@', entry.startsWith('@') ? entry.indexOf('/') + 1 : 0);
   if (separator <= 0) {
     return undefined;
   }
   const name = entry.slice(0, separator);
-  const tag = entry.slice(separator + 1);
-  if (!PACKAGE_NAME.test(name) || !DIST_TAG.test(tag) || RANGE_LIKE_TAG.test(tag)) {
+  const spec = entry.slice(separator + 1);
+  if (!PACKAGE_NAME.test(name)) {
     return undefined;
   }
-  return { name, tag };
+  if (DIST_TAG.test(spec) && !RANGE_LIKE_TAG.test(spec)) {
+    return { name, spec, kind: 'tag' };
+  }
+  // An exact version never changes, so only ranges are checked. `_` never appears in a range, but Windows cache names
+  // use it in place of `<`, `>`, `|`, and `*`, and loose parsing would still accept some of those names.
+  if (!spec.includes('_') && valid(spec, LOOSE) === null && validRange(spec, LOOSE) !== null) {
+    return { name, spec, kind: 'range' };
+  }
+  return undefined;
 }
+
+// npm-install-checks treats a version as installable when the running Node version satisfies its `engines.node`.
+const engineOk = (item: PackumentVersion, nodeVersion: string) =>
+  item.node === undefined || satisfies(nodeVersion, item.node, { includePrerelease: true });
+
+// Follows npm-pick-manifest for a range. The `latest` dist-tag wins when it satisfies the range (a literal `*` always
+// does), is published, is not deprecated, and supports the running Node version. Otherwise the satisfying versions are
+// ranked: not deprecated and engine-compatible first, then engine-compatible, then not deprecated, then highest.
+export function resolveSpec(
+  packument: Packument,
+  entry: Pick<CachedPackage, 'spec' | 'kind'>,
+  nodeVersion: string = process.version,
+): string | undefined {
+  if (entry.kind === 'tag') {
+    return packument.distTags[entry.spec];
+  }
+  const latest = packument.distTags.latest;
+  if (latest !== undefined && (entry.spec === '*' || satisfies(latest, entry.spec, LOOSE))) {
+    const manifest = packument.versions.find((item) => item.version === latest);
+    if (manifest !== undefined && !manifest.deprecated && engineOk(manifest, nodeVersion)) {
+      return latest;
+    }
+  }
+  const rank = (item: PackumentVersion) => {
+    const engine = engineOk(item, nodeVersion);
+    return [Number(!item.deprecated && engine), Number(engine), Number(!item.deprecated)];
+  };
+  const compare = (first: PackumentVersion, second: PackumentVersion) => {
+    const firstRank = rank(first);
+    const secondRank = rank(second);
+    for (const [index, value] of secondRank.entries()) {
+      const difference = value - (firstRank[index] ?? 0);
+      if (difference !== 0) {
+        return difference;
+      }
+    }
+    return rcompare(first.version, second.version, LOOSE);
+  };
+  const best = packument.versions
+    .filter((item) => satisfies(item.version, entry.spec, LOOSE))
+    .sort(compare)
+    .at(0);
+  return best?.version;
+}
+
+// The registry stores versions without build metadata, while an installed manifest can keep it, as in `1.2.3+build`.
+const comparableVersion = (version: string) => valid(version, LOOSE) ?? version;
 
 const directoryNames = async (directory: string): Promise<string[]> => {
   try {
@@ -241,7 +313,7 @@ const installedVersion = async (directory: string, name: string): Promise<string
   }
 };
 
-export async function listTaggedPackages(packagesDirectory: string): Promise<CachedPackage[]> {
+export async function listCachedPackages(packagesDirectory: string): Promise<CachedPackage[]> {
   const entries: string[] = [];
   for (const name of await directoryNames(packagesDirectory)) {
     if (name.startsWith('.')) {
@@ -289,23 +361,24 @@ const readState = (packagesDirectory: string): Record<string, string> => {
 export async function findOutdatedPackages(options: FindOptions): Promise<OutdatedPackage[]> {
   await rm(join(options.packagesDirectory, STALE_DIRECTORY), { recursive: true, force: true });
   const removedFor = readState(options.packagesDirectory);
-  const cached = await listTaggedPackages(options.packagesDirectory);
-  const distTags = new Map<string, ReturnType<DistTagLookup>>();
+  const cached = await listCachedPackages(options.packagesDirectory);
+  const packuments = new Map<string, ReturnType<PackumentLookup>>();
   const results = await Promise.all(
     cached.map(async (entry): Promise<OutdatedPackage | undefined> => {
-      let tags = distTags.get(entry.name);
-      if (tags === undefined) {
-        tags = options.fetchDistTags(entry.name);
-        distTags.set(entry.name, tags);
+      let packument = packuments.get(entry.name);
+      if (packument === undefined) {
+        packument = options.fetchPackument(entry.name);
+        packuments.set(entry.name, packument);
       }
       try {
-        const availableVersion = (await tags)?.[entry.tag];
-        if (availableVersion === undefined || availableVersion === entry.installedVersion) {
+        const resolved = await packument;
+        const availableVersion = resolved === undefined ? undefined : resolveSpec(resolved, entry);
+        if (availableVersion === undefined || availableVersion === comparableVersion(entry.installedVersion)) {
           return undefined;
         }
         if (removedFor[entry.entry] === availableVersion) {
           await options.warn('Reinstalling the cached plugin package did not produce the registry version', {
-            package: `${entry.name}@${entry.tag}`,
+            package: `${entry.name}@${entry.spec}`,
             installed: entry.installedVersion,
             registry: availableVersion,
           });
@@ -314,7 +387,7 @@ export async function findOutdatedPackages(options: FindOptions): Promise<Outdat
         return { ...entry, availableVersion };
       } catch (error) {
         await options.warn('Could not check cached plugin package', {
-          package: `${entry.name}@${entry.tag}`,
+          package: `${entry.name}@${entry.spec}`,
           error: error instanceof Error ? error.message : String(error),
         });
         return undefined;
@@ -358,7 +431,7 @@ export function discardPackagesSync(packagesDirectory: string, packages: readonl
   return discarded;
 }
 
-export function registryDistTags(settings: NpmSettings): DistTagLookup {
+export function registryPackument(settings: NpmSettings): PackumentLookup {
   return async (name) => {
     const scope = name.startsWith('@') ? name.slice(0, name.indexOf('/')) : undefined;
     const configured = (scope === undefined ? undefined : settings.scopes[scope]) ?? settings.registry;
@@ -399,8 +472,20 @@ export function registryDistTags(settings: NpmSettings): DistTagLookup {
     if (typeof tags !== 'object' || tags === null) {
       return undefined;
     }
-    return Object.fromEntries(
-      Object.entries(tags).filter((tag): tag is [string, string] => typeof tag[1] === 'string'),
-    );
+    const versions =
+      'versions' in body && typeof body.versions === 'object' && body.versions !== null ? body.versions : {};
+    return {
+      distTags: Object.fromEntries(
+        Object.entries(tags).filter((tag): tag is [string, string] => typeof tag[1] === 'string'),
+      ),
+      versions: Object.entries(versions).map(([version, manifest]: [string, unknown]) => {
+        const fields = typeof manifest === 'object' && manifest !== null ? manifest : {};
+        const deprecated = 'deprecated' in fields && typeof fields.deprecated === 'string' && fields.deprecated !== '';
+        const engines = 'engines' in fields && typeof fields.engines === 'object' ? fields.engines : null;
+        const node =
+          engines !== null && 'node' in engines && typeof engines.node === 'string' ? engines.node : undefined;
+        return { version, deprecated, ...(node === undefined ? {} : { node }) };
+      }),
+    };
   };
 }
