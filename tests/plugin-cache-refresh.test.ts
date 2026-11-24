@@ -19,7 +19,7 @@ import {
   registryAuthorization,
   registryDistTags,
 } from '../extensions/plugin-cache/refresh.ts';
-import { commandName } from '../extensions/plugin-cache/tui.ts';
+import { isAttachCommand } from '../extensions/plugin-cache/tui.ts';
 
 async function packagesFixture(t: TestContext) {
   const root = await mkdtemp(join(tmpdir(), 'plugin-cache-refresh-test-'));
@@ -421,10 +421,11 @@ test('the server plugin does nothing in a worker thread, where the TUI entrypoin
 });
 
 test('the TUI entrypoint recognizes the attach command', () => {
-  assert.equal(commandName(['bun', 'opencode', 'attach', 'http://localhost:4096']), 'attach');
-  assert.equal(commandName(['bun', 'opencode', '--print-logs', 'attach']), 'attach');
-  assert.equal(commandName(['bun', 'opencode']), undefined);
-  assert.equal(commandName(['bun', 'opencode', '--print-logs', 'project']), 'project');
+  assert.equal(isAttachCommand(['bun', 'opencode', 'attach', 'http://localhost:4096']), true);
+  assert.equal(isAttachCommand(['bun', 'opencode', '--print-logs', 'attach']), true);
+  assert.equal(isAttachCommand(['bun', 'opencode', '--log-level', 'DEBUG', 'attach', 'http://localhost:4096']), true);
+  assert.equal(isAttachCommand(['bun', 'opencode']), false);
+  assert.equal(isAttachCommand(['bun', 'opencode', '--print-logs', 'project']), false);
 });
 
 test('an invalid registry URL is reported without its text', async () => {

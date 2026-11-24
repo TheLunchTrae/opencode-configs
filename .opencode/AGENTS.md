@@ -137,9 +137,8 @@ The TUI entrypoint skips `opencode attach`, whose server runs in another process
 A process ended by a signal keeps the entries for a later normal exit. `opencode serve` and `web` usually end that
 way, and closing the terminal window can too. Do not add SIGINT or SIGTERM listeners: libraries that re-raise a
 signal only as its sole listener would stop doing so, and `opencode run` handles SIGINT without exiting.
-Removal skips an entry whose
-installed version changed since the check. It records the version each removal targeted. If a reinstall still
-differs, it warns and does not remove the entry again.
+Removal skips an entry whose installed version changed since the check. It records the version each removal
+targeted. If a reinstall still differs, it warns and does not remove the entry again.
 Registry settings come from environment variables, the user npmrc, and the npmrc in `npm_config_globalconfig`.
 It reads `registry`, `@scope:registry`, `before`, and per-registry `_authToken`, `_auth`, or `username`/`_password`.
 Credentials go only to their matching registry, without following redirects. Registry failures keep the cache.
